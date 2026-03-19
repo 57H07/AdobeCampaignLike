@@ -1,11 +1,13 @@
 using CampaignEngine.Application.Interfaces;
 using CampaignEngine.Infrastructure.Configuration;
 using CampaignEngine.Infrastructure.Dispatch;
+using CampaignEngine.Infrastructure.Identity;
 using CampaignEngine.Infrastructure.Logging;
 using CampaignEngine.Infrastructure.Persistence;
 using CampaignEngine.Infrastructure.Persistence.Security;
 using CampaignEngine.Infrastructure.Persistence.Seed;
 using CampaignEngine.Infrastructure.Rendering;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -72,6 +74,12 @@ public static class ServiceCollectionExtensions
         // Register as scoped so it can aggregate scoped IChannelDispatcher instances.
         services.AddScoped<IChannelDispatcherRegistry, ChannelDispatcherRegistry>();
 
+        // Send log service — SEND_LOG is the source of truth for all dispatch activity.
+        services.AddScoped<ISendLogService, SendLogService>();
+
+        // Logging dispatch orchestrator — wraps dispatchers with before/after SEND_LOG recording.
+        services.AddScoped<ILoggingDispatchOrchestrator, LoggingDispatchOrchestrator>();
+
         // Channel dispatchers registered as IChannelDispatcher implementations.
         // Each dispatcher registers itself — the registry resolves by ChannelType at runtime.
         // To add a new channel: services.AddScoped<IChannelDispatcher, YourNewDispatcher>()
@@ -83,6 +91,41 @@ public static class ServiceCollectionExtensions
         // Data source connectors (strategy pattern)
         // Example:
         // services.AddScoped<IDataSourceConnector, SqlServerDataSourceConnector>();
+
+        // ----------------------------------------------------------------
+        // ASP.NET Core Identity: user and role management
+        // Uses ApplicationUser / ApplicationRole backed by SQL Server via EF Core.
+        // Cookie lifetime and password policy configurable per environment.
+        // ----------------------------------------------------------------
+        services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
+            {
+                // Password policy
+                options.Password.RequireDigit = true;
+                options.Password.RequiredLength = 8;
+                options.Password.RequireLowercase = true;
+                options.Password.RequireUppercase = true;
+                options.Password.RequireNonAlphanumeric = false;
+
+                // Lockout policy: 5 failed attempts → locked 15 minutes
+                options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
+                options.Lockout.MaxFailedAccessAttempts = 5;
+                options.Lockout.AllowedForNewUsers = true;
+
+                // User settings
+                options.User.RequireUniqueEmail = true;
+                options.SignIn.RequireConfirmedAccount = false;
+            })
+            .AddEntityFrameworkStores<CampaignEngineDbContext>()
+            .AddDefaultTokenProviders();
+
+        // ----------------------------------------------------------------
+        // Identity services
+        // ----------------------------------------------------------------
+        // Resolves the current authenticated user from the HTTP context.
+        services.AddScoped<ICurrentUserService, CurrentUserService>();
+
+        // Audit trail for authentication events.
+        services.AddScoped<IAuthAuditService, AuthAuditService>();
 
         return services;
     }

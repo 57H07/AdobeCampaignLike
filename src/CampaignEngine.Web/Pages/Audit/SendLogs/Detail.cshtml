@@ -1,0 +1,142 @@
+@page "{id:guid}"
+@model CampaignEngine.Web.Pages.Audit.SendLogs.SendLogDetailModel
+@{
+    ViewData["Title"] = "Send Log Detail";
+}
+
+<div class="mb-3">
+    <a asp-page="Index" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i> Back to Send Logs
+    </a>
+</div>
+
+@if (Model.Log is null)
+{
+    <div class="alert alert-warning">Send log entry not found.</div>
+}
+else
+{
+    var statusBadge = Model.Log.Status switch
+    {
+        "Sent" => "bg-success",
+        "Failed" => "bg-danger",
+        "Retrying" => "bg-warning text-dark",
+        "Pending" => "bg-secondary",
+        _ => "bg-secondary"
+    };
+
+    <h1 class="mb-4">Send Log Detail</h1>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">Send Attempt</h6>
+                    <span class="badge @statusBadge fs-6">@Model.Log.Status</span>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-4">Log ID</dt>
+                        <dd class="col-sm-8"><code>@Model.Log.Id</code></dd>
+
+                        <dt class="col-sm-4">Channel</dt>
+                        <dd class="col-sm-8">@Model.Log.Channel</dd>
+
+                        <dt class="col-sm-4">Recipient</dt>
+                        <dd class="col-sm-8">@Model.Log.RecipientAddress</dd>
+
+                        @if (!string.IsNullOrEmpty(Model.Log.RecipientId))
+                        {
+                            <dt class="col-sm-4">Recipient ID</dt>
+                            <dd class="col-sm-8"><code>@Model.Log.RecipientId</code></dd>
+                        }
+
+                        <dt class="col-sm-4">Created (UTC)</dt>
+                        <dd class="col-sm-8">@Model.Log.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss")</dd>
+
+                        @if (Model.Log.SentAt.HasValue)
+                        {
+                            <dt class="col-sm-4">Sent At (UTC)</dt>
+                            <dd class="col-sm-8">@Model.Log.SentAt.Value.ToString("yyyy-MM-dd HH:mm:ss")</dd>
+                        }
+
+                        <dt class="col-sm-4">Last Updated (UTC)</dt>
+                        <dd class="col-sm-8">@Model.Log.UpdatedAt.ToString("yyyy-MM-dd HH:mm:ss")</dd>
+
+                        <dt class="col-sm-4">Retry Count</dt>
+                        <dd class="col-sm-8">
+                            @if (Model.Log.RetryCount > 0)
+                            {
+                                <span class="badge bg-warning text-dark">@Model.Log.RetryCount retries</span>
+                            }
+                            else
+                            {
+                                <span>0</span>
+                            }
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+
+            @if (!string.IsNullOrEmpty(Model.Log.ErrorDetail))
+            {
+                <div class="card mb-4 border-danger">
+                    <div class="card-header bg-danger text-white">
+                        <h6 class="mb-0">Error Detail</h6>
+                    </div>
+                    <div class="card-body">
+                        <pre class="mb-0 text-danger" style="white-space:pre-wrap;word-break:break-word;">@Model.Log.ErrorDetail</pre>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0">Correlation</h6>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-12">Campaign ID</dt>
+                        <dd class="col-12">
+                            <code class="text-break">@Model.Log.CampaignId</code>
+                        </dd>
+
+                        @if (Model.Log.CampaignStepId.HasValue)
+                        {
+                            <dt class="col-12">Step ID</dt>
+                            <dd class="col-12">
+                                <code class="text-break">@Model.Log.CampaignStepId</code>
+                            </dd>
+                        }
+
+                        @if (!string.IsNullOrEmpty(Model.Log.CorrelationId))
+                        {
+                            <dt class="col-12">Correlation ID</dt>
+                            <dd class="col-12">
+                                <code class="text-break">@Model.Log.CorrelationId</code>
+                            </dd>
+                        }
+                    </dl>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">Quick Actions</h6>
+                </div>
+                <div class="card-body">
+                    <a asp-page="Index" asp-route-campaignId="@Model.Log.CampaignId"
+                       class="btn btn-sm btn-outline-primary w-100 mb-2">
+                        View all logs for this campaign
+                    </a>
+                    <a asp-page="Index" asp-route-recipient="@Model.Log.RecipientAddress"
+                       class="btn btn-sm btn-outline-secondary w-100">
+                        View all logs for this recipient
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+}

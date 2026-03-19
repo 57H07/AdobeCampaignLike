@@ -1,0 +1,66 @@
+@page
+@model CampaignEngine.Web.Pages.Account.LoginModel
+@{
+    ViewData["Title"] = "Sign In";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - CampaignEngine</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+</head>
+<body class="bg-light">
+<div class="container">
+    <div class="row justify-content-center mt-5">
+        <div class="col-md-5">
+            <div class="card shadow">
+                <div class="card-header text-center bg-dark text-white">
+                    <h4 class="mb-0">CampaignEngine</h4>
+                    <small>Multi-channel campaign management</small>
+                </div>
+                <div class="card-body p-4">
+                    <h5 class="card-title text-center mb-4">Sign In</h5>
+
+                    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+                    {
+                        <div class="alert alert-danger">@Model.ErrorMessage</div>
+                    }
+
+                    <form method="post">
+                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                        <div class="mb-3">
+                            <label asp-for="Input.UserName" class="form-label">Username or Email</label>
+                            <input asp-for="Input.UserName" class="form-control" autofocus autocomplete="username" />
+                            <span asp-validation-for="Input.UserName" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Input.Password" class="form-label">Password</label>
+                            <input asp-for="Input.Password" class="form-control" type="password" autocomplete="current-password" />
+                            <span asp-validation-for="Input.Password" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3 form-check">
+                            <input asp-for="Input.RememberMe" class="form-check-input" />
+                            <label asp-for="Input.RememberMe" class="form-check-label">Remember me</label>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-dark">Sign In</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+<script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+<script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
+</body>
+</html>

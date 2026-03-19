@@ -1,0 +1,26 @@
+@page
+@model CampaignEngine.Web.Pages.Account.LogoutModel
+@{
+    ViewData["Title"] = "Signed Out";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - CampaignEngine</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+</head>
+<body class="bg-light">
+<div class="container">
+    <div class="row justify-content-center mt-5">
+        <div class="col-md-4 text-center">
+            <h4>You have been signed out.</h4>
+            <a asp-page="/Account/Login" class="btn btn-dark mt-3">Sign In Again</a>
+        </div>
+    </div>
+</div>
+</body>
+</html>

@@ -39,7 +39,17 @@ try
 
     // ----------------------------------------------------------------
     // ASP.NET Core: Razor Pages + Web API
+    // Configure cookie-based authentication paths for Identity
     // ----------------------------------------------------------------
+    builder.Services.ConfigureApplicationCookie(options =>
+    {
+        options.LoginPath = "/Account/Login";
+        options.LogoutPath = "/Account/Logout";
+        options.AccessDeniedPath = "/Account/AccessDenied";
+        options.SlidingExpiration = true;
+        options.ExpireTimeSpan = TimeSpan.FromHours(8);
+    });
+
     builder.Services.AddRazorPages();
     builder.Services.AddControllers();
 

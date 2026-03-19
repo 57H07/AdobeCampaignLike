@@ -1,0 +1,189 @@
+@page
+@model CampaignEngine.Web.Pages.Audit.SendLogs.SendLogsIndexModel
+@{
+    ViewData["Title"] = "Send Log Viewer";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h1 class="mb-1">Send Log Viewer</h1>
+        <p class="text-muted mb-0">SEND_LOG — source of truth for all dispatch activity</p>
+    </div>
+</div>
+
+@* ------------------------------------------------------------------ *@
+@* Filter Panel                                                         *@
+@* ------------------------------------------------------------------ *@
+<div class="card mb-4">
+    <div class="card-header">
+        <h6 class="mb-0">Filters</h6>
+    </div>
+    <div class="card-body">
+        <form method="get" asp-page="Index">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">Campaign ID</label>
+                    <input type="text" class="form-control" name="campaignId"
+                           value="@Model.Filter.CampaignId"
+                           placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Recipient</label>
+                    <input type="text" class="form-control" name="recipient"
+                           value="@Model.Filter.Recipient"
+                           placeholder="email@example.com or phone" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Status</label>
+                    <select class="form-select" name="status">
+                        <option value="">All</option>
+                        <option value="1" selected="@(Model.Filter.Status == "1")">Pending</option>
+                        <option value="2" selected="@(Model.Filter.Status == "2")">Sent</option>
+                        <option value="3" selected="@(Model.Filter.Status == "3")">Failed</option>
+                        <option value="4" selected="@(Model.Filter.Status == "4")">Retrying</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">From (UTC)</label>
+                    <input type="datetime-local" class="form-control" name="from"
+                           value="@Model.Filter.From" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">To (UTC)</label>
+                    <input type="datetime-local" class="form-control" name="to"
+                           value="@Model.Filter.To" />
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-search"></i> Search
+                    </button>
+                    <a asp-page="Index" class="btn btn-outline-secondary ms-2">Clear</a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@* ------------------------------------------------------------------ *@
+@* Results                                                              *@
+@* ------------------------------------------------------------------ *@
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span>Results: <strong>@Model.Total</strong> entries</span>
+        <small class="text-muted">Page @Model.Page of @Model.TotalPages</small>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-sm table-striped table-hover mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Created (UTC)</th>
+                        <th>Status</th>
+                        <th>Channel</th>
+                        <th>Recipient</th>
+                        <th>Campaign</th>
+                        <th>Sent At</th>
+                        <th>Retries</th>
+                        <th>Error</th>
+                        <th>Details</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var log in Model.Items)
+                    {
+                        var statusBadge = log.Status switch
+                        {
+                            "Sent" => "bg-success",
+                            "Failed" => "bg-danger",
+                            "Retrying" => "bg-warning text-dark",
+                            "Pending" => "bg-secondary",
+                            _ => "bg-secondary"
+                        };
+                        <tr>
+                            <td class="text-nowrap">
+                                <small>@log.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss")</small>
+                            </td>
+                            <td>
+                                <span class="badge @statusBadge">@log.Status</span>
+                            </td>
+                            <td>@log.Channel</td>
+                            <td class="text-truncate" style="max-width:180px;" title="@log.RecipientAddress">
+                                @log.RecipientAddress
+                            </td>
+                            <td>
+                                <code title="@log.CampaignId">@log.CampaignId.ToString()[..8]…</code>
+                            </td>
+                            <td class="text-nowrap">
+                                <small>@(log.SentAt.HasValue ? log.SentAt.Value.ToString("HH:mm:ss") : "-")</small>
+                            </td>
+                            <td class="text-center">@log.RetryCount</td>
+                            <td class="text-truncate" style="max-width:200px;" title="@log.ErrorDetail">
+                                @if (!string.IsNullOrEmpty(log.ErrorDetail))
+                                {
+                                    <small class="text-danger">@log.ErrorDetail</small>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">-</span>
+                                }
+                            </td>
+                            <td>
+                                <a asp-page="Detail" asp-route-id="@log.Id"
+                                   class="btn btn-sm btn-outline-secondary">View</a>
+                            </td>
+                        </tr>
+                    }
+                    @if (!Model.Items.Any())
+                    {
+                        <tr>
+                            <td colspan="9" class="text-center text-muted py-4">
+                                No send log entries match the current filters.
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+    @* Pagination *@
+    @if (Model.TotalPages > 1)
+    {
+        <div class="card-footer d-flex justify-content-between align-items-center">
+            <small class="text-muted">
+                Showing @((Model.Page - 1) * Model.PageSize + 1)–@(Math.Min(Model.Page * Model.PageSize, Model.Total)) of @Model.Total
+            </small>
+            <nav>
+                <ul class="pagination pagination-sm mb-0">
+                    @if (Model.Page > 1)
+                    {
+                        <li class="page-item">
+                            <a class="page-link"
+                               asp-page="Index"
+                               asp-route-page="@(Model.Page - 1)"
+                               asp-route-campaignId="@Model.Filter.CampaignId"
+                               asp-route-recipient="@Model.Filter.Recipient"
+                               asp-route-status="@Model.Filter.Status"
+                               asp-route-from="@Model.Filter.From"
+                               asp-route-to="@Model.Filter.To">Previous</a>
+                        </li>
+                    }
+                    @if (Model.Page < Model.TotalPages)
+                    {
+                        <li class="page-item">
+                            <a class="page-link"
+                               asp-page="Index"
+                               asp-route-page="@(Model.Page + 1)"
+                               asp-route-campaignId="@Model.Filter.CampaignId"
+                               asp-route-recipient="@Model.Filter.Recipient"
+                               asp-route-status="@Model.Filter.Status"
+                               asp-route-from="@Model.Filter.From"
+                               asp-route-to="@Model.Filter.To">Next</a>
+                        </li>
+                    }
+                </ul>
+            </nav>
+        </div>
+    }
+</div>

@@ -1,0 +1,99 @@
+@page "{id}"
+@model CampaignEngine.Web.Pages.Admin.Users.EditRoleModel
+@{
+    ViewData["Title"] = "Edit User Role";
+}
+
+<h1>Edit User Role</h1>
+<p class="text-muted">Assign or change the role for user <strong>@Model.Input.UserName</strong>.</p>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">User Information</div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Username</dt>
+                    <dd class="col-sm-8">@Model.Input.UserName</dd>
+                    <dt class="col-sm-4">Email</dt>
+                    <dd class="col-sm-8">@Model.Input.Email</dd>
+                    <dt class="col-sm-4">Display Name</dt>
+                    <dd class="col-sm-8">@(Model.Input.DisplayName ?? "-")</dd>
+                    <dt class="col-sm-4">Status</dt>
+                    <dd class="col-sm-8">
+                        @if (Model.Input.IsActive)
+                        {
+                            <span class="badge bg-success">Active</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary">Inactive</span>
+                        }
+                    </dd>
+                    <dt class="col-sm-4">Current Roles</dt>
+                    <dd class="col-sm-8">
+                        @foreach (var role in Model.Input.CurrentRoles)
+                        {
+                            var badgeClass = role switch
+                            {
+                                "Admin" => "bg-danger",
+                                "Designer" => "bg-primary",
+                                "Operator" => "bg-success",
+                                _ => "bg-secondary"
+                            };
+                            <span class="badge @badgeClass me-1">@role</span>
+                        }
+                    </dd>
+                </dl>
+            </div>
+        </div>
+
+        <form method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+            <input type="hidden" asp-for="Input.UserId" />
+            <input type="hidden" asp-for="Input.UserName" />
+            <input type="hidden" asp-for="Input.Email" />
+            <input type="hidden" asp-for="Input.DisplayName" />
+            <input type="hidden" asp-for="Input.IsActive" />
+
+            <div class="mb-3">
+                <label asp-for="Input.SelectedRole" class="form-label fw-semibold">Assign Role</label>
+                <select asp-for="Input.SelectedRole" class="form-select">
+                    @foreach (var role in Model.Input.AvailableRoles)
+                    {
+                        <option value="@role">@role</option>
+                    }
+                </select>
+                <div class="form-text">
+                    Selecting a role removes all existing roles and assigns the selected one.
+                </div>
+                <span asp-validation-for="Input.SelectedRole" class="text-danger"></span>
+            </div>
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">Save Role</button>
+                <a asp-page="Index" class="btn btn-outline-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">Role Permissions</div>
+            <div class="card-body">
+                <dl>
+                    <dt><span class="badge bg-danger">Admin</span></dt>
+                    <dd>Full access: all features, user management, configuration.</dd>
+                    <dt><span class="badge bg-primary">Designer</span></dt>
+                    <dd>Template CRUD + preview. No campaign access.</dd>
+                    <dt><span class="badge bg-success">Operator</span></dt>
+                    <dd>Campaign CRUD + monitoring. Read-only template access.</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

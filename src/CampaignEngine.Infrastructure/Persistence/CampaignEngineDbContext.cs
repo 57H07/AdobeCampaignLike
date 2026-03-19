@@ -1,14 +1,17 @@
 using CampaignEngine.Domain.Entities;
+using CampaignEngine.Infrastructure.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace CampaignEngine.Infrastructure.Persistence;
 
 /// <summary>
 /// Entity Framework Core DbContext for CampaignEngine.
-/// Configured with SQL Server provider. All entity mappings applied
-/// via IEntityTypeConfiguration classes in the Configurations folder.
+/// Extends IdentityDbContext to include ASP.NET Core Identity tables
+/// (AspNetUsers, AspNetRoles, AspNetUserRoles, etc.).
+/// All entity mappings applied via IEntityTypeConfiguration classes in the Configurations folder.
 /// </summary>
-public class CampaignEngineDbContext : DbContext
+public class CampaignEngineDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, string>
 {
     public CampaignEngineDbContext(DbContextOptions<CampaignEngineDbContext> options)
         : base(options)
@@ -35,6 +38,9 @@ public class CampaignEngineDbContext : DbContext
 
     // API authentication
     public DbSet<ApiKey> ApiKeys => Set<ApiKey>();
+
+    // Security audit trail
+    public DbSet<AuthAuditLog> AuthAuditLogs => Set<AuthAuditLog>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

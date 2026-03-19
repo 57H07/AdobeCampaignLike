@@ -148,6 +148,10 @@ public sealed class ScribanTemplateRenderer : ITemplateRenderer
     /// - CancellationToken: enforces render timeout
     /// - StrictVariables = false: missing vars render as empty string (designer-friendly)
     /// - No custom member access: only ScriptObject values are accessible
+    ///
+    /// Custom functions registered (US-012):
+    /// - format_date(value, format): format a date using a .NET format string
+    /// - format_currency(value, symbol): format a decimal as currency with prefix symbol
     /// </summary>
     private static ScribanRenderContext BuildScribanContext(AppTemplateContext context, CancellationToken cancellationToken)
     {
@@ -164,7 +168,12 @@ public sealed class ScribanTemplateRenderer : ITemplateRenderer
             CancellationToken = cancellationToken
         };
 
-        // Build the root script object from context data
+        // Register custom functions (format_date, format_currency) — TASK-012-04
+        // Custom functions are pushed first so data values take priority in lookup order.
+        var customFunctions = TemplateCustomFunctions.CreateAndRegister();
+        scribanContext.PushGlobal(customFunctions);
+
+        // Build the root script object from context data and push on top
         var scriptObject = BuildScriptObject(context);
         scribanContext.PushGlobal(scriptObject);
 

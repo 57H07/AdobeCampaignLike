@@ -173,7 +173,9 @@
 ---
 
 #### [US-003] - Authentication and authorization implementation
-**Status:** 🟡 TODO
+**Status:** ✅ DONE
+**Start date:** 2026-03-19
+**End date:** 2026-03-19
 **Priority:** 🔴 High
 **Complexity:** M
 **Epic:** Foundation & Infrastructure
@@ -186,20 +188,20 @@
 > Role-based access control: Designer role (template CRUD, preview) vs Operator role (campaign CRUD, monitoring) vs Admin role. ASP.NET Core Identity or Windows Authentication.
 
 **Acceptance criteria:**
-- [ ] Authentication mechanism implemented (Windows Auth or ASP.NET Core Identity)
-- [ ] Three roles defined: Designer, Operator, Admin
-- [ ] Authorization policies applied at controller/page level
-- [ ] Role assignment UI for Admin users
-- [ ] Audit trail for authentication events
+- [x] Authentication mechanism implemented (Windows Auth or ASP.NET Core Identity) ✅
+- [x] Three roles defined: Designer, Operator, Admin ✅
+- [x] Authorization policies applied at controller/page level ✅
+- [x] Role assignment UI for Admin users ✅
+- [x] Audit trail for authentication events ✅
 
 **Technical tasks:**
-- [ ] `TASK-003-01` - **[Model]** Create User and Role entities
-- [ ] `TASK-003-02` - **[Auth]** Implement authentication middleware (Windows or Identity)
-- [ ] `TASK-003-03` - **[Auth]** Configure role-based authorization policies
-- [ ] `TASK-003-04` - **[Frontend]** Create user management UI for Admin
-- [ ] `TASK-003-05` - **[API]** Add role-checking attributes to controllers
-- [ ] `TASK-003-06` - **[Test]** Unit tests for authorization policies
-- [ ] `TASK-003-07` - **[Doc]** Document role permissions matrix
+- [x] `TASK-003-01` - **[Model]** Create User and Role entities ✅ 2026-03-19
+- [x] `TASK-003-02` - **[Auth]** Implement authentication middleware (Windows or Identity) ✅ 2026-03-19
+- [x] `TASK-003-03` - **[Auth]** Configure role-based authorization policies ✅ 2026-03-19
+- [x] `TASK-003-04` - **[Frontend]** Create user management UI for Admin ✅ 2026-03-19
+- [x] `TASK-003-05` - **[API]** Add role-checking attributes to controllers ✅ 2026-03-19
+- [x] `TASK-003-06` - **[Test]** Unit tests for authorization policies ✅ 2026-03-19
+- [x] `TASK-003-07` - **[Doc]** Document role permissions matrix ✅ 2026-03-19
 
 **Business rules:**
 1. Designer: Full template CRUD + preview, no campaign access
@@ -559,7 +561,9 @@
 ---
 
 #### [US-012] - Advanced rendering features (tables, lists, conditionals)
-**Status:** 🟡 TODO
+**Status:** ✅ DONE
+**Start date:** 2026-03-19
+**End date:** 2026-03-19
 **Priority:** 🔴 High
 **Complexity:** M
 **Epic:** Rendering Engine
@@ -572,22 +576,22 @@
 > Table rendering: `{{#table}}...{{/table}}` with row iteration. List rendering: `{{#list}}...{{/list}}`. Conditional blocks: `{{#if condition}}...{{/if}}`.
 
 **Acceptance criteria:**
-- [ ] Table blocks iterate over array data and generate HTML tables
-- [ ] List blocks iterate and generate bulleted/numbered lists
-- [ ] Conditional blocks evaluate boolean expressions
-- [ ] Nested structures supported (table within conditional)
-- [ ] Empty collections handled gracefully
+- [x] Table blocks iterate over array data and generate HTML tables ✅
+- [x] List blocks iterate and generate bulleted/numbered lists ✅
+- [x] Conditional blocks evaluate boolean expressions ✅
+- [x] Nested structures supported (table within conditional) ✅
+- [x] Empty collections handled gracefully ✅
 
 **Technical tasks:**
-- [ ] `TASK-012-01` - **[Service]** Implement table iteration logic in Scriban
-- [ ] `TASK-012-02` - **[Service]** Implement list iteration logic
-- [ ] `TASK-012-03` - **[Service]** Implement conditional block evaluation
-- [ ] `TASK-012-04` - **[Service]** Add custom Scriban functions (formatDate, formatCurrency)
-- [ ] `TASK-012-05` - **[Test]** Unit tests for table rendering
-- [ ] `TASK-012-06` - **[Test]** Unit tests for list rendering
-- [ ] `TASK-012-07` - **[Test]** Unit tests for conditional logic
-- [ ] `TASK-012-08` - **[Test]** Integration tests for nested structures
-- [ ] `TASK-012-09` - **[Doc]** Advanced syntax examples
+- [x] `TASK-012-01` - **[Service]** Implement table iteration logic in Scriban ✅ 2026-03-19
+- [x] `TASK-012-02` - **[Service]** Implement list iteration logic ✅ 2026-03-19
+- [x] `TASK-012-03` - **[Service]** Implement conditional block evaluation ✅ 2026-03-19
+- [x] `TASK-012-04` - **[Service]** Add custom Scriban functions (formatDate, formatCurrency) ✅ 2026-03-19
+- [x] `TASK-012-05` - **[Test]** Unit tests for table rendering ✅ 2026-03-19
+- [x] `TASK-012-06` - **[Test]** Unit tests for list rendering ✅ 2026-03-19
+- [x] `TASK-012-07` - **[Test]** Unit tests for conditional logic ✅ 2026-03-19
+- [x] `TASK-012-08` - **[Test]** Integration tests for nested structures ✅ 2026-03-19
+- [x] `TASK-012-09` - **[Doc]** Advanced syntax examples ✅ 2026-03-19
 
 **Business rules:**
 1. Table syntax: `{{#for row in table}} <tr><td>{{row.field}}</td></tr> {{/for}}`
@@ -1351,7 +1355,9 @@
 > REST API for transactional message sending
 
 #### [US-030] - Single send API endpoint
-**Status:** 🟡 TODO
+**Status:** ✅ DONE
+**Start date:** 2026-03-19
+**End date:** 2026-03-19
 **Priority:** 🔴 High
 **Complexity:** M
 **Epic:** Generic Send API
@@ -1364,21 +1370,21 @@
 > POST /api/send with templateId, channel, data dictionary, recipient. API-first design for integration consumers.
 
 **Acceptance criteria:**
-- [ ] POST /api/send endpoint accepts template, channel, data, recipient
-- [ ] Template resolved with provided data
-- [ ] Message dispatched immediately (synchronous)
-- [ ] Response includes send status and tracking ID
-- [ ] Error responses with clear validation messages
+- [x] POST /api/send endpoint accepts template, channel, data, recipient ✅
+- [x] Template resolved with provided data ✅
+- [x] Message dispatched immediately (synchronous) ✅
+- [x] Response includes send status and tracking ID ✅
+- [x] Error responses with clear validation messages ✅
 
 **Technical tasks:**
-- [ ] `TASK-030-01` - **[Model]** Create SendRequest DTO
-- [ ] `TASK-030-02` - **[API]** POST /api/send endpoint
-- [ ] `TASK-030-03` - **[Service]** Single send orchestration service
-- [ ] `TASK-030-04` - **[Service]** Request validation service
-- [ ] `TASK-030-05` - **[API]** Response model with tracking ID
-- [ ] `TASK-030-06` - **[Test]** API integration tests
-- [ ] `TASK-030-07` - **[Test]** Validation tests (missing data, invalid template)
-- [ ] `TASK-030-08` - **[Doc]** API endpoint documentation
+- [x] `TASK-030-01` - **[Model]** Create SendRequest DTO ✅ 2026-03-19
+- [x] `TASK-030-02` - **[API]** POST /api/send endpoint ✅ 2026-03-19
+- [x] `TASK-030-03` - **[Service]** Single send orchestration service ✅ 2026-03-19
+- [x] `TASK-030-04` - **[Service]** Request validation service ✅ 2026-03-19
+- [x] `TASK-030-05` - **[API]** Response model with tracking ID ✅ 2026-03-19
+- [x] `TASK-030-06` - **[Test]** API integration tests ✅ 2026-03-19
+- [x] `TASK-030-07` - **[Test]** Validation tests (missing data, invalid template) ✅ 2026-03-19
+- [x] `TASK-030-08` - **[Doc]** API endpoint documentation ✅ 2026-03-19
 
 **Business rules:**
 1. Template must be Published
@@ -1517,7 +1523,9 @@
 > Log all send operations and provide retry mechanisms
 
 #### [US-034] - Send logging and audit trail
-**Status:** 🟡 TODO
+**Status:** ✅ DONE
+**Start date:** 2026-03-19
+**End date:** 2026-03-19
 **Priority:** 🔴 High
 **Complexity:** M
 **Epic:** Tracking & Audit
@@ -1530,21 +1538,21 @@
 > Every send attempt logged with status (Pending/Sent/Failed/Retrying), timestamp, error detail, retry count. SEND_LOG as source of truth.
 
 **Acceptance criteria:**
-- [ ] Every send logged to SEND_LOG table
-- [ ] Send status: Pending, Sent, Failed, Retrying
-- [ ] Timestamp, error message, retry count captured
-- [ ] Correlation to campaign and recipient
-- [ ] Query interface for send log lookup
+- [x] Every send logged to SEND_LOG table ✅
+- [x] Send status: Pending, Sent, Failed, Retrying ✅
+- [x] Timestamp, error message, retry count captured ✅
+- [x] Correlation to campaign and recipient ✅
+- [x] Query interface for send log lookup ✅
 
 **Technical tasks:**
-- [ ] `TASK-034-01` - **[Model]** Create SendLog entity
-- [ ] `TASK-034-02` - **[Service]** Send logging service
-- [ ] `TASK-034-03` - **[Service]** Log on every send attempt (before and after)
-- [ ] `TASK-034-04` - **[API]** GET /api/sendlogs with filtering
-- [ ] `TASK-034-05` - **[Frontend]** Send log viewer UI
-- [ ] `TASK-034-06` - **[Frontend]** Filter by campaign, recipient, status, date
-- [ ] `TASK-034-07` - **[Test]** Logging completeness tests
-- [ ] `TASK-034-08` - **[Doc]** Send log schema documentation
+- [x] `TASK-034-01` - **[Model]** Create SendLog entity ✅ 2026-03-19
+- [x] `TASK-034-02` - **[Service]** Send logging service ✅ 2026-03-19
+- [x] `TASK-034-03` - **[Service]** Log on every send attempt (before and after) ✅ 2026-03-19
+- [x] `TASK-034-04` - **[API]** GET /api/sendlogs with filtering ✅ 2026-03-19
+- [x] `TASK-034-05` - **[Frontend]** Send log viewer UI ✅ 2026-03-19
+- [x] `TASK-034-06` - **[Frontend]** Filter by campaign, recipient, status, date ✅ 2026-03-19
+- [x] `TASK-034-07` - **[Test]** Logging completeness tests ✅ 2026-03-19
+- [x] `TASK-034-08` - **[Doc]** Send log schema documentation ✅ 2026-03-19
 
 **Business rules:**
 1. All sends logged before dispatch attempt
