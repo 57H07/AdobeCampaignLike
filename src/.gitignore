@@ -1,0 +1,51 @@
+## .NET build artifacts
+bin/
+obj/
+
+## Visual Studio / Rider user-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.vs/
+.idea/
+*.DotSettings.user
+
+## NuGet
+*.nupkg
+*.snupkg
+**/[Pp]ackages/
+!**/[Pp]ackages/build/
+*.nuget.props
+*.nuget.targets
+
+## Publish output
+**/publish/
+**/PublishOutput/
+
+## ASP.NET Core
+appsettings.*.json
+!appsettings.json
+!appsettings.Development.json
+!appsettings.Production.json
+
+## Logs (Serilog / structured logging output)
+logs/
+*.log
+
+## Test results
+TestResults/
+coverage/
+*.trx
+*.coveragexml
+*.coverage
+
+## OS artifacts
+.DS_Store
+Thumbs.db
+desktop.ini
+
+## Environment / secrets
+.env
+.env.*
+secrets.json
