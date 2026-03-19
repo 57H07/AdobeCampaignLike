@@ -1,0 +1,1806 @@
+# 📋 Backlog - CampaignEngine
+
+**Source:** _docs/prd.md
+**Created:** 2026-03-19
+**Last updated:** 2026-03-19
+
+---
+
+## 📊 Overview
+
+**Total User Stories:** 35
+**Estimated complexity:** 52-68 person-weeks (260-340 person-days)
+**Overall status:** 🟡 Planning
+
+### Statistics by Priority
+- 🔴 High priority (MVP): 25 stories
+- 🟠 Medium priority (Phase 2): 9 stories
+- 🟢 Low priority (Phase 3): 1 story
+
+### Statistics by Complexity
+- **S (Small)**: 8 stories
+- **M (Medium)**: 19 stories
+- **L (Large)**: 7 stories
+- **XL (Extra Large)**: 1 story
+
+---
+
+## 🎭 Personas / Actors
+
+### [DESIGNER] - Marie, Template Designer
+**Role:** Communication/marketing team member with HTML/CSS skills
+**Needs:**
+- Create polished, brand-compliant templates with dynamic content
+- Preview templates with real sample data
+- Manage template versioning and composition
+- Work with sub-templates for consistency
+
+### [OPERATOR] - Thomas, Campaign Operator
+**Role:** Operations/business team member responsible for customer communications
+**Needs:**
+- Launch targeted campaigns quickly
+- Define multi-step sequences with delays
+- Monitor campaign progress in real time
+- Manage attachments and CC recipients
+- Apply filters on data repositories
+
+### [DEVELOPER] - Julien, Integration Developer
+**Role:** Backend developer on internal business applications
+**Needs:**
+- Trigger transactional messages via simple API
+- Use existing templates without duplicating logic
+- Reliable delivery with status tracking
+- Clear OpenAPI documentation
+
+### [ADMIN] - Sophie, IT Administrator
+**Role:** Infrastructure/ops team member
+**Needs:**
+- Monitor system health
+- Manage user roles and permissions
+- Configure SMTP servers, SMS providers, file share access
+- Review audit logs and monitor Hangfire dashboard
+
+---
+
+## 🏗️ Architecture & Technical Stack
+
+**Runtime:** .NET 8 (LTS)
+**Web Framework:** ASP.NET Core (Razor Pages + Web API)
+**ORM:** Entity Framework Core
+**Database:** SQL Server
+**Background Jobs:** Hangfire Community
+**Template Engine:** Scriban
+**Object Mapping:** Mapster
+**PDF Generation:** wkhtmltopdf / DinkToPdf (POC required)
+**PDF Consolidation:** PdfSharp (MIT)
+**CSS Inlining:** PreMailer.Net
+**File Storage:** Internal file share (UNC paths)
+**Hosting:** IIS on Windows Server
+**Testing:** xUnit + Moq + FluentAssertions
+
+**Performance Targets:**
+- Single API send: < 500ms p95
+- Batch campaign: 100,000 recipients in < 60 minutes (8 Hangfire workers)
+- Delivery rate: > 98%
+- Retry success: > 90% within 3 attempts
+
+---
+
+## 🎯 User Stories
+
+### Epic 1: Foundation & Infrastructure
+
+> Core infrastructure setup including database, authentication, and layered architecture
+
+#### [US-001] - Project scaffold and layered architecture setup
+**Status:** 🟡 TODO
+**Priority:** 🔴 High
+**Complexity:** M
+**Epic:** Foundation & Infrastructure
+
+**As a** Developer
+**I want** a clean layered architecture with proper separation of concerns
+**So that** the application is maintainable and extensible
+
+**Specification context:**
+> Layered architecture (Domain / Application / Infrastructure / Web). All cross-cutting concerns behind interfaces. DI-based strategy pattern for channels and data connectors.
+
+**Acceptance criteria:**
+- [ ] Solution structure follows Domain / Application / Infrastructure / Web layers
+- [ ] All projects properly reference each other with correct dependencies
+- [ ] Microsoft.Extensions.DependencyInjection configured as DI container
+- [ ] Cross-cutting concerns (logging, error handling) abstracted behind interfaces
+- [ ] Unit test projects created with xUnit + Moq + FluentAssertions
+
+**Technical tasks:**
+- [ ] `TASK-001-01` - **[Setup]** Create solution with 4 projects (Domain, Application, Infrastructure, Web)
+- [ ] `TASK-001-02` - **[Setup]** Configure project dependencies and package references
+- [ ] `TASK-001-03` - **[Config]** Set up DI container registration patterns
+- [ ] `TASK-001-04` - **[Setup]** Add test projects (Domain.Tests, Application.Tests, Infrastructure.Tests)
+- [ ] `TASK-001-05` - **[Config]** Configure appsettings.json structure for environments
+- [ ] `TASK-001-06` - **[Doc]** Create README with architecture diagram
+
+**Business rules:**
+1. No circular dependencies between layers
+2. Infrastructure and Web depend on Application; Application depends on Domain only
+3. All external dependencies injected via interfaces
+
+**Dependencies:** None
+**Estimation:** 3-4 days
+
+---
+
+#### [US-002] - Database provisioning and EF Core setup
+**Status:** 🟡 TODO
+**Priority:** 🔴 High
+**Complexity:** M
+**Epic:** Foundation & Infrastructure
+
+**As a** Developer
+**I want** SQL Server database with Entity Framework Core migrations
+**So that** all entities can be persisted reliably
+
+**Specification context:**
+> SQL Server as enterprise standard with EF Core for migrations and LINQ support
+
+**Acceptance criteria:**
+- [ ] SQL Server database created with appropriate connection string
+- [ ] DbContext configured with all entity mappings
+- [ ] Initial migration created and applied
+- [ ] Seed data mechanism for development environment
+- [ ] Connection string encryption configured
+
+**Technical tasks:**
+- [ ] `TASK-002-01` - **[Model]** Create DbContext with SQL Server provider
+- [ ] `TASK-002-02` - **[Config]** Configure connection string with encryption
+- [ ] `TASK-002-03` - **[Migration]** Create initial migration with all core tables
+- [ ] `TASK-002-04` - **[Data]** Create seed data service for development
+- [ ] `TASK-002-05` - **[Test]** Add integration tests with in-memory database
+- [ ] `TASK-002-06` - **[Doc]** Document database schema and migration strategy
+
+**Business rules:**
+1. All entity IDs use GUID for distributed generation
+2. All entities have CreatedAt/UpdatedAt audit fields
+3. Soft delete pattern for critical entities (templates, campaigns)
+
+**Dependencies:** US-001
+**Estimation:** 4-5 days
+
+---
+
+#### [US-003] - Authentication and authorization implementation
+**Status:** 🟡 TODO
+**Priority:** 🔴 High
+**Complexity:** M
+**Epic:** Foundation & Infrastructure
+
+**As a** IT Administrator (Sophie)
+**I want** secure authentication with role-based access control
+**So that** users can only access features appropriate to their role
+
+**Specification context:**
+> Role-based access control: Designer role (template CRUD, preview) vs Operator role (campaign CRUD, monitoring) vs Admin role. ASP.NET Core Identity or Windows Authentication.
+
+**Acceptance criteria:**
+- [ ] Authentication mechanism implemented (Windows Auth or ASP.NET Core Identity)
+- [ ] Three roles defined: Designer, Operator, Admin
+- [ ] Authorization policies applied at controller/page level
+- [ ] Role assignment UI for Admin users
+- [ ] Audit trail for authentication events
+
+**Technical tasks:**
+- [ ] `TASK-003-01` - **[Model]** Create User and Role entities
+- [ ] `TASK-003-02` - **[Auth]** Implement authentication middleware (Windows or Identity)
+- [ ] `TASK-003-03` - **[Auth]** Configure role-based authorization policies
+- [ ] `TASK-003-04` - **[Frontend]** Create user management UI for Admin
+- [ ] `TASK-003-05` - **[API]** Add role-checking attributes to controllers
+- [ ] `TASK-003-06` - **[Test]** Unit tests for authorization policies
+- [ ] `TASK-003-07` - **[Doc]** Document role permissions matrix
+
+**Business rules:**
+1. Designer: Full template CRUD + preview, no campaign access
+2. Operator: Full campaign CRUD + monitoring, read-only template access
+3. Admin: Full access to all features + user management + configuration
+4. Default role for new users: Operator
+
+**Dependencies:** US-002
+**Estimation:** 5-6 days
+
+**Implementation notes:**
+- Open Question Q4: Windows Authentication vs local Identity accounts - implement strategy pattern to support both
+- Consider using Claims-based authorization for flexibility
+
+---
+
+#### [US-004] - Structured logging and observability setup
+**Status:** 🟡 TODO
+**Priority:** 🔴 High
+**Complexity:** S
+**Epic:** Foundation & Infrastructure
+
+**As a** IT Administrator (Sophie)
+**I want** structured logging throughout the application
+**So that** I can diagnose issues and monitor system health
+
+**Specification context:**
+> Structured logging. SEND_LOG as source of truth for all dispatch activity. Observability as core requirement.
+
+**Acceptance criteria:**
+- [ ] Structured logging configured (Serilog or NLog)
+- [ ] Log levels appropriately used (Debug, Info, Warning, Error, Critical)
+- [ ] Correlation IDs tracked across request lifecycle
+- [ ] Performance metrics logged for critical operations
+- [ ] Log sink configured (file, database, or monitoring tool)
+
+**Technical tasks:**
+- [ ] `TASK-004-01` - **[Config]** Configure Serilog with structured logging
+- [ ] `TASK-004-02` - **[Middleware]** Add correlation ID middleware
+- [ ] `TASK-004-03` - **[Logging]** Create logging abstractions for core services
+- [ ] `TASK-004-04` - **[Config]** Configure log sinks (file + SQL for errors)
+- [ ] `TASK-004-05` - **[Test]** Verify logging in integration tests
+- [ ] `TASK-004-06` - **[Doc]** Document logging conventions
+
+**Business rules:**
+1. All API calls logged with request/response details
+2. All send operations logged with correlation to campaign/template
+3. All errors logged with stack traces
+4. PII masked in logs
+
+**Dependencies:** US-001
+**Estimation:** 2-3 days
+
+---
+
+### Epic 2: Template Management (Template Registry)
+
+> Create, manage, and version message templates with dynamic content support
+
+#### [US-005] - Template CRUD operations
+**Status:** 🟡 TODO
+**Priority:** 🔴 High
+**Complexity:** M
+**Epic:** Template Management
+
+**As a** Template Designer (Marie)
+**I want** to create and edit templates with name, channel, HTML body, and placeholder manifest
+**So that** I can define reusable message layouts
+
+**Specification context:**
+> Template CRUD: Create, read, update, delete templates with name, channel (Email/Letter/SMS), HTML body, and placeholder manifest.
+
+**Acceptance criteria:**
+- [ ] Templates can be created with name, channel type, HTML body
+- [ ] Templates can be edited and updated
+- [ ] Templates can be soft-deleted (archived)
+- [ ] Template list view with filtering by channel and status
+- [ ] Template detail view showing all metadata
+
+**Technical tasks:**
+- [ ] `TASK-005-01` - **[Model]** Create Template entity with channel enum
+- [ ] `TASK-005-02` - **[API]** POST /api/templates endpoint with validation
+- [ ] `TASK-005-03` - **[API]** GET /api/templates with filtering and pagination
+- [ ] `TASK-005-04` - **[API]** PUT /api/templates/{id} endpoint
+- [ ] `TASK-005-05` - **[API]** DELETE /api/templates/{id} (soft delete)
+- [ ] `TASK-005-06` - **[Frontend]** Template list Razor page with grid
+- [ ] `TASK-005-07` - **[Frontend]** Template create/edit form with validation
+- [ ] `TASK-005-08` - **[Test]** Unit tests for template service
+- [ ] `TASK-005-09` - **[Test]** Integration tests for template API
+- [ ] `TASK-005-10` - **[Doc]** API documentation for template endpoints
+
+**Business rules:**
+1. Template names must be unique within same channel
+2. Channel types: Email, Letter, SMS
+3. Soft delete: set IsDeleted flag, keep for audit
+4. Only Designer and Admin roles can create/edit templates
+
+**Dependencies:** US-002, US-003
+**Estimation:** 5-6 days
+
+---
+
+#### [US-006] - Placeholder manifest declaration
+**Status:** 🟡 TODO
+**Priority:** 🔴 High
+**Complexity:** M
+**Epic:** Template Management
+
+**As a** Template Designer (Marie)
+**I want** to declare typed placeholders with source indication
+**So that** operators know what data is required for each template
+
+**Specification context:**
+> Typed placeholder declarations (scalar, table, list, freeField) with source indication (datasource vs operator input).
+
+**Acceptance criteria:**
+- [ ] Placeholder manifest can be defined for each template
+- [ ] Placeholder types supported: scalar, table, list, freeField
+- [ ] Each placeholder indicates source: dataSource or operatorInput
+- [ ] Manifest validation ensures all template placeholders are declared
+- [ ] UI shows placeholder manifest in template editor
+
+**Technical tasks:**
+- [ ] `TASK-006-01` - **[Model]** Create PlaceholderManifest value object with type enum
+- [ ] `TASK-006-02` - **[Model]** Add PlaceholderManifests collection to Template entity
+- [ ] `TASK-006-03` - **[Service]** Create placeholder parser to extract from template HTML
+- [ ] `TASK-006-04` - **[Service]** Validate manifest completeness against template
+- [ ] `TASK-006-05` - **[Frontend]** Placeholder manifest editor UI component
+- [ ] `TASK-006-06` - **[Frontend]** Auto-detect placeholders from template HTML
+- [ ] `TASK-006-07` - **[Test]** Unit tests for placeholder extraction
+- [ ] `TASK-006-08` - **[Test]** Validation tests for manifest completeness
+- [ ] `TASK-006-09` - **[Doc]** Placeholder syntax guide
+
+**Business rules:**
+1. Placeholder syntax: `{{key}}` for scalar, `{{#table}}...{{/table}}` for iteration
+2. All placeholders in template HTML must be declared in manifest
+3. FreeField placeholders require operator input at campaign creation
+4. DataSource placeholders must map to available data source fields
+
+**Dependencies:** US-005
+**Estimation:** 5-6 days
+
+---
+
+#### [US-007] - Sub-template composition
+**Status:** 🟡 TODO
+**Priority:** 🔴 High
+**Complexity:** M
+**Epic:** Template Management
+
+**As a** Template Designer (Marie)
+**I want** to compose templates from reusable blocks (header, footer, signature)
+**So that** I maintain brand consistency across all communications
+
+**Specification context:**
+> Sub-template composition: Support reusable sub-templates (header, footer, signature blocks) that can be embedded in parent templates.
+
+**Acceptance criteria:**
+- [ ] Sub-templates can be created as standalone templates
+- [ ] Parent templates can reference sub-templates via placeholder syntax
+- [ ] Sub-templates are resolved recursively during rendering
+- [ ] Changes to sub-templates propagate to parent previews (not frozen campaigns)
+- [ ] Circular reference detection prevents infinite loops
+
+**Technical tasks:**
+- [ ] `TASK-007-01` - **[Model]** Add IsSubTemplate flag to Template entity
+- [ ] `TASK-007-02` - **[Model]** Create TemplateReference value object
+- [ ] `TASK-007-03` - **[Service]** Implement sub-template resolution logic
+- [ ] `TASK-007-04` - **[Service]** Add circular reference detection
+- [ ] `TASK-007-05` - **[Frontend]** Sub-template selector in template editor
+- [ ] `TASK-007-06` - **[Frontend]** Visual indicator for sub-template usage
+- [ ] `TASK-007-07` - **[Test]** Unit tests for recursive resolution
+- [ ] `TASK-007-08` - **[Test]** Circular reference detection tests
+- [ ] `TASK-007-09` - **[Doc]** Sub-template composition guide
+
+**Business rules:**
+1. Sub-template syntax: `{{> subtemplate_name}}`
+2. Sub-templates can reference other sub-templates (max depth: 5)
+3. Circular references throw validation error
+4. Sub-templates inherit channel from parent
+
+**Dependencies:** US-005
+**Estimation:** 4-5 days
+
+---
+
+#### [US-008] - Template versioning
+**Status:** 🟡 TODO
+**Priority:** 🟠 Medium
+**Complexity:** M
+**Epic:** Template Management
+
+**As a** Template Designer (Marie)
+**I want** automatic version history for templates
+**So that** I can track changes and revert if needed
+
+**Specification context:**
+> Auto-increment version on each update; maintain version history. Template snapshots guarantee campaign reproducibility.
+
+**Acceptance criteria:**
+- [ ] Version number auto-increments on every template update
+- [ ] Full version history maintained in separate table
+- [ ] Version diff view showing changes between versions
+- [ ] Ability to view/preview any historical version
+- [ ] Ability to revert to previous version (creates new version)
+
+**Technical tasks:**
+- [ ] `TASK-008-01` - **[Model]** Add Version field to Template entity
+- [ ] `TASK-008-02` - **[Model]** Create TemplateHistory entity for snapshots
+- [ ] `TASK-008-03` - **[Service]** Auto-snapshot on template update
+- [ ] `TASK-008-04` - **[API]** GET /api/templates/{id}/history endpoint
+- [ ] `TASK-008-05` - **[API]** POST /api/templates/{id}/revert/{version} endpoint
+- [ ] `TASK-008-06` - **[Frontend]** Version history view with diff display
+- [ ] `TASK-008-07` - **[Frontend]** Revert confirmation dialog
+- [ ] `TASK-008-08` - **[Test]** Versioning logic tests
+- [ ] `TASK-008-09` - **[Doc]** Version management guide
+
+**Business rules:**
+1. Version starts at 1, increments on every save
+2. Version history never deleted (audit requirement)
+3. Revert creates new version (doesn't overwrite history)
+4. Frozen campaign snapshots reference specific version
+
+**Dependencies:** US-005
+**Estimation:** 4-5 days
+
+---
+
+#### [US-009] - Template lifecycle workflow
+**Status:** 🟡 TODO
+**Priority:** 🟠 Medium
+**Complexity:** S
+**Epic:** Template Management
+
+**As a** IT Administrator (Sophie)
+**I want** template governance with Draft → Published → Archived states
+**So that** incomplete templates cannot be used in production campaigns
+
+**Specification context:**
+> Status management: Draft → Published → Archived. Incomplete templates cannot be used in production.
+
+**Acceptance criteria:**
+- [ ] Templates have status: Draft, Published, Archived
+- [ ] Only Published templates available for campaign creation
+- [ ] Draft templates can be edited freely without affecting campaigns
+- [ ] Archived templates visible for audit but not usable
+- [ ] Status transition validation and audit logging
+
+**Technical tasks:**
+- [ ] `TASK-009-01` - **[Model]** Add Status enum to Template entity
+- [ ] `TASK-009-02` - **[Service]** Implement status transition validation
+- [ ] `TASK-009-03` - **[API]** POST /api/templates/{id}/publish endpoint
+- [ ] `TASK-009-04` - **[API]** POST /api/templates/{id}/archive endpoint
+- [ ] `TASK-009-05` - **[Frontend]** Status badges and transition buttons
+- [ ] `TASK-009-06` - **[Test]** Status transition validation tests
+- [ ] `TASK-009-07` - **[Doc]** Template lifecycle documentation
+
+**Business rules:**
+1. New templates start as Draft
+2. Draft → Published requires complete placeholder manifest
+3. Published templates can be edited (creates new version) or archived
+4. Archived templates cannot transition back to Published
+5. Only Admin can force-archive templates in active campaigns
+
+**Dependencies:** US-005, US-006
+**Estimation:** 3-4 days
+
+---
+
+#### [US-010] - Template preview with sample data
+**Status:** 🟡 TODO
+**Priority:** 🔴 High
+**Complexity:** M
+**Epic:** Template Management
+
+**As a** Template Designer (Marie)
+**I want** to preview my template with real sample data
+**So that** I can verify rendering before publication
+
+**Specification context:**
+> Resolve a template with sample data from a real data source (read-only). Preview capability essential for designer workflow.
+
+**Acceptance criteria:**
+- [ ] Preview button available in template editor
+- [ ] User can select data source for preview
+- [ ] System fetches N sample rows from selected data source
+- [ ] Template rendered with first sample row data
+- [ ] Preview shows channel-specific output (HTML for email, PDF for letter)
+
+**Technical tasks:**
+- [ ] `TASK-010-01` - **[API]** POST /api/templates/{id}/preview endpoint
+- [ ] `TASK-010-02` - **[Service]** Sample data fetcher from data source
+- [ ] `TASK-010-03` - **[Service]** Template resolution with sample data
+- [ ] `TASK-010-04` - **[Frontend]** Preview modal with data source selector
+- [ ] `TASK-010-05` - **[Frontend]** Rendered preview display (HTML/PDF viewer)
+- [ ] `TASK-010-06` - **[Test]** Preview rendering tests
+- [ ] `TASK-010-07` - **[Doc]** Preview workflow guide
+
+**Business rules:**
+1. Preview is read-only (no actual sends)
+2. Sample data: first 5 rows from data source
+3. Preview respects channel post-processing (CSS inline, PDF conversion)
+4. Missing placeholder values highlighted in preview
+
+**Dependencies:** US-005, US-006, US-015 (Data Source Connector)
+**Estimation:** 4-5 days
+
+---
+
+### Epic 3: Rendering Engine
+
+> Transform templates with dynamic data into channel-specific outputs
+
+#### [US-011] - Scriban template engine integration
+**Status:** 🟡 TODO
+**Priority:** 🔴 High
+**Complexity:** M
+**Epic:** Rendering Engine
+
+**As a** Integration Developer (Julien)
+**I want** a reliable template engine abstracted behind ITemplateRenderer
+**So that** we don't maintain custom parsing code and can swap engines if needed
+
+**Specification context:**
+> Use Scriban as the underlying engine behind an ITemplateRenderer abstraction. Lightweight, sandboxed, Liquid-like syntax.
+
+**Acceptance criteria:**
+- [ ] ITemplateRenderer interface defined in Application layer
+- [ ] Scriban implementation in Infrastructure layer
+- [ ] Basic scalar substitution working
+- [ ] Error handling for malformed templates
+- [ ] Performance benchmarks for 1000 renders/sec
+
+**Technical tasks:**
+- [ ] `TASK-011-01` - **[Interface]** Define ITemplateRenderer in Application layer
+- [ ] `TASK-011-02` - **[Model]** Create TemplateContext data model
+- [ ] `TASK-011-03` - **[Service]** Implement ScribanTemplateRenderer
+- [ ] `TASK-011-04` - **[Service]** Configure Scriban security settings (sandbox)
+- [ ] `TASK-011-05` - **[Service]** Add error handling and validation
+- [ ] `TASK-011-06` - **[Test]** Unit tests for renderer
+- [ ] `TASK-011-07` - **[Test]** Performance benchmark tests
+- [ ] `TASK-011-08` - **[Doc]** Template syntax reference
+
+**Business rules:**
+1. All data values HTML-escaped by default to prevent XSS
+2. Template HTML itself trusted (Designer role only)
+3. Renderer must be stateless and thread-safe
+4. Timeout: 10 seconds max per render
+
+**Dependencies:** US-001
+**Estimation:** 4-5 days
+
+---
+
+#### [US-012] - Advanced rendering features (tables, lists, conditionals)
+**Status:** 🟡 TODO
+**Priority:** 🔴 High
+**Complexity:** M
+**Epic:** Rendering Engine
+
+**As a** Template Designer (Marie)
+**I want** dynamic tables, lists, and conditional content
+**So that** templates can adapt to variable data structures
+
+**Specification context:**
+> Table rendering: `{{#table}}...{{/table}}` with row iteration. List rendering: `{{#list}}...{{/list}}`. Conditional blocks: `{{#if condition}}...{{/if}}`.
+
+**Acceptance criteria:**
+- [ ] Table blocks iterate over array data and generate HTML tables
+- [ ] List blocks iterate and generate bulleted/numbered lists
+- [ ] Conditional blocks evaluate boolean expressions
+- [ ] Nested structures supported (table within conditional)
+- [ ] Empty collections handled gracefully
+
+**Technical tasks:**
+- [ ] `TASK-012-01` - **[Service]** Implement table iteration logic in Scriban
+- [ ] `TASK-012-02` - **[Service]** Implement list iteration logic
+- [ ] `TASK-012-03` - **[Service]** Implement conditional block evaluation
+- [ ] `TASK-012-04` - **[Service]** Add custom Scriban functions (formatDate, formatCurrency)
+- [ ] `TASK-012-05` - **[Test]** Unit tests for table rendering
+- [ ] `TASK-012-06` - **[Test]** Unit tests for list rendering
+- [ ] `TASK-012-07` - **[Test]** Unit tests for conditional logic
+- [ ] `TASK-012-08` - **[Test]** Integration tests for nested structures
+- [ ] `TASK-012-09` - **[Doc]** Advanced syntax examples
+
+**Business rules:**
+1. Table syntax: `{{#for row in table}} <tr><td>{{row.field}}</td></tr> {{/for}}`
+2. List syntax: `{{#for item in list}} <li>{{item}}</li> {{/for}}`
+3. Conditional syntax: `{{if condition}} content {{/if}}`
+4. Empty tables/lists render nothing (no placeholder text)
+
+**Dependencies:** US-011
+**Estimation:** 5-6 days
+
+---
+
+#### [US-013] - Channel-specific post-processing
+**Status:** 🟡 TODO
+**Priority:** 🔴 High
+**Complexity:** L
+**Epic:** Rendering Engine
+
+**As a** Campaign Operator (Thomas)
+**I want** channel-appropriate output (CSS inlining for email, PDF for letter, plain text for SMS)
+**So that** messages render correctly on each medium
+
+**Specification context:**
+> Email: CSS inlining + HTML sanitization. Letter: HTML→PDF conversion. SMS: plain text extraction + truncation.
+
+**Acceptance criteria:**
+- [ ] Email channel: inline CSS using PreMailer.Net
+- [ ] Letter channel: convert HTML to PDF using chosen tool (POC required)
+- [ ] SMS channel: strip HTML tags and truncate to 160 characters
+- [ ] Multi-page PDF consolidation for letter batches
+- [ ] Error handling for conversion failures
+
+**Technical tasks:**
+- [ ] `TASK-013-01` - **[POC]** PDF generation POC (wkhtmltopdf vs DinkToPdf vs Puppeteer)
+- [ ] `TASK-013-02` - **[Service]** Implement EmailPostProcessor with PreMailer.Net
+- [ ] `TASK-013-03` - **[Service]** Implement LetterPostProcessor with chosen PDF tool
+- [ ] `TASK-013-04` - **[Service]** Implement SmsPostProcessor with HTML stripping
+- [ ] `TASK-013-05` - **[Service]** Implement PDF consolidation with PdfSharp
+- [ ] `TASK-013-06` - **[Interface]** Define IChannelPostProcessor abstraction
+- [ ] `TASK-013-07` - **[Test]** Unit tests for each post-processor
+- [ ] `TASK-013-08` - **[Test]** PDF generation performance tests
+- [ ] `TASK-013-09` - **[Test]** Email CSS inlining tests (Outlook compatibility)
+- [ ] `TASK-013-10` - **[Doc]** Channel post-processing documentation
+
+**Business rules:**
+1. Email CSS inlining required for Outlook compatibility
+2. Letter PDF: A4 format, embedded fonts, max 10MB per file
+3. SMS truncation: preserve whole words when possible
+4. PDF consolidation: max 500 pages per batch file
+
+**Dependencies:** US-011
+**Estimation:** 8-10 days
+
+**Implementation notes:**
+- Open Question Q1: PDF tool POC required before implementation
+- Consider performance impact of PDF generation on Hangfire workers
+
+---
+
+### Epic 4: Data Source Connector
+
+> Connect to external data repositories to fetch recipient data
+
+#### [US-014] - Data source declaration and management
+**Status:** 🟡 TODO
+**Priority:** 🔴 High
+**Complexity:** M
+**Epic:** Data Source Connector
+
+**As a** IT Administrator (Sophie)
+**I want** to declare data repositories with connection details and schema
+**So that** operators can target different populations for campaigns
+
+**Specification context:**
+> Register data sources with name, connection type, connection string, and schema definition (fields, types, filterability).
+
+**Acceptance criteria:**
+- [ ] Data sources can be created with name, type, connection string
+- [ ] Schema can be defined with field names and types
+- [ ] Connection testing validates connectivity
+- [ ] Field metadata includes filterability and data type
+- [ ] Data source list view with status indicators
+
+**Technical tasks:**
+- [ ] `TASK-014-01` - **[Model]** Create DataSource entity with connection metadata
+- [ ] `TASK-014-02` - **[Model]** Create FieldDefinition value object for schema
+- [ ] `TASK-014-03` - **[API]** POST /api/datasources endpoint
+- [ ] `TASK-014-04` - **[API]** GET /api/datasources with filtering
+- [ ] `TASK-014-05` - **[Service]** Connection testing service
+- [ ] `TASK-014-06` - **[Frontend]** Data source management UI
+- [ ] `TASK-014-07` - **[Frontend]** Connection string encryption in UI
+- [ ] `TASK-014-08` - **[Test]** Connection validation tests
+- [ ] `TASK-014-09` - **[Doc]** Data source configuration guide
+
+**Business rules:**
+1. Data source types: SQL Server, REST API (Phase 1)
+2. Connection strings encrypted at rest
+3. Only Admin role can create/edit data sources
+4. Schema can be auto-discovered or manually defined
+
+**Dependencies:** US-002, US-003
+**Estimation:** 5-6 days
+
+---
+
+#### [US-015] - SQL Server data connector implementation
+**Status:** 🟡 TODO
+**Priority:** 🔴 High
+**Complexity:** M
+**Epic:** Data Source Connector
+
+**As a** Campaign Operator (Thomas)
+**I want** to connect to SQL Server databases for recipient data
+**So that** I can target populations from existing business databases
+
+**Specification context:**
+> IDataSourceConnector with SQL Server implementation. Schema-agnostic querying with parameterized SQL for security.
+
+**Acceptance criteria:**
+- [ ] IDataSourceConnector interface defined
+- [ ] SqlServerConnector implementation with Dapper
+- [ ] Schema auto-discovery from SQL Server metadata
+- [ ] Parameterized query generation prevents SQL injection
+- [ ] Connection pooling and timeout configuration
+
+**Technical tasks:**
+- [ ] `TASK-015-01` - **[Interface]** Define IDataSourceConnector interface
+- [ ] `TASK-015-02` - **[Service]** Implement SqlServerConnector with Dapper
+- [ ] `TASK-015-03` - **[Service]** Schema discovery from INFORMATION_SCHEMA
+- [ ] `TASK-015-04` - **[Service]** Query builder with parameterization
+- [ ] `TASK-015-05` - **[Service]** Connection pool configuration
+- [ ] `TASK-015-06` - **[Test]** Integration tests with test database
+- [ ] `TASK-015-07` - **[Test]** SQL injection prevention tests
+- [ ] `TASK-015-08` - **[Doc]** SQL connector configuration guide
+
+**Business rules:**
+1. All queries must use parameterized SQL (no string concatenation)
+2. Read-only connection (SELECT only)
+3. Query timeout: 30 seconds default
+4. Connection pooling enabled for performance
+
+**Dependencies:** US-014
+**Estimation:** 5-6 days
+
+---
+
+#### [US-016] - Filter expression builder (AST)
+**Status:** 🟡 TODO
+**Priority:** 🔴 High
+**Complexity:** L
+**Epic:** Data Source Connector
+
+**As a** Campaign Operator (Thomas)
+**I want** visual filtering to target specific populations
+**So that** I can segment recipients without writing SQL
+
+**Specification context:**
+> Operator builds filters as expression trees; connector translates to parameterized SQL. No raw SQL from operators.
+
+**Acceptance criteria:**
+- [ ] Filter UI supports field selection, operator, and value input
+- [ ] Supported operators: =, !=, >, <, >=, <=, LIKE, IN
+- [ ] Multiple filter conditions with AND/OR logic
+- [ ] Filter AST serialized to JSON for storage
+- [ ] AST translated to parameterized SQL WHERE clause
+
+**Technical tasks:**
+- [ ] `TASK-016-01` - **[Model]** Create FilterExpression AST classes
+- [ ] `TASK-016-02` - **[Service]** Filter AST to SQL translator
+- [ ] `TASK-016-03` - **[Service]** Expression validation service
+- [ ] `TASK-016-04` - **[API]** POST /api/datasources/{id}/preview endpoint (apply filters)
+- [ ] `TASK-016-05` - **[Frontend]** Filter builder UI component
+- [ ] `TASK-016-06` - **[Frontend]** Filter preview with row count
+- [ ] `TASK-016-07` - **[Test]** AST to SQL translation tests
+- [ ] `TASK-016-08` - **[Test]** SQL injection prevention in filter values
+- [ ] `TASK-016-09` - **[Test]** Complex filter logic tests (AND/OR)
+- [ ] `TASK-016-10` - **[Doc]** Filter expression syntax guide
+
+**Business rules:**
+1. All filter values parameterized (prevent SQL injection)
+2. Date fields support relative filters (last 30 days, etc.)
+3. IN operator supports up to 1000 values
+4. Filter preview limited to first 100 rows
+
+**Dependencies:** US-015
+**Estimation:** 7-8 days
+
+---
+
+#### [US-017] - REST API data connector (Phase 2)
+**Status:** 🟡 TODO
+**Priority:** 🟠 Medium
+**Complexity:** M
+**Epic:** Data Source Connector
+
+**As a** Integration Developer (Julien)
+**I want** to connect to REST API data sources
+**So that** we can consume recipient data from external systems
+
+**Specification context:**
+> Additional data source connectors (REST API, CSV import). Open Question Q8: existing REST APIs vs SQL only.
+
+**Acceptance criteria:**
+- [ ] RestApiConnector implementation of IDataSourceConnector
+- [ ] Support for GET endpoints with query parameters
+- [ ] JSON response parsing to data rows
+- [ ] Authentication support (API key, OAuth2)
+- [ ] Pagination handling for large datasets
+
+**Technical tasks:**
+- [ ] `TASK-017-01` - **[Service]** Implement RestApiConnector
+- [ ] `TASK-017-02` - **[Service]** JSON to data row mapping
+- [ ] `TASK-017-03` - **[Service]** Authentication handler (API key, OAuth2)
+- [ ] `TASK-017-04` - **[Service]** Pagination strategy (link header, page param)
+- [ ] `TASK-017-05` - **[Test]** Integration tests with mock API
+- [ ] `TASK-017-06` - **[Doc]** REST API connector guide
+
+**Business rules:**
+1. API timeout: 60 seconds
+2. Retry policy: 3 attempts with exponential backoff
+3. Response size limit: 50 MB
+4. JSON path selector for nested data
+
+**Dependencies:** US-015
+**Estimation:** 5-6 days
+
+---
+
+### Epic 5: Dispatch Engine
+
+> Send messages through email, SMS, and letter channels
+
+#### [US-018] - Channel dispatcher abstraction
+**Status:** 🟡 TODO
+**Priority:** 🔴 High
+**Complexity:** S
+**Epic:** Dispatch Engine
+
+**As a** Integration Developer (Julien)
+**I want** pluggable channel dispatchers via strategy pattern
+**So that** adding new channels doesn't require core changes
+
+**Specification context:**
+> IChannelDispatcher interface with DI-based registry — no hardcoded switch/case. Extensibility for WhatsApp, Push.
+
+**Acceptance criteria:**
+- [ ] IChannelDispatcher interface defined
+- [ ] Dispatcher registry with DI-based resolution
+- [ ] Channel-specific configuration model
+- [ ] Dispatch result model with success/failure indication
+- [ ] Error handling abstraction for all channels
+
+**Technical tasks:**
+- [ ] `TASK-018-01` - **[Interface]** Define IChannelDispatcher interface
+- [ ] `TASK-018-02` - **[Model]** Create DispatchRequest and DispatchResult models
+- [ ] `TASK-018-03` - **[Service]** Create ChannelDispatcherRegistry with DI
+- [ ] `TASK-018-04` - **[Model]** Channel configuration base class
+- [ ] `TASK-018-05` - **[Test]** Mock dispatcher for testing
+- [ ] `TASK-018-06` - **[Doc]** Channel dispatcher extension guide
+
+**Business rules:**
+1. Each channel registered in DI container
+2. Dispatcher selected by Channel enum value
+3. All dispatchers return standardized result
+4. Transient failures throw retriable exceptions
+
+**Dependencies:** US-001
+**Estimation:** 3-4 days
+
+---
+
+#### [US-019] - Email dispatcher (SMTP)
+**Status:** 🟡 TODO
+**Priority:** 🔴 High
+**Complexity:** M
+**Epic:** Dispatch Engine
+
+**As a** Campaign Operator (Thomas)
+**I want** to send formatted emails via SMTP
+**So that** recipients receive HTML communications
+
+**Specification context:**
+> Send resolved HTML emails via configurable SMTP server with attachment and CC support.
+
+**Acceptance criteria:**
+- [ ] SMTP configuration in appsettings (server, port, credentials)
+- [ ] HTML email sending with proper headers
+- [ ] Attachment support (multiple files)
+- [ ] CC and BCC support
+- [ ] SMTP error handling and retry logic
+
+**Technical tasks:**
+- [ ] `TASK-019-01` - **[Service]** Implement EmailDispatcher with MailKit
+- [ ] `TASK-019-02` - **[Config]** SMTP configuration model
+- [ ] `TASK-019-03` - **[Service]** Attachment handling from file paths
+- [ ] `TASK-019-04` - **[Service]** CC/BCC recipient list handling
+- [ ] `TASK-019-05` - **[Service]** SMTP error categorization (transient vs permanent)
+- [ ] `TASK-019-06` - **[Test]** Integration tests with local SMTP server
+- [ ] `TASK-019-07` - **[Test]** Attachment validation tests
+- [ ] `TASK-019-08` - **[Doc]** SMTP configuration guide
+
+**Business rules:**
+1. From address configurable per environment
+2. Reply-To address optional per campaign
+3. Attachment whitelist: PDF, DOCX, XLSX, PNG, JPG
+4. Attachment size limits: 10 MB per file, 25 MB total
+
+**Dependencies:** US-018, US-013 (CSS inlining)
+**Estimation:** 5-6 days
+
+**Implementation notes:**
+- Open Question Q3: SMTP server limits affect throttling configuration
+
+---
+
+#### [US-020] - SMS dispatcher
+**Status:** 🟡 TODO
+**Priority:** 🔴 High
+**Complexity:** M
+**Epic:** Dispatch Engine
+
+**As a** Campaign Operator (Thomas)
+**I want** to send SMS messages to recipients
+**So that** I can reach them on mobile devices
+
+**Specification context:**
+> Send plain text messages via external SMS provider API. Open Question Q2: provider contract needed.
+
+**Acceptance criteria:**
+- [ ] SMS provider integration (Twilio, Nexmo, or configurable)
+- [ ] Plain text message sending
+- [ ] Phone number validation
+- [ ] Delivery status tracking (if supported by provider)
+- [ ] Error handling for invalid numbers
+
+**Technical tasks:**
+- [ ] `TASK-020-01` - **[Service]** Implement SmsDispatcher
+- [ ] `TASK-020-02` - **[Config]** SMS provider configuration (API key, endpoint)
+- [ ] `TASK-020-03` - **[Service]** Phone number validation (international format)
+- [ ] `TASK-020-04` - **[Service]** Provider API client (Twilio or generic)
+- [ ] `TASK-020-05` - **[Service]** Delivery status callback handler
+- [ ] `TASK-020-06` - **[Test]** Integration tests with provider sandbox
+- [ ] `TASK-020-07` - **[Doc]** SMS provider setup guide
+
+**Business rules:**
+1. Phone numbers in E.164 format (+1234567890)
+2. Message truncation: 160 characters (or configurable per provider)
+3. Rate limiting per provider contract
+4. Invalid numbers logged but don't fail campaign
+
+**Dependencies:** US-018, US-013 (text extraction)
+**Estimation:** 5-6 days
+
+**Implementation notes:**
+- Open Question Q2: SMS provider API contract required
+
+---
+
+#### [US-021] - PDF letter dispatcher
+**Status:** 🟡 TODO
+**Priority:** 🔴 High
+**Complexity:** L
+**Epic:** Dispatch Engine
+
+**As a** Campaign Operator (Thomas)
+**I want** to generate PDF mailings for print providers
+**So that** recipients can receive physical letters
+
+**Specification context:**
+> Generate PDF files and transmit to print/mail provider; support multi-page consolidation. Open Question Q5: provider format.
+
+**Acceptance criteria:**
+- [ ] PDF generation from HTML content
+- [ ] Multi-page PDF consolidation (500 pages max per batch)
+- [ ] File transmission to print provider (file drop or API)
+- [ ] PDF metadata (recipient info, page count)
+- [ ] Error handling for generation failures
+
+**Technical tasks:**
+- [ ] `TASK-021-01` - **[Service]** Implement LetterDispatcher
+- [ ] `TASK-021-02` - **[Service]** PDF generation wrapper (using US-013 post-processor)
+- [ ] `TASK-021-03` - **[Service]** PDF consolidation service with PdfSharp
+- [ ] `TASK-021-04` - **[Service]** Print provider file drop handler (UNC or API)
+- [ ] `TASK-021-05` - **[Service]** PDF metadata generation (manifest file)
+- [ ] `TASK-021-06` - **[Test]** PDF generation tests
+- [ ] `TASK-021-07` - **[Test]** Consolidation tests (verify page order)
+- [ ] `TASK-021-08` - **[Doc]** Letter channel configuration guide
+
+**Business rules:**
+1. A4 format, portrait orientation
+2. Consolidation: ordered by recipient ID or campaign sequence
+3. Manifest file: CSV with recipient metadata
+4. File naming convention: CAMPAIGN_{id}_{timestamp}.pdf
+
+**Dependencies:** US-018, US-013 (PDF conversion)
+**Estimation:** 7-8 days
+
+**Implementation notes:**
+- Open Question Q5: Print provider format requirements
+- Depends on US-013 PDF tool POC decision
+
+---
+
+#### [US-022] - Channel throttling and rate limiting
+**Status:** 🟡 TODO
+**Priority:** 🟠 Medium
+**Complexity:** M
+**Epic:** Dispatch Engine
+
+**As a** IT Administrator (Sophie)
+**I want** configurable send throttling per channel
+**So that** we don't overwhelm mail servers or exceed provider limits
+
+**Specification context:**
+> Configurable rate limiting per channel (e.g., 100 msgs/sec for SMTP). Respect server limits to avoid blacklisting.
+
+**Acceptance criteria:**
+- [ ] Rate limiting configuration per channel (messages/second)
+- [ ] Throttling applied at dispatcher level
+- [ ] Queue backpressure when limit reached
+- [ ] Monitoring metrics for send rate
+- [ ] Graceful handling of rate limit errors
+
+**Technical tasks:**
+- [ ] `TASK-022-01` - **[Service]** Implement rate limiter service (token bucket)
+- [ ] `TASK-022-02` - **[Config]** Per-channel rate limit configuration
+- [ ] `TASK-022-03` - **[Service]** Integrate throttling in dispatchers
+- [ ] `TASK-022-04` - **[Service]** Queue backpressure handling
+- [ ] `TASK-022-05` - **[Monitoring]** Rate limit metrics (Prometheus or AppMetrics)
+- [ ] `TASK-022-06` - **[Test]** Rate limiting tests
+- [ ] `TASK-022-07` - **[Doc]** Throttling configuration guide
+
+**Business rules:**
+1. Default rates: SMTP 100/sec, SMS 10/sec, Letter no limit
+2. Configurable per environment
+3. Rate limit errors trigger retry with backoff
+4. Metrics exposed for monitoring
+
+**Dependencies:** US-018, US-019, US-020, US-021
+**Estimation:** 4-5 days
+
+---
+
+### Epic 6: Campaign Orchestrator
+
+> Create and execute multi-step campaigns with recipient targeting
+
+#### [US-023] - Campaign creation and configuration
+**Status:** 🟡 TODO
+**Priority:** 🔴 High
+**Complexity:** L
+**Epic:** Campaign Orchestrator
+
+**As a** Campaign Operator (Thomas)
+**I want** to configure campaigns with templates, data sources, and filters
+**So that** I can target specific recipients with the right content
+
+**Specification context:**
+> Create campaigns with template selection, data source, filters, free field values, and schedule.
+
+**Acceptance criteria:**
+- [ ] Campaign creation UI with wizard flow
+- [ ] Template selection (filtered by channel and status)
+- [ ] Data source selection with filter builder
+- [ ] Free field value input for operator-provided data
+- [ ] Schedule configuration (immediate or future date/time)
+- [ ] Campaign preview: estimated recipient count before execution
+
+**Technical tasks:**
+- [ ] `TASK-023-01` - **[Model]** Create Campaign entity with relationships
+- [ ] `TASK-023-02` - **[Model]** Create CampaignStep entity for multi-step support
+- [ ] `TASK-023-03` - **[API]** POST /api/campaigns endpoint
+- [ ] `TASK-023-04` - **[API]** GET /api/campaigns with filtering and pagination
+- [ ] `TASK-023-05` - **[Frontend]** Campaign creation wizard (5 steps)
+- [ ] `TASK-023-06` - **[Frontend]** Template selector component
+- [ ] `TASK-023-07` - **[Frontend]** Data source and filter selector
+- [ ] `TASK-023-08` - **[Frontend]** Free field input form
+- [ ] `TASK-023-09` - **[Frontend]** Schedule picker with validation
+- [ ] `TASK-023-10` - **[Service]** Recipient count estimation service
+- [ ] `TASK-023-11` - **[Test]** Campaign creation workflow tests
+- [ ] `TASK-023-12` - **[Doc]** Campaign creation guide
+
+**Business rules:**
+1. Only Published templates can be selected
+2. Operator must provide values for all freeField placeholders
+3. Scheduled campaigns must be at least 5 minutes in future
+4. Campaign name must be unique
+
+**Dependencies:** US-005, US-014, US-016
+**Estimation:** 8-10 days
+
+---
+
+#### [US-024] - Multi-step campaign sequences
+**Status:** 🟡 TODO
+**Priority:** 🔴 High
+**Complexity:** L
+**Epic:** Campaign Orchestrator
+
+**As a** Campaign Operator (Thomas)
+**I want** to define multi-step campaigns with delays
+**So that** I can schedule initial send, email reminder, then SMS follow-up
+
+**Specification context:**
+> Define ordered steps with channel, delay (J+N days), and step-specific target filters (e.g., non-respondents only).
+
+**Acceptance criteria:**
+- [ ] Campaign can have multiple steps (max 10)
+- [ ] Each step has: channel, template, delay (days), optional filter
+- [ ] Step order enforced and displayed visually
+- [ ] Step-specific filters refine base campaign audience
+- [ ] Delay calculated from campaign start or previous step completion
+
+**Technical tasks:**
+- [ ] `TASK-024-01` - **[Model]** Add StepOrder, DelayDays, StepFilter to CampaignStep
+- [ ] `TASK-024-02` - **[Service]** Step validation service (order, delays)
+- [ ] `TASK-024-03` - **[Service]** Step scheduling service (calculate execution dates)
+- [ ] `TASK-024-04` - **[Frontend]** Multi-step builder UI component
+- [ ] `TASK-024-05` - **[Frontend]** Step timeline visualization
+- [ ] `TASK-024-06` - **[Frontend]** Step-specific filter builder
+- [ ] `TASK-024-07` - **[Test]** Multi-step scheduling logic tests
+- [ ] `TASK-024-08` - **[Test]** Step filter application tests
+- [ ] `TASK-024-09` - **[Doc]** Multi-step campaign guide
+
+**Business rules:**
+1. Step delay: 0 = immediate, positive integer = days after previous step
+2. Step filters are AND-combined with base campaign filter
+3. Each step can use different template (but same data source)
+4. Example: Step 1 (Email, Day 0) → Step 2 (Email reminder, Day 15) → Step 3 (SMS, Day 20)
+
+**Dependencies:** US-023
+**Estimation:** 7-8 days
+
+---
+
+#### [US-025] - Template snapshot for campaign integrity
+**Status:** 🟡 TODO
+**Priority:** 🔴 High
+**Complexity:** M
+**Epic:** Campaign Orchestrator
+
+**As a** Campaign Operator (Thomas)
+**I want** campaigns to freeze template content at scheduling time
+**So that** template edits don't affect running campaigns
+
+**Specification context:**
+> Freeze template content at campaign scheduling time; all steps use the snapshot. Template snapshots guarantee campaign reproducibility.
+
+**Acceptance criteria:**
+- [ ] Template content frozen when campaign is scheduled
+- [ ] Snapshot includes resolved sub-templates
+- [ ] All campaign steps reference same snapshot
+- [ ] Snapshot stored in database for audit
+- [ ] Campaign display shows snapshot version used
+
+**Technical tasks:**
+- [ ] `TASK-025-01` - **[Model]** Create TemplateSnapshot entity
+- [ ] `TASK-025-02` - **[Service]** Snapshot creation service (resolve sub-templates)
+- [ ] `TASK-025-03` - **[Service]** Link campaign to snapshot on scheduling
+- [ ] `TASK-025-04` - **[API]** GET /api/campaigns/{id}/snapshot endpoint
+- [ ] `TASK-025-05` - **[Frontend]** Snapshot view in campaign details
+- [ ] `TASK-025-06` - **[Test]** Snapshot creation and isolation tests
+- [ ] `TASK-025-07` - **[Doc]** Template snapshot documentation
+
+**Business rules:**
+1. Snapshot created when campaign status changes to Scheduled
+2. Snapshot never modified after creation
+3. If template deleted, snapshot remains for audit
+4. Snapshot includes all sub-templates (fully resolved)
+
+**Dependencies:** US-023, US-007 (sub-templates)
+**Estimation:** 4-5 days
+
+---
+
+#### [US-026] - Chunk-based batch processing with Hangfire
+**Status:** 🟡 TODO
+**Priority:** 🔴 High
+**Complexity:** XL
+**Epic:** Campaign Orchestrator
+
+**As a** IT Administrator (Sophie)
+**I want** scalable batch processing for large campaigns
+**So that** 100K-recipient campaigns complete reliably in under 60 minutes
+
+**Specification context:**
+> Split recipients into chunks of 500, process via Hangfire workers in parallel, track completion atomically. Hangfire Community lacks batch primitives — use Chunk Coordinator pattern.
+
+**Acceptance criteria:**
+- [ ] Recipients split into configurable chunks (default 500)
+- [ ] Each chunk processed as separate Hangfire job
+- [ ] Parallel processing across 4-8 workers
+- [ ] Atomic chunk completion tracking
+- [ ] Campaign completes when all chunks processed
+- [ ] Progress visible in real-time (processed/total)
+
+**Technical tasks:**
+- [ ] `TASK-026-01` - **[Service]** Implement ChunkCoordinator service
+- [ ] `TASK-026-02` - **[Service]** Recipient chunking algorithm
+- [ ] `TASK-026-03` - **[Hangfire]** Configure Hangfire with SQL Server storage
+- [ ] `TASK-026-04` - **[Hangfire]** Create ProcessChunkJob background job
+- [ ] `TASK-026-05` - **[Service]** Atomic chunk completion counter (SQL UPDATE...OUTPUT)
+- [ ] `TASK-026-06` - **[Service]** Campaign completion detection service
+- [ ] `TASK-026-07` - **[Service]** Failed chunk retry orchestrator
+- [ ] `TASK-026-08` - **[Frontend]** Hangfire dashboard integration
+- [ ] `TASK-026-09` - **[Test]** Chunk processing integration tests
+- [ ] `TASK-026-10` - **[Test]** Performance test (100K recipients in <60 min)
+- [ ] `TASK-026-11` - **[Test]** Failure recovery tests
+- [ ] `TASK-026-12` - **[Doc]** Batch processing architecture guide
+
+**Business rules:**
+1. Chunk size configurable (default 500)
+2. Worker count configurable (default 8)
+3. Each chunk job auto-retries 3 times on failure
+4. Campaign status: Running → StepInProgress → Completed/PartialFailure
+5. Hangfire dashboard accessible only to Admin role
+
+**Dependencies:** US-023, US-015
+**Estimation:** 12-15 days
+
+**Implementation notes:**
+- Critical performance target: 100K recipients in <60 minutes
+- Chunk Coordinator pattern required due to Hangfire Community limitations
+- Requires POC/validation of atomic counter approach
+
+---
+
+#### [US-027] - Campaign status tracking and monitoring
+**Status:** 🟡 TODO
+**Priority:** 🔴 High
+**Complexity:** M
+**Epic:** Campaign Orchestrator
+
+**As a** Campaign Operator (Thomas)
+**I want** real-time campaign status visibility
+**So that** I know what's happening at all times
+
+**Specification context:**
+> Real-time progress: Draft → Scheduled → Running → StepInProgress → Completed / PartialFailure / ManualReview.
+
+**Acceptance criteria:**
+- [ ] Campaign status enum with all lifecycle states
+- [ ] Real-time progress tracking (processed/total counts)
+- [ ] Status transitions logged with timestamps
+- [ ] Dashboard showing active campaigns and progress
+- [ ] Failed send count visible per campaign
+
+**Technical tasks:**
+- [ ] `TASK-027-01` - **[Model]** Add Status enum to Campaign entity
+- [ ] `TASK-027-02` - **[Model]** Add progress counters (total, processed, failed)
+- [ ] `TASK-027-03` - **[Service]** Status transition service with validation
+- [ ] `TASK-027-04` - **[API]** GET /api/campaigns/{id}/status endpoint (real-time)
+- [ ] `TASK-027-05` - **[Frontend]** Campaign dashboard with status cards
+- [ ] `TASK-027-06` - **[Frontend]** Progress bar component with live updates
+- [ ] `TASK-027-07` - **[Frontend]** Campaign detail view with status history
+- [ ] `TASK-027-08` - **[Test]** Status transition validation tests
+- [ ] `TASK-027-09` - **[Doc]** Campaign status lifecycle guide
+
+**Business rules:**
+1. Status flow: Draft → Scheduled → Running → StepInProgress → Completed
+2. PartialFailure if >2% sends failed
+3. ManualReview if >10% sends failed (requires Admin intervention)
+4. Progress updated after each chunk completion
+
+**Dependencies:** US-023, US-026
+**Estimation:** 5-6 days
+
+---
+
+#### [US-028] - Static and dynamic attachment management
+**Status:** 🟡 TODO
+**Priority:** 🟠 Medium
+**Complexity:** M
+**Epic:** Campaign Orchestrator
+
+**As a** Campaign Operator (Thomas)
+**I want** to attach documents to campaign sends
+**So that** recipients receive reference materials or personal documents
+
+**Specification context:**
+> Static attachments: operator uploads common files attached to all sends. Dynamic attachments: per-recipient file path from data source field.
+
+**Acceptance criteria:**
+- [ ] Static attachments uploaded at campaign creation
+- [ ] Dynamic attachments specified via data source field mapping
+- [ ] Attachment validation (type whitelist, size limits)
+- [ ] Missing dynamic attachments logged but don't fail send
+- [ ] Attachments stored on file share with DB metadata
+
+**Technical tasks:**
+- [ ] `TASK-028-01` - **[Model]** Create Attachment entity
+- [ ] `TASK-028-02` - **[Service]** File upload service (to UNC path)
+- [ ] `TASK-028-03` - **[Service]** Attachment validation (type, size)
+- [ ] `TASK-028-04` - **[Service]** Dynamic attachment resolver (from data field)
+- [ ] `TASK-028-05` - **[API]** POST /api/campaigns/{id}/attachments endpoint
+- [ ] `TASK-028-06` - **[Frontend]** Static attachment uploader component
+- [ ] `TASK-028-07` - **[Frontend]** Dynamic attachment field mapper
+- [ ] `TASK-028-08` - **[Test]** Attachment validation tests
+- [ ] `TASK-028-09` - **[Test]** Missing dynamic attachment handling tests
+- [ ] `TASK-028-10` - **[Doc]** Attachment management guide
+
+**Business rules:**
+1. Whitelist: PDF, DOCX, XLSX, PNG, JPG
+2. Size limits: 10 MB per file, 25 MB total per send
+3. Static attachments stored at campaign creation
+4. Dynamic attachments resolved at send time
+5. Missing dynamic attachments: log warning, send without attachment
+
+**Dependencies:** US-023, US-019 (email dispatcher)
+**Estimation:** 5-6 days
+
+**Implementation notes:**
+- Open Question Q7: File share infrastructure (UNC vs NAS vs S3)
+
+---
+
+#### [US-029] - CC and BCC management
+**Status:** 🟡 TODO
+**Priority:** 🟠 Medium
+**Complexity:** S
+**Epic:** Campaign Orchestrator
+
+**As a** Campaign Operator (Thomas)
+**I want** to CC stakeholders on campaign emails
+**So that** relevant parties receive copies
+
+**Specification context:**
+> Static CC (operator-defined) + dynamic CC (from data source field); deduplicated, validated.
+
+**Acceptance criteria:**
+- [ ] Static CC addresses configured at campaign creation
+- [ ] Dynamic CC addresses from data source field
+- [ ] Email validation for all CC addresses
+- [ ] Deduplication (same address only receives one copy)
+- [ ] BCC support for hidden copies
+
+**Technical tasks:**
+- [ ] `TASK-029-01` - **[Model]** Add StaticCC and DynamicCCField to Campaign
+- [ ] `TASK-029-02` - **[Service]** Email validation service
+- [ ] `TASK-029-03` - **[Service]** CC deduplication service
+- [ ] `TASK-029-04` - **[Frontend]** CC/BCC configuration UI
+- [ ] `TASK-029-05` - **[Test]** Email validation tests
+- [ ] `TASK-029-06` - **[Test]** Deduplication tests
+- [ ] `TASK-029-07` - **[Doc]** CC management guide
+
+**Business rules:**
+1. Static CC: comma-separated email list
+2. Dynamic CC: data field containing email or semicolon-separated list
+3. Invalid emails logged but don't fail send
+4. Max 10 CC recipients per send
+
+**Dependencies:** US-023, US-019
+**Estimation:** 3-4 days
+
+---
+
+### Epic 7: Generic Send API
+
+> REST API for transactional message sending
+
+#### [US-030] - Single send API endpoint
+**Status:** 🟡 TODO
+**Priority:** 🔴 High
+**Complexity:** M
+**Epic:** Generic Send API
+
+**As a** Integration Developer (Julien)
+**I want** a simple API to send single messages
+**So that** any internal app can trigger communications
+
+**Specification context:**
+> POST /api/send with templateId, channel, data dictionary, recipient. API-first design for integration consumers.
+
+**Acceptance criteria:**
+- [ ] POST /api/send endpoint accepts template, channel, data, recipient
+- [ ] Template resolved with provided data
+- [ ] Message dispatched immediately (synchronous)
+- [ ] Response includes send status and tracking ID
+- [ ] Error responses with clear validation messages
+
+**Technical tasks:**
+- [ ] `TASK-030-01` - **[Model]** Create SendRequest DTO
+- [ ] `TASK-030-02` - **[API]** POST /api/send endpoint
+- [ ] `TASK-030-03` - **[Service]** Single send orchestration service
+- [ ] `TASK-030-04` - **[Service]** Request validation service
+- [ ] `TASK-030-05` - **[API]** Response model with tracking ID
+- [ ] `TASK-030-06` - **[Test]** API integration tests
+- [ ] `TASK-030-07` - **[Test]** Validation tests (missing data, invalid template)
+- [ ] `TASK-030-08` - **[Doc]** API endpoint documentation
+
+**Business rules:**
+1. Template must be Published
+2. All required placeholders must have values in data dictionary
+3. Recipient email/phone validated based on channel
+4. Response time target: < 500ms at p95
+5. Tracking ID returned for status lookup
+
+**Dependencies:** US-011, US-018
+**Estimation:** 5-6 days
+
+---
+
+#### [US-031] - API authentication and authorization
+**Status:** 🟡 TODO
+**Priority:** 🔴 High
+**Complexity:** M
+**Epic:** Generic Send API
+
+**As a** IT Administrator (Sophie)
+**I want** API authentication via API keys or OAuth2
+**So that** only authorized systems can send messages
+
+**Specification context:**
+> API key or OAuth2 client credentials for external consumers. HTTPS only. Security critical.
+
+**Acceptance criteria:**
+- [ ] API key authentication mechanism
+- [ ] API key management UI (create, revoke, rotate)
+- [ ] OAuth2 client credentials flow support (optional)
+- [ ] HTTPS enforcement for all API calls
+- [ ] Rate limiting per API key
+
+**Technical tasks:**
+- [ ] `TASK-031-01` - **[Model]** Create ApiKey entity
+- [ ] `TASK-031-02` - **[Auth]** Implement API key authentication middleware
+- [ ] `TASK-031-03` - **[Service]** API key generation and hashing service
+- [ ] `TASK-031-04` - **[API]** API key management endpoints (Admin only)
+- [ ] `TASK-031-05` - **[Frontend]** API key management UI
+- [ ] `TASK-031-06` - **[Config]** HTTPS enforcement configuration
+- [ ] `TASK-031-07` - **[Test]** Authentication tests
+- [ ] `TASK-031-08` - **[Doc]** API authentication guide
+
+**Business rules:**
+1. API keys hashed in database (bcrypt)
+2. API keys can be scoped to specific templates or channels
+3. API keys expire after 1 year (configurable)
+4. HTTPS required for all API endpoints
+5. Rate limiting: 1000 requests/minute per key (configurable)
+
+**Dependencies:** US-030
+**Estimation:** 5-6 days
+
+---
+
+#### [US-032] - OpenAPI/Swagger documentation
+**Status:** 🟡 TODO
+**Priority:** 🟠 Medium
+**Complexity:** S
+**Epic:** Generic Send API
+
+**As a** Integration Developer (Julien)
+**I want** auto-generated API documentation
+**So that** I can integrate without guessing
+
+**Specification context:**
+> Auto-generated Swagger/OpenAPI spec. Essential for developer experience.
+
+**Acceptance criteria:**
+- [ ] Swagger UI accessible at /swagger
+- [ ] All API endpoints documented with parameters and responses
+- [ ] Authentication documented (API key header)
+- [ ] Example requests and responses
+- [ ] Downloadable OpenAPI JSON/YAML spec
+
+**Technical tasks:**
+- [ ] `TASK-032-01` - **[Config]** Install and configure Swashbuckle.AspNetCore
+- [ ] `TASK-032-02` - **[API]** Add XML comments to controllers
+- [ ] `TASK-032-03` - **[API]** Add example attributes to DTOs
+- [ ] `TASK-032-04` - **[Config]** Configure Swagger UI theme
+- [ ] `TASK-032-05` - **[Test]** Verify OpenAPI spec validity
+- [ ] `TASK-032-06` - **[Doc]** Swagger usage guide
+
+**Business rules:**
+1. Swagger UI accessible only in non-production environments (or with authentication)
+2. OpenAPI spec version 3.0
+3. All DTOs include example values
+4. Authentication scheme documented
+
+**Dependencies:** US-030, US-031
+**Estimation:** 2-3 days
+
+---
+
+#### [US-033] - API rate limiting per consumer
+**Status:** 🟡 TODO
+**Priority:** 🟠 Medium
+**Complexity:** S
+**Epic:** Generic Send API
+
+**As a** IT Administrator (Sophie)
+**I want** rate limiting per API consumer
+**So that** no single consumer can overwhelm the system
+
+**Specification context:**
+> Configurable rate limits per API key. Prevent abuse and ensure fair resource allocation.
+
+**Acceptance criteria:**
+- [ ] Rate limits configurable per API key
+- [ ] Default rate limit applied to new API keys
+- [ ] 429 Too Many Requests response when limit exceeded
+- [ ] Rate limit headers in responses (X-RateLimit-*)
+- [ ] Rate limit monitoring and alerting
+
+**Technical tasks:**
+- [ ] `TASK-033-01` - **[Service]** Implement API rate limiter (per key)
+- [ ] `TASK-033-02` - **[Middleware]** Rate limiting middleware
+- [ ] `TASK-033-03` - **[API]** Add rate limit headers to responses
+- [ ] `TASK-033-04` - **[Frontend]** Rate limit configuration in API key UI
+- [ ] `TASK-033-05` - **[Test]** Rate limiting tests
+- [ ] `TASK-033-06` - **[Doc]** Rate limiting documentation
+
+**Business rules:**
+1. Default: 1000 requests/minute per key
+2. Rate limit window: sliding 1-minute window
+3. Rate limit headers: X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset
+4. Exceeded requests return 429 with Retry-After header
+
+**Dependencies:** US-031
+**Estimation:** 3-4 days
+
+---
+
+### Epic 8: Tracking & Audit
+
+> Log all send operations and provide retry mechanisms
+
+#### [US-034] - Send logging and audit trail
+**Status:** 🟡 TODO
+**Priority:** 🔴 High
+**Complexity:** M
+**Epic:** Tracking & Audit
+
+**As a** Campaign Operator (Thomas)
+**I want** detailed logs for every send attempt
+**So that** I can investigate delivery issues
+
+**Specification context:**
+> Every send attempt logged with status (Pending/Sent/Failed/Retrying), timestamp, error detail, retry count. SEND_LOG as source of truth.
+
+**Acceptance criteria:**
+- [ ] Every send logged to SEND_LOG table
+- [ ] Send status: Pending, Sent, Failed, Retrying
+- [ ] Timestamp, error message, retry count captured
+- [ ] Correlation to campaign and recipient
+- [ ] Query interface for send log lookup
+
+**Technical tasks:**
+- [ ] `TASK-034-01` - **[Model]** Create SendLog entity
+- [ ] `TASK-034-02` - **[Service]** Send logging service
+- [ ] `TASK-034-03` - **[Service]** Log on every send attempt (before and after)
+- [ ] `TASK-034-04` - **[API]** GET /api/sendlogs with filtering
+- [ ] `TASK-034-05` - **[Frontend]** Send log viewer UI
+- [ ] `TASK-034-06` - **[Frontend]** Filter by campaign, recipient, status, date
+- [ ] `TASK-034-07` - **[Test]** Logging completeness tests
+- [ ] `TASK-034-08` - **[Doc]** Send log schema documentation
+
+**Business rules:**
+1. All sends logged before dispatch attempt
+2. Status updated after dispatch result
+3. Error details captured in ErrorDetail field
+4. Retention: 90 days (configurable)
+
+**Dependencies:** US-018
+**Estimation:** 5-6 days
+
+---
+
+#### [US-035] - Retry mechanism with exponential backoff
+**Status:** 🟡 TODO
+**Priority:** 🔴 High
+**Complexity:** M
+**Epic:** Tracking & Audit
+
+**As a** IT Administrator (Sophie)
+**I want** automatic retry for transient failures
+**So that** delivery issues are recovered without manual intervention
+
+**Specification context:**
+> Configurable exponential backoff (30s / 2min / 10min, 3 attempts) per send; chunk-level retry via Hangfire AutomaticRetry.
+
+**Acceptance criteria:**
+- [ ] Failed sends automatically retried up to 3 times
+- [ ] Exponential backoff: 30s, 2min, 10min
+- [ ] Retry count tracked in SendLog
+- [ ] Transient vs permanent failure detection
+- [ ] Chunk-level retry via Hangfire [AutomaticRetry] attribute
+
+**Technical tasks:**
+- [ ] `TASK-035-01` - **[Service]** Implement retry policy with exponential backoff
+- [ ] `TASK-035-02` - **[Service]** Transient failure detection (SMTP, SMS errors)
+- [ ] `TASK-035-03` - **[Hangfire]** Configure AutomaticRetry attribute on chunk jobs
+- [ ] `TASK-035-04` - **[Service]** Retry count tracking in SendLog
+- [ ] `TASK-035-05` - **[Test]** Retry logic tests
+- [ ] `TASK-035-06` - **[Test]** Exponential backoff timing tests
+- [ ] `TASK-035-07` - **[Doc]** Retry policy documentation
+
+**Business rules:**
+1. Max 3 retry attempts per send
+2. Backoff: 30s, 2min, 10min
+3. Transient errors retried (SMTP connection timeout, rate limit)
+4. Permanent errors not retried (invalid email, template error)
+5. Retry success target: >90% within 3 attempts
+
+**Dependencies:** US-034, US-026 (Hangfire)
+**Estimation:** 4-5 days
+
+---
+
+### Epic 9: Reporting & Dashboards (Phase 2)
+
+> Monitoring and analytics for campaigns
+
+#### [US-036] - Campaign progress dashboard
+**Status:** 🟡 TODO
+**Priority:** 🟠 Medium
+**Complexity:** M
+**Epic:** Reporting & Dashboards
+
+**As a** Campaign Operator (Thomas)
+**I want** an aggregate view of campaign progress
+**So that** I can monitor all campaigns in real time
+
+**Specification context:**
+> Aggregate view: total recipients, processed count, success/failure breakdown per step.
+
+**Acceptance criteria:**
+- [ ] Dashboard shows all active campaigns
+- [ ] Per-campaign metrics: total, processed, sent, failed counts
+- [ ] Progress percentage and estimated completion time
+- [ ] Multi-step campaign timeline visualization
+- [ ] Auto-refresh every 10 seconds
+
+**Technical tasks:**
+- [ ] `TASK-036-01` - **[API]** GET /api/campaigns/dashboard endpoint
+- [ ] `TASK-036-02` - **[Service]** Aggregate metrics calculation service
+- [ ] `TASK-036-03` - **[Frontend]** Dashboard page with campaign cards
+- [ ] `TASK-036-04` - **[Frontend]** Real-time update via SignalR or polling
+- [ ] `TASK-036-05` - **[Frontend]** Timeline visualization for multi-step
+- [ ] `TASK-036-06` - **[Test]** Dashboard metrics tests
+- [ ] `TASK-036-07` - **[Doc]** Dashboard user guide
+
+**Business rules:**
+1. Dashboard shows campaigns in Running or StepInProgress status
+2. Metrics updated after each chunk completion
+3. Estimated completion based on current send rate
+4. Filters: by status, date range, operator
+
+**Dependencies:** US-027, US-034
+**Estimation:** 5-6 days
+
+---
+
+## 📋 Suggested Roadmap
+
+### Phase 1 — MVP (Core Engine) — 12-16 weeks
+
+**Sprint 1 — Foundation (Weeks 1-3)**
+- US-001: Project scaffold and architecture
+- US-002: Database and EF Core setup
+- US-003: Authentication and authorization
+- US-004: Structured logging
+- US-014: Data source declaration
+
+**Sprint 2 — Template Engine (Weeks 4-6)**
+- US-005: Template CRUD
+- US-006: Placeholder manifest
+- US-007: Sub-template composition
+- US-011: Scriban integration
+- US-012: Advanced rendering (tables, lists, conditionals)
+
+**Sprint 3 — Data & Dispatch (Weeks 7-9)**
+- US-015: SQL Server connector
+- US-016: Filter expression builder
+- US-013: Channel post-processing (POC PDF tool first!)
+- US-018: Channel dispatcher abstraction
+- US-019: Email dispatcher
+
+**Sprint 4 — Campaign Core (Weeks 10-12)**
+- US-020: SMS dispatcher
+- US-021: PDF letter dispatcher
+- US-023: Campaign creation
+- US-025: Template snapshots
+- US-034: Send logging
+
+**Sprint 5 — Batch Processing (Weeks 13-14)**
+- US-026: Chunk-based batch processing (critical path)
+- US-027: Campaign status tracking
+- US-035: Retry mechanism
+
+**Sprint 6 — API & Polish (Weeks 15-16)**
+- US-024: Multi-step sequences
+- US-030: Single send API
+- US-031: API authentication
+- US-010: Template preview
+- Integration testing and performance validation
+
+### Phase 2 — Operational Excellence (8-10 weeks after Phase 1)
+
+**Sprint 7 — Enhanced Features (Weeks 17-19)**
+- US-008: Template versioning
+- US-009: Template lifecycle workflow
+- US-028: Attachment management
+- US-029: CC management
+- US-022: Channel throttling
+
+**Sprint 8 — Developer Experience (Weeks 20-21)**
+- US-032: OpenAPI documentation
+- US-033: API rate limiting
+- US-036: Campaign progress dashboard
+- US-017: REST API connector (if needed)
+
+**Sprint 9 — Stabilization & Training (Weeks 22-24)**
+- Performance optimization
+- User training and documentation
+- Production deployment
+- Monitoring and alerting setup
+
+### Phase 3 — Advanced Features (10-12 weeks after Phase 2)
+
+**Future Epics (Out of Scope v1):**
+- Visual template editor (WYSIWYG or MJML)
+- Email tracking (opens, clicks)
+- Webhook notifications
+- Additional channels (WhatsApp, Push)
+- Advanced analytics and reporting
+- A/B testing
+- Unsubscribe management
+
+---
+
+## ⚠️ Risks & Constraints
+
+### Identified Risks
+
+1. **PDF Generation Tool Selection (High Impact)**
+   - **Risk:** No PDF tool chosen yet (wkhtmltopdf vs DinkToPdf vs Puppeteer)
+   - **Mitigation:** US-013 TASK-001 POC required before Sprint 3
+   - **Blocker for:** US-021 (Letter dispatcher)
+
+2. **SMTP Server Throttling (Medium Impact)**
+   - **Risk:** High-volume sends may trigger blacklisting
+   - **Mitigation:** US-022 throttling implementation + Q3 resolution
+   - **Monitoring:** Send rate metrics in observability
+
+3. **Hangfire Community Batch Limitations (Medium Impact)**
+   - **Risk:** No built-in batch primitives requires custom Chunk Coordinator
+   - **Mitigation:** US-026 Chunk Coordinator pattern (validated in architecture study)
+   - **Performance target:** 100K recipients in <60 minutes
+
+4. **Email Rendering Inconsistencies (Medium Impact)**
+   - **Risk:** Outlook/Gmail/Apple Mail render HTML differently
+   - **Mitigation:** PreMailer.Net CSS inlining + test on major clients
+   - **Future:** Consider MJML in Phase 3
+
+5. **Data Source Connector Failures Mid-Campaign (High Impact)**
+   - **Risk:** Database connection loss during batch processing
+   - **Mitigation:** Chunk-level retry (3 attempts) + PartialFailure status
+   - **Manual intervention:** ManualReview status for >10% failure rate
+
+6. **File Share Accessibility (Low Impact)**
+   - **Risk:** UNC path inaccessible from Hangfire workers
+   - **Mitigation:** Validate at campaign scheduling time + Q7 resolution
+   - **Warning:** Missing dynamic attachments logged, send continues
+
+7. **XSS via Template Data (Low Impact)**
+   - **Risk:** Unescaped user data in templates
+   - **Mitigation:** Scriban auto-escapes all substituted values
+   - **Trust:** Template HTML itself trusted (Designer role only)
+
+### Technical Constraints
+
+1. **Windows Server + IIS hosting** (infrastructure standard)
+2. **SQL Server database** (team expertise)
+3. **Hangfire Community** (no Pro license — requires Chunk Coordinator pattern)
+4. **File share for attachments** (UNC path or NAS — Q7 pending)
+5. **Performance target:** 100K recipients in <60 minutes (8 workers)
+6. **API response time:** <500ms p95 for single sends
+
+### Open Questions Requiring Resolution
+
+| # | Question | Blocks User Story | Target Resolution |
+|---|----------|-------------------|-------------------|
+| Q1 | PDF generation tool POC | US-013, US-021 | Sprint 2 end |
+| Q2 | SMS provider contract | US-020 | Sprint 3 start |
+| Q3 | SMTP server limits | US-022 | Sprint 6 start |
+| Q4 | Windows Auth vs Identity | US-003 | Sprint 1 start |
+| Q5 | Print provider format | US-021 | Sprint 4 start |
+| Q7 | File share infrastructure | US-028 | Sprint 7 start |
+| Q8 | REST API data sources needed? | US-017 | Sprint 8 start |
+
+---
+
+## 📚 References
+
+- **Source specification:** _docs/prd.md
+- **Analysis date:** 2026-03-19
+- **PRD version:** 1.0 (Draft)
+- **Project directory:** f:\_Projets\AdobeCampaignLike
+
+---
+
+## 🚀 Next Steps
+
+1. **Review priorities:** Open [.userstories/BACKLOG.md](.userstories/BACKLOG.md) and adjust story priorities
+2. **Resolve Open Questions:** Focus on Q1 (PDF tool) and Q4 (Auth) before Sprint 1
+3. **Validate estimations:** Review complexity ratings with team
+4. **Start Sprint 1:** Run `/do-userstory US-001` to begin implementation
+
+## 💡 Useful Commands
+
+- `/list-userstories` - View all user stories with status
+- `/do-userstory US-XXX` - Implement a specific user story
+- `/show-progress` - Visual progress report with dependency graph
+- `/refine-userstory US-XXX` - Analyze and improve a user story
+- `/orchestrate-backlog` - Autonomous implementation of selected features
+- `/export-backlog` - Export to PDF, Markdown, HTML, or JSON
+
+---
+
+**Legend:**
+- 🔴 High Priority (MVP — Phase 1)
+- 🟠 Medium Priority (Phase 2)
+- 🟢 Low Priority (Phase 3 / Future)
+- 🟡 TODO | 🔵 In Progress | 🟢 Done | 🔴 Blocked
