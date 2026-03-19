@@ -1,0 +1,15 @@
+F:\_Projets\AdobeCampaignLike\src\CampaignEngine.Application\bin\Debug\net8.0\CampaignEngine.Application.deps.json
+F:\_Projets\AdobeCampaignLike\src\CampaignEngine.Application\bin\Debug\net8.0\CampaignEngine.Application.dll
+F:\_Projets\AdobeCampaignLike\src\CampaignEngine.Application\bin\Debug\net8.0\CampaignEngine.Application.pdb
+F:\_Projets\AdobeCampaignLike\src\CampaignEngine.Application\bin\Debug\net8.0\CampaignEngine.Domain.dll
+F:\_Projets\AdobeCampaignLike\src\CampaignEngine.Application\bin\Debug\net8.0\CampaignEngine.Domain.pdb
+F:\_Projets\AdobeCampaignLike\src\CampaignEngine.Application\obj\Debug\net8.0\CampaignEngine.Application.csproj.AssemblyReference.cache
+F:\_Projets\AdobeCampaignLike\src\CampaignEngine.Application\obj\Debug\net8.0\CampaignEngine.Application.GeneratedMSBuildEditorConfig.editorconfig
+F:\_Projets\AdobeCampaignLike\src\CampaignEngine.Application\obj\Debug\net8.0\CampaignEngine.Application.AssemblyInfoInputs.cache
+F:\_Projets\AdobeCampaignLike\src\CampaignEngine.Application\obj\Debug\net8.0\CampaignEngine.Application.AssemblyInfo.cs
+F:\_Projets\AdobeCampaignLike\src\CampaignEngine.Application\obj\Debug\net8.0\CampaignEngine.Application.csproj.CoreCompileInputs.cache
+F:\_Projets\AdobeCampaignLike\src\CampaignEngine.Application\obj\Debug\net8.0\Campaign.07FA968A.Up2Date
+F:\_Projets\AdobeCampaignLike\src\CampaignEngine.Application\obj\Debug\net8.0\CampaignEngine.Application.dll
+F:\_Projets\AdobeCampaignLike\src\CampaignEngine.Application\obj\Debug\net8.0\refint\CampaignEngine.Application.dll
+F:\_Projets\AdobeCampaignLike\src\CampaignEngine.Application\obj\Debug\net8.0\CampaignEngine.Application.pdb
+F:\_Projets\AdobeCampaignLike\src\CampaignEngine.Application\obj\Debug\net8.0\ref\CampaignEngine.Application.dll

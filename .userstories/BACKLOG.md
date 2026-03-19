@@ -114,12 +114,12 @@
 - [ ] Unit test projects created with xUnit + Moq + FluentAssertions
 
 **Technical tasks:**
-- [ ] `TASK-001-01` - **[Setup]** Create solution with 4 projects (Domain, Application, Infrastructure, Web)
-- [ ] `TASK-001-02` - **[Setup]** Configure project dependencies and package references
-- [ ] `TASK-001-03` - **[Config]** Set up DI container registration patterns
-- [ ] `TASK-001-04` - **[Setup]** Add test projects (Domain.Tests, Application.Tests, Infrastructure.Tests)
-- [ ] `TASK-001-05` - **[Config]** Configure appsettings.json structure for environments
-- [ ] `TASK-001-06` - **[Doc]** Create README with architecture diagram
+- [x] `TASK-001-01` - **[Setup]** Create solution with 4 projects (Domain, Application, Infrastructure, Web) ✅ 2026-03-19
+- [x] `TASK-001-02` - **[Setup]** Configure project dependencies and package references ✅ 2026-03-19
+- [x] `TASK-001-03` - **[Config]** Set up DI container registration patterns ✅ 2026-03-19
+- [x] `TASK-001-04` - **[Setup]** Add test projects (Domain.Tests, Application.Tests, Infrastructure.Tests) ✅ 2026-03-19
+- [x] `TASK-001-05` - **[Config]** Configure appsettings.json structure for environments ✅ 2026-03-19
+- [x] `TASK-001-06` - **[Doc]** Create README with architecture diagram ✅ 2026-03-19
 
 **Business rules:**
 1. No circular dependencies between layers
