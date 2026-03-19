@@ -215,8 +215,9 @@
 ---
 
 #### [US-004] - Structured logging and observability setup
-**Status:** 🔵 IN PROGRESS
+**Status:** ✅ DONE
 **Start date:** 2026-03-19
+**End date:** 2026-03-19
 **Priority:** 🔴 High
 **Complexity:** S
 **Epic:** Foundation & Infrastructure
@@ -229,11 +230,11 @@
 > Structured logging. SEND_LOG as source of truth for all dispatch activity. Observability as core requirement.
 
 **Acceptance criteria:**
-- [ ] Structured logging configured (Serilog or NLog)
-- [ ] Log levels appropriately used (Debug, Info, Warning, Error, Critical)
-- [ ] Correlation IDs tracked across request lifecycle
-- [ ] Performance metrics logged for critical operations
-- [ ] Log sink configured (file, database, or monitoring tool)
+- [x] Structured logging configured (Serilog or NLog) ✅
+- [x] Log levels appropriately used (Debug, Info, Warning, Error, Critical) ✅
+- [x] Correlation IDs tracked across request lifecycle ✅
+- [x] Performance metrics logged for critical operations ✅
+- [x] Log sink configured (file, database, or monitoring tool) ✅
 
 **Technical tasks:**
 - [x] `TASK-004-01` - **[Config]** Configure Serilog with structured logging ✅ 2026-03-19
@@ -241,7 +242,7 @@
 - [x] `TASK-004-03` - **[Logging]** Create logging abstractions for core services ✅ 2026-03-19
 - [x] `TASK-004-04` - **[Config]** Configure log sinks (file + SQL for errors) ✅ 2026-03-19
 - [x] `TASK-004-05` - **[Test]** Verify logging in integration tests ✅ 2026-03-19
-- [ ] `TASK-004-06` - **[Doc]** Document logging conventions
+- [x] `TASK-004-06` - **[Doc]** Document logging conventions ✅ 2026-03-19
 
 **Business rules:**
 1. All API calls logged with request/response details
