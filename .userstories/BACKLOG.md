@@ -240,7 +240,7 @@
 - [x] `TASK-004-02` - **[Middleware]** Add correlation ID middleware ✅ 2026-03-19
 - [x] `TASK-004-03` - **[Logging]** Create logging abstractions for core services ✅ 2026-03-19
 - [x] `TASK-004-04` - **[Config]** Configure log sinks (file + SQL for errors) ✅ 2026-03-19
-- [ ] `TASK-004-05` - **[Test]** Verify logging in integration tests
+- [x] `TASK-004-05` - **[Test]** Verify logging in integration tests ✅ 2026-03-19
 - [ ] `TASK-004-06` - **[Doc]** Document logging conventions
 
 **Business rules:**

@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("CampaignEngine.Domain")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+aeafd5be5221d3052439260326a7ddb5194d547a")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+98ddc69804694ef301e26e44df234a19cedef419")]
 [assembly: System.Reflection.AssemblyProductAttribute("CampaignEngine.Domain")]
 [assembly: System.Reflection.AssemblyTitleAttribute("CampaignEngine.Domain")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
