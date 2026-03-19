@@ -133,7 +133,9 @@
 ---
 
 #### [US-002] - Database provisioning and EF Core setup
-**Status:** 🟡 TODO
+**Status:** ✅ DONE
+**Start date:** 2026-03-19
+**End date:** 2026-03-19
 **Priority:** 🔴 High
 **Complexity:** M
 **Epic:** Foundation & Infrastructure
@@ -146,19 +148,19 @@
 > SQL Server as enterprise standard with EF Core for migrations and LINQ support
 
 **Acceptance criteria:**
-- [ ] SQL Server database created with appropriate connection string
-- [ ] DbContext configured with all entity mappings
-- [ ] Initial migration created and applied
-- [ ] Seed data mechanism for development environment
-- [ ] Connection string encryption configured
+- [x] SQL Server database created with appropriate connection string ✅
+- [x] DbContext configured with all entity mappings ✅
+- [x] Initial migration created and applied ✅
+- [x] Seed data mechanism for development environment ✅
+- [x] Connection string encryption configured ✅
 
 **Technical tasks:**
-- [ ] `TASK-002-01` - **[Model]** Create DbContext with SQL Server provider
-- [ ] `TASK-002-02` - **[Config]** Configure connection string with encryption
-- [ ] `TASK-002-03` - **[Migration]** Create initial migration with all core tables
-- [ ] `TASK-002-04` - **[Data]** Create seed data service for development
-- [ ] `TASK-002-05` - **[Test]** Add integration tests with in-memory database
-- [ ] `TASK-002-06` - **[Doc]** Document database schema and migration strategy
+- [x] `TASK-002-01` - **[Model]** Create DbContext with SQL Server provider ✅ 2026-03-19
+- [x] `TASK-002-02` - **[Config]** Configure connection string with encryption ✅ 2026-03-19
+- [x] `TASK-002-03` - **[Migration]** Create initial migration with all core tables ✅ 2026-03-19
+- [x] `TASK-002-04` - **[Data]** Create seed data service for development ✅ 2026-03-19
+- [x] `TASK-002-05` - **[Test]** Add integration tests with in-memory database ✅ 2026-03-19
+- [x] `TASK-002-06` - **[Doc]** Document database schema and migration strategy ✅ 2026-03-19
 
 **Business rules:**
 1. All entity IDs use GUID for distributed generation
@@ -514,7 +516,9 @@
 > Transform templates with dynamic data into channel-specific outputs
 
 #### [US-011] - Scriban template engine integration
-**Status:** 🟡 TODO
+**Status:** ✅ DONE
+**Start date:** 2026-03-19
+**End date:** 2026-03-19
 **Priority:** 🔴 High
 **Complexity:** M
 **Epic:** Rendering Engine
@@ -527,21 +531,21 @@
 > Use Scriban as the underlying engine behind an ITemplateRenderer abstraction. Lightweight, sandboxed, Liquid-like syntax.
 
 **Acceptance criteria:**
-- [ ] ITemplateRenderer interface defined in Application layer
-- [ ] Scriban implementation in Infrastructure layer
-- [ ] Basic scalar substitution working
-- [ ] Error handling for malformed templates
-- [ ] Performance benchmarks for 1000 renders/sec
+- [x] ITemplateRenderer interface defined in Application layer ✅
+- [x] Scriban implementation in Infrastructure layer ✅
+- [x] Basic scalar substitution working ✅
+- [x] Error handling for malformed templates ✅
+- [x] Performance benchmarks for 1000 renders/sec ✅
 
 **Technical tasks:**
-- [ ] `TASK-011-01` - **[Interface]** Define ITemplateRenderer in Application layer
-- [ ] `TASK-011-02` - **[Model]** Create TemplateContext data model
-- [ ] `TASK-011-03` - **[Service]** Implement ScribanTemplateRenderer
-- [ ] `TASK-011-04` - **[Service]** Configure Scriban security settings (sandbox)
-- [ ] `TASK-011-05` - **[Service]** Add error handling and validation
-- [ ] `TASK-011-06` - **[Test]** Unit tests for renderer
-- [ ] `TASK-011-07` - **[Test]** Performance benchmark tests
-- [ ] `TASK-011-08` - **[Doc]** Template syntax reference
+- [x] `TASK-011-01` - **[Interface]** Define ITemplateRenderer in Application layer ✅ 2026-03-19
+- [x] `TASK-011-02` - **[Model]** Create TemplateContext data model ✅ 2026-03-19
+- [x] `TASK-011-03` - **[Service]** Implement ScribanTemplateRenderer ✅ 2026-03-19
+- [x] `TASK-011-04` - **[Service]** Configure Scriban security settings (sandbox) ✅ 2026-03-19
+- [x] `TASK-011-05` - **[Service]** Add error handling and validation ✅ 2026-03-19
+- [x] `TASK-011-06` - **[Test]** Unit tests for renderer ✅ 2026-03-19
+- [x] `TASK-011-07` - **[Test]** Performance benchmark tests ✅ 2026-03-19
+- [x] `TASK-011-08` - **[Doc]** Template syntax reference ✅ 2026-03-19
 
 **Business rules:**
 1. All data values HTML-escaped by default to prevent XSS
@@ -817,7 +821,9 @@
 > Send messages through email, SMS, and letter channels
 
 #### [US-018] - Channel dispatcher abstraction
-**Status:** 🟡 TODO
+**Status:** ✅ DONE
+**Start date:** 2026-03-19
+**End date:** 2026-03-19
 **Priority:** 🔴 High
 **Complexity:** S
 **Epic:** Dispatch Engine
@@ -830,19 +836,19 @@
 > IChannelDispatcher interface with DI-based registry — no hardcoded switch/case. Extensibility for WhatsApp, Push.
 
 **Acceptance criteria:**
-- [ ] IChannelDispatcher interface defined
-- [ ] Dispatcher registry with DI-based resolution
-- [ ] Channel-specific configuration model
-- [ ] Dispatch result model with success/failure indication
-- [ ] Error handling abstraction for all channels
+- [x] IChannelDispatcher interface defined ✅
+- [x] Dispatcher registry with DI-based resolution ✅
+- [x] Channel-specific configuration model ✅
+- [x] Dispatch result model with success/failure indication ✅
+- [x] Error handling abstraction for all channels ✅
 
 **Technical tasks:**
-- [ ] `TASK-018-01` - **[Interface]** Define IChannelDispatcher interface
-- [ ] `TASK-018-02` - **[Model]** Create DispatchRequest and DispatchResult models
-- [ ] `TASK-018-03` - **[Service]** Create ChannelDispatcherRegistry with DI
-- [ ] `TASK-018-04` - **[Model]** Channel configuration base class
-- [ ] `TASK-018-05` - **[Test]** Mock dispatcher for testing
-- [ ] `TASK-018-06` - **[Doc]** Channel dispatcher extension guide
+- [x] `TASK-018-01` - **[Interface]** Define IChannelDispatcher interface ✅ 2026-03-19
+- [x] `TASK-018-02` - **[Model]** Create DispatchRequest and DispatchResult models ✅ 2026-03-19
+- [x] `TASK-018-03` - **[Service]** Create ChannelDispatcherRegistry with DI ✅ 2026-03-19
+- [x] `TASK-018-04` - **[Model]** Channel configuration base class ✅ 2026-03-19
+- [x] `TASK-018-05` - **[Test]** Mock dispatcher for testing ✅ 2026-03-19
+- [x] `TASK-018-06` - **[Doc]** Channel dispatcher extension guide ✅ 2026-03-19
 
 **Business rules:**
 1. Each channel registered in DI container

@@ -26,6 +26,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\CampaignEngine.Domain\CampaignEngine.Domain.csproj" />
     <ProjectReference Include="..\..\src\CampaignEngine.Application\CampaignEngine.Application.csproj" />
+    <ProjectReference Include="..\..\src\CampaignEngine.Infrastructure\CampaignEngine.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>
