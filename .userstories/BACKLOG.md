@@ -215,7 +215,8 @@
 ---
 
 #### [US-004] - Structured logging and observability setup
-**Status:** 🟡 TODO
+**Status:** 🔵 IN PROGRESS
+**Start date:** 2026-03-19
 **Priority:** 🔴 High
 **Complexity:** S
 **Epic:** Foundation & Infrastructure
