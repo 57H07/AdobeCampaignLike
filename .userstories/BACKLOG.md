@@ -236,10 +236,10 @@
 - [ ] Log sink configured (file, database, or monitoring tool)
 
 **Technical tasks:**
-- [ ] `TASK-004-01` - **[Config]** Configure Serilog with structured logging
-- [ ] `TASK-004-02` - **[Middleware]** Add correlation ID middleware
-- [ ] `TASK-004-03` - **[Logging]** Create logging abstractions for core services
-- [ ] `TASK-004-04` - **[Config]** Configure log sinks (file + SQL for errors)
+- [x] `TASK-004-01` - **[Config]** Configure Serilog with structured logging ✅ 2026-03-19
+- [x] `TASK-004-02` - **[Middleware]** Add correlation ID middleware ✅ 2026-03-19
+- [x] `TASK-004-03` - **[Logging]** Create logging abstractions for core services ✅ 2026-03-19
+- [x] `TASK-004-04` - **[Config]** Configure log sinks (file + SQL for errors) ✅ 2026-03-19
 - [ ] `TASK-004-05` - **[Test]** Verify logging in integration tests
 - [ ] `TASK-004-06` - **[Doc]** Document logging conventions
 

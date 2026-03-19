@@ -162,3 +162,6 @@ F:\_Projets\AdobeCampaignLike\tests\CampaignEngine.Infrastructure.Tests\obj\Debu
 F:\_Projets\AdobeCampaignLike\tests\CampaignEngine.Infrastructure.Tests\obj\Debug\net8.0\ref\CampaignEngine.Infrastructure.Tests.dll
 F:\_Projets\AdobeCampaignLike\tests\CampaignEngine.Infrastructure.Tests\bin\Debug\net8.0\Microsoft.Extensions.Configuration.Binder.dll
 F:\_Projets\AdobeCampaignLike\tests\CampaignEngine.Infrastructure.Tests\bin\Debug\net8.0\Microsoft.Extensions.Options.ConfigurationExtensions.dll
+F:\_Projets\AdobeCampaignLike\tests\CampaignEngine.Infrastructure.Tests\bin\Debug\net8.0\Serilog.dll
+F:\_Projets\AdobeCampaignLike\tests\CampaignEngine.Infrastructure.Tests\bin\Debug\net8.0\Serilog.Extensions.Logging.dll
+F:\_Projets\AdobeCampaignLike\tests\CampaignEngine.Infrastructure.Tests\bin\Debug\net8.0\Serilog.Sinks.Console.dll
