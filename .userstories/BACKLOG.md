@@ -93,8 +93,9 @@
 > Core infrastructure setup including database, authentication, and layered architecture
 
 #### [US-001] - Project scaffold and layered architecture setup
-**Status:** 🔵 IN PROGRESS
+**Status:** ✅ DONE
 **Start date:** 2026-03-19
+**End date:** 2026-03-19
 **Priority:** 🔴 High
 **Complexity:** M
 **Epic:** Foundation & Infrastructure
@@ -107,11 +108,11 @@
 > Layered architecture (Domain / Application / Infrastructure / Web). All cross-cutting concerns behind interfaces. DI-based strategy pattern for channels and data connectors.
 
 **Acceptance criteria:**
-- [ ] Solution structure follows Domain / Application / Infrastructure / Web layers
-- [ ] All projects properly reference each other with correct dependencies
-- [ ] Microsoft.Extensions.DependencyInjection configured as DI container
-- [ ] Cross-cutting concerns (logging, error handling) abstracted behind interfaces
-- [ ] Unit test projects created with xUnit + Moq + FluentAssertions
+- [x] Solution structure follows Domain / Application / Infrastructure / Web layers ✅
+- [x] All projects properly reference each other with correct dependencies ✅
+- [x] Microsoft.Extensions.DependencyInjection configured as DI container ✅
+- [x] Cross-cutting concerns (logging, error handling) abstracted behind interfaces ✅
+- [x] Unit test projects created with xUnit + Moq + FluentAssertions ✅
 
 **Technical tasks:**
 - [x] `TASK-001-01` - **[Setup]** Create solution with 4 projects (Domain, Application, Infrastructure, Web) ✅ 2026-03-19
