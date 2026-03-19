@@ -93,7 +93,8 @@
 > Core infrastructure setup including database, authentication, and layered architecture
 
 #### [US-001] - Project scaffold and layered architecture setup
-**Status:** 🟡 TODO
+**Status:** 🔵 IN PROGRESS
+**Start date:** 2026-03-19
 **Priority:** 🔴 High
 **Complexity:** M
 **Epic:** Foundation & Infrastructure
