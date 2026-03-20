@@ -461,7 +461,7 @@
 
 **Technical tasks:**
 - [x] `TASK-009-01` - **[Model]** Add Status enum to Template entity ✅ 2026-03-20
-- [ ] `TASK-009-02` - **[Service]** Implement status transition validation
+- [x] `TASK-009-02` - **[Service]** Implement status transition validation ✅ 2026-03-20
 - [ ] `TASK-009-03` - **[API]** POST /api/templates/{id}/publish endpoint
 - [ ] `TASK-009-04` - **[API]** POST /api/templates/{id}/archive endpoint
 - [ ] `TASK-009-05` - **[Frontend]** Status badges and transition buttons

@@ -49,4 +49,24 @@ public interface ITemplateService
     /// </summary>
     Task<IReadOnlyList<TemplateSummaryDto>> GetSubTemplatesAsync(
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Transitions a template from Draft to Published.
+    /// Business rules:
+    ///   - Template must currently be in Draft status.
+    ///   - Template must have a complete placeholder manifest (all HTML placeholders declared).
+    /// Throws NotFoundException if template not found.
+    /// Throws ValidationException if transition is not allowed.
+    /// </summary>
+    Task<Template> PublishAsync(Guid id, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Transitions a template to Archived status.
+    /// Business rules:
+    ///   - Template must be in Draft or Published status (not already Archived).
+    ///   - Archived templates cannot transition back to Published.
+    /// Throws NotFoundException if template not found.
+    /// Throws ValidationException if transition is not allowed.
+    /// </summary>
+    Task<Template> ArchiveAsync(Guid id, CancellationToken cancellationToken = default);
 }

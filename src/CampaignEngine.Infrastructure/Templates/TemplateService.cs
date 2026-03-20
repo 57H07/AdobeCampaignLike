@@ -14,18 +14,25 @@ namespace CampaignEngine.Infrastructure.Templates;
 /// Business rules enforced here:
 ///   - Template name must be unique within the same channel.
 ///   - Soft delete sets IsDeleted flag; record is preserved for audit.
+///   - Status lifecycle: Draft → Published → Archived (one-way, no reversal).
 /// </summary>
 public sealed class TemplateService : ITemplateService
 {
     private readonly CampaignEngineDbContext _dbContext;
     private readonly IAppLogger<TemplateService> _logger;
+    private readonly IPlaceholderManifestService _manifestService;
+    private readonly IPlaceholderParserService _parserService;
 
     public TemplateService(
         CampaignEngineDbContext dbContext,
-        IAppLogger<TemplateService> logger)
+        IAppLogger<TemplateService> logger,
+        IPlaceholderManifestService manifestService,
+        IPlaceholderParserService parserService)
     {
         _dbContext = dbContext;
         _logger = logger;
+        _manifestService = manifestService;
+        _parserService = parserService;
     }
 
     /// <inheritdoc />
@@ -167,6 +174,80 @@ public sealed class TemplateService : ITemplateService
             IsSubTemplate = t.IsSubTemplate,
             Description = t.Description
         }).ToList().AsReadOnly();
+    }
+
+    // ----------------------------------------------------------------
+    // Status Transition: Publish
+    // ----------------------------------------------------------------
+
+    /// <inheritdoc />
+    public async Task<Template> PublishAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var template = await _dbContext.Templates
+            .FirstOrDefaultAsync(t => t.Id == id, cancellationToken);
+
+        if (template is null)
+            throw new NotFoundException(nameof(Template), id);
+
+        // Business rule: only Draft templates can be published
+        if (template.Status != TemplateStatus.Draft)
+        {
+            throw new ValidationException(
+                $"Template '{template.Name}' cannot be published: current status is '{template.Status}'. " +
+                "Only Draft templates can be published.");
+        }
+
+        // Business rule: manifest must be complete before publishing
+        var manifestEntries = await _manifestService.GetByTemplateIdAsync(id, cancellationToken);
+        var validationResult = _parserService.ValidateManifestCompleteness(template.HtmlBody, manifestEntries);
+
+        if (!validationResult.IsComplete)
+        {
+            var missing = string.Join(", ", validationResult.UndeclaredKeys.Select(k => $"'{k}'"));
+            throw new ValidationException(
+                $"Template '{template.Name}' cannot be published: placeholder manifest is incomplete. " +
+                $"Undeclared placeholders: {missing}. " +
+                "All placeholders used in the template HTML must be declared in the manifest before publishing.");
+        }
+
+        template.Status = TemplateStatus.Published;
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation(
+            "Template published: Id={TemplateId}, Name={Name}", template.Id, template.Name);
+
+        return template;
+    }
+
+    // ----------------------------------------------------------------
+    // Status Transition: Archive
+    // ----------------------------------------------------------------
+
+    /// <inheritdoc />
+    public async Task<Template> ArchiveAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var template = await _dbContext.Templates
+            .FirstOrDefaultAsync(t => t.Id == id, cancellationToken);
+
+        if (template is null)
+            throw new NotFoundException(nameof(Template), id);
+
+        // Business rule: Archived templates cannot transition anywhere
+        if (template.Status == TemplateStatus.Archived)
+        {
+            throw new ValidationException(
+                $"Template '{template.Name}' is already Archived. Archived templates cannot change status.");
+        }
+
+        template.Status = TemplateStatus.Archived;
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation(
+            "Template archived: Id={TemplateId}, Name={Name}", template.Id, template.Name);
+
+        return template;
     }
 
     // ----------------------------------------------------------------
