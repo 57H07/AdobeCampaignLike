@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿# ðŸ“‹ Backlog - CampaignEngine
+﻿﻿﻿﻿﻿﻿# ðŸ“‹ Backlog - CampaignEngine
 
 **Source:** _docs/prd.md
 **Created:** 2026-03-19
@@ -397,7 +397,8 @@
 ---
 
 #### [US-008] - Template versioning
-**Status:** ðŸŸ¡ TODO
+**Status:** 🔵 IN PROGRESS
+**Start date:** 2026-03-20
 **Priority:** ðŸŸ  Medium
 **Complexity:** M
 **Epic:** Template Management
@@ -439,8 +440,7 @@
 ---
 
 #### [US-009] - Template lifecycle workflow
-**Status:** 🔵 IN PROGRESS
-**Start date:** 2026-03-20
+**Status:** ðŸŸ¡ TODO
 **Priority:** ðŸŸ  Medium
 **Complexity:** S
 **Epic:** Template Management
@@ -460,7 +460,7 @@
 - [ ] Status transition validation and audit logging
 
 **Technical tasks:**
-- [ ] `TASK-009-01` - **[Model]** Add Status enum to Template entity
+- [x] `TASK-009-01` - **[Model]** Add Status enum to Template entity ✅ 2026-03-20
 - [ ] `TASK-009-02` - **[Service]** Implement status transition validation
 - [ ] `TASK-009-03` - **[API]** POST /api/templates/{id}/publish endpoint
 - [ ] `TASK-009-04` - **[API]** POST /api/templates/{id}/archive endpoint
@@ -1881,4 +1881,5 @@
 - ðŸŸ  Medium Priority (Phase 2)
 - ðŸŸ¢ Low Priority (Phase 3 / Future)
 - ðŸŸ¡ TODO | ðŸ”µ In Progress | ðŸŸ¢ Done | ðŸ”´ Blocked
+
 
