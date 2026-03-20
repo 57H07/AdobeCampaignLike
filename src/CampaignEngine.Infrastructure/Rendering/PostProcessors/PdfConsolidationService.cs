@@ -33,7 +33,7 @@ public sealed class PdfConsolidationService : IPdfConsolidationService
     }
 
     /// <inheritdoc/>
-    public async Task<IReadOnlyList<byte[]>> ConsolidateAsync(
+    public Task<IReadOnlyList<byte[]>> ConsolidateAsync(
         IEnumerable<byte[]> pdfDocuments,
         CancellationToken cancellationToken = default)
     {
@@ -42,7 +42,7 @@ public sealed class PdfConsolidationService : IPdfConsolidationService
 
         if (documents.Count == 0)
         {
-            return Array.Empty<byte[]>();
+            return Task.FromResult<IReadOnlyList<byte[]>>(Array.Empty<byte[]>());
         }
 
         _logger.LogInformation(
@@ -145,7 +145,7 @@ public sealed class PdfConsolidationService : IPdfConsolidationService
             batches.Count,
             documents.Count);
 
-        return batches;
+        return Task.FromResult<IReadOnlyList<byte[]>>(batches);
     }
 
     private static byte[] SaveDocument(PdfDocument doc)
