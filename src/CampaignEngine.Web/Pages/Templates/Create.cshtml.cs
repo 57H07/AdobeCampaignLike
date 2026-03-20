@@ -46,7 +46,8 @@ public class CreateTemplateModel : PageModel
                 Name = Input.Name,
                 Channel = (ChannelType)Input.Channel,
                 HtmlBody = Input.HtmlBody,
-                Description = string.IsNullOrWhiteSpace(Input.Description) ? null : Input.Description
+                Description = string.IsNullOrWhiteSpace(Input.Description) ? null : Input.Description,
+                IsSubTemplate = Input.IsSubTemplate
             };
 
             var template = await _templateService.CreateAsync(request);
@@ -76,4 +77,10 @@ public class CreateTemplateInputModel
 
     [Required(ErrorMessage = "HTML body is required.")]
     public string HtmlBody { get; set; } = string.Empty;
+
+    /// <summary>
+    /// When checked, this template is a reusable sub-template block
+    /// embeddable in parent templates via {{> name}} syntax.
+    /// </summary>
+    public bool IsSubTemplate { get; set; } = false;
 }

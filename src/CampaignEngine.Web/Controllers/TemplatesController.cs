@@ -5,6 +5,7 @@ using CampaignEngine.Domain.Enums;
 using CampaignEngine.Domain.Exceptions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using ValidationException = CampaignEngine.Domain.Exceptions.ValidationException;
 
 namespace CampaignEngine.Web.Controllers;
 
@@ -21,15 +22,18 @@ public class TemplatesController : ControllerBase
     private readonly ITemplateService _templateService;
     private readonly IPlaceholderManifestService _manifestService;
     private readonly IPlaceholderParserService _parserService;
+    private readonly ISubTemplateResolverService _subTemplateResolver;
 
     public TemplatesController(
         ITemplateService templateService,
         IPlaceholderManifestService manifestService,
-        IPlaceholderParserService parserService)
+        IPlaceholderParserService parserService,
+        ISubTemplateResolverService subTemplateResolver)
     {
         _templateService = templateService;
         _manifestService = manifestService;
         _parserService = parserService;
+        _subTemplateResolver = subTemplateResolver;
     }
 
     // ----------------------------------------------------------------
@@ -401,4 +405,163 @@ public class TemplatesController : ControllerBase
         var result = _parserService.ValidateManifestCompleteness(template.HtmlBody, manifestEntries);
         return Ok(result);
     }
+
+    // ================================================================
+    // Sub-Template Endpoints
+    // ================================================================
+
+    // ----------------------------------------------------------------
+    // GET /api/templates/subtemplates
+    // ----------------------------------------------------------------
+
+    /// <summary>
+    /// Returns all templates marked as sub-templates (IsSubTemplate = true).
+    /// Used by the sub-template selector UI in the template editor.
+    /// </summary>
+    [HttpGet("subtemplates")]
+    [Authorize(Policy = AuthorizationPolicies.RequireAuthenticated)]
+    [ProducesResponseType(typeof(IReadOnlyList<TemplateSummaryDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<IReadOnlyList<TemplateSummaryDto>>> GetSubTemplates(
+        CancellationToken cancellationToken = default)
+    {
+        var result = await _templateService.GetSubTemplatesAsync(cancellationToken);
+        return Ok(result);
+    }
+
+    // ----------------------------------------------------------------
+    // GET /api/templates/{id}/subtemplates/references
+    // ----------------------------------------------------------------
+
+    /// <summary>
+    /// Extracts all direct sub-template references ({{> name}} syntax) from the template HTML body.
+    /// Does not perform recursive resolution — returns only direct references.
+    /// </summary>
+    /// <param name="id">Template GUID.</param>
+    [HttpGet("{id:guid}/subtemplates/references")]
+    [Authorize(Policy = AuthorizationPolicies.RequireAuthenticated)]
+    [ProducesResponseType(typeof(SubTemplateReferencesResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<SubTemplateReferencesResult>> GetSubTemplateReferences(
+        Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        var template = await _templateService.GetByIdAsync(id, cancellationToken);
+        if (template is null) return NotFound();
+
+        var references = _subTemplateResolver.ExtractReferences(template.HtmlBody);
+        return Ok(new SubTemplateReferencesResult
+        {
+            TemplateId = id,
+            References = references.Select(r => r.Name).ToList().AsReadOnly()
+        });
+    }
+
+    // ----------------------------------------------------------------
+    // POST /api/templates/{id}/subtemplates/resolve
+    // ----------------------------------------------------------------
+
+    /// <summary>
+    /// Resolves all sub-template references in the template HTML body recursively.
+    /// Returns the fully resolved HTML body for preview purposes.
+    /// Changes to sub-templates propagate live (not frozen).
+    /// </summary>
+    /// <param name="id">Template GUID.</param>
+    [HttpPost("{id:guid}/subtemplates/resolve")]
+    [Authorize(Policy = AuthorizationPolicies.RequireAuthenticated)]
+    [ProducesResponseType(typeof(SubTemplateResolveResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<SubTemplateResolveResult>> ResolveSubTemplates(
+        Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        var template = await _templateService.GetByIdAsync(id, cancellationToken);
+        if (template is null) return NotFound();
+
+        try
+        {
+            var resolvedBody = await _subTemplateResolver.ResolveAsync(id, template.HtmlBody, cancellationToken);
+            return Ok(new SubTemplateResolveResult
+            {
+                TemplateId = id,
+                ResolvedHtmlBody = resolvedBody,
+                IsFullyResolved = true
+            });
+        }
+        catch (ValidationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    // ----------------------------------------------------------------
+    // GET /api/templates/{id}/subtemplates/validate
+    // ----------------------------------------------------------------
+
+    /// <summary>
+    /// Validates that no circular sub-template references exist starting from the specified template.
+    /// </summary>
+    /// <param name="id">Template GUID.</param>
+    [HttpGet("{id:guid}/subtemplates/validate")]
+    [Authorize(Policy = AuthorizationPolicies.RequireAuthenticated)]
+    [ProducesResponseType(typeof(SubTemplateValidationResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<SubTemplateValidationResult>> ValidateSubTemplateReferences(
+        Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        var template = await _templateService.GetByIdAsync(id, cancellationToken);
+        if (template is null) return NotFound();
+
+        try
+        {
+            await _subTemplateResolver.ValidateNoCircularReferencesAsync(id, cancellationToken);
+            return Ok(new SubTemplateValidationResult
+            {
+                TemplateId = id,
+                IsValid = true,
+                Message = "No circular sub-template references detected."
+            });
+        }
+        catch (ValidationException ex)
+        {
+            return Ok(new SubTemplateValidationResult
+            {
+                TemplateId = id,
+                IsValid = false,
+                Message = ex.Message
+            });
+        }
+    }
+}
+
+// ================================================================
+// Sub-Template Result DTOs (inline — used only by these endpoints)
+// ================================================================
+
+/// <summary>Result of extracting sub-template references from a template.</summary>
+public class SubTemplateReferencesResult
+{
+    public Guid TemplateId { get; init; }
+    public IReadOnlyList<string> References { get; init; } = Array.Empty<string>();
+}
+
+/// <summary>Result of resolving sub-template references in a template.</summary>
+public class SubTemplateResolveResult
+{
+    public Guid TemplateId { get; init; }
+    public string ResolvedHtmlBody { get; init; } = string.Empty;
+    public bool IsFullyResolved { get; init; }
+}
+
+/// <summary>Result of circular reference validation for a template.</summary>
+public class SubTemplateValidationResult
+{
+    public Guid TemplateId { get; init; }
+    public bool IsValid { get; init; }
+    public string Message { get; init; } = string.Empty;
 }

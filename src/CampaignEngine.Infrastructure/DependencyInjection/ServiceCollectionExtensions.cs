@@ -118,6 +118,9 @@ public static class ServiceCollectionExtensions
         // Placeholder parser service — extracts placeholder keys from template HTML and validates completeness.
         services.AddSingleton<IPlaceholderParserService, PlaceholderParserService>();
 
+        // Sub-template resolver service — resolves {{> name}} references recursively with circular detection.
+        services.AddScoped<ISubTemplateResolverService, SubTemplateResolverService>();
+
         // Logging dispatch orchestrator — wraps dispatchers with before/after SEND_LOG recording.
         services.AddScoped<ILoggingDispatchOrchestrator, LoggingDispatchOrchestrator>();
 

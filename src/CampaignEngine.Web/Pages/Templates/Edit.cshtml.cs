@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using System.ComponentModel.DataAnnotations;
+using ValidationException = CampaignEngine.Domain.Exceptions.ValidationException;
 
 namespace CampaignEngine.Web.Pages.Templates;
 
@@ -17,10 +18,14 @@ namespace CampaignEngine.Web.Pages.Templates;
 public class EditTemplateModel : PageModel
 {
     private readonly ITemplateService _templateService;
+    private readonly ISubTemplateResolverService _subTemplateResolver;
 
-    public EditTemplateModel(ITemplateService templateService)
+    public EditTemplateModel(
+        ITemplateService templateService,
+        ISubTemplateResolverService subTemplateResolver)
     {
         _templateService = templateService;
+        _subTemplateResolver = subTemplateResolver;
     }
 
     [BindProperty]
@@ -35,6 +40,14 @@ public class EditTemplateModel : PageModel
     /// <summary>Status display string.</summary>
     public string StatusDisplay { get; private set; } = string.Empty;
 
+    /// <summary>Available sub-templates for the selector panel.</summary>
+    public IReadOnlyList<TemplateSummaryDto> AvailableSubTemplates { get; private set; }
+        = Array.Empty<TemplateSummaryDto>();
+
+    /// <summary>Sub-template names referenced in the current template's HTML body.</summary>
+    public IReadOnlyList<string> ReferencedSubTemplates { get; private set; }
+        = Array.Empty<string>();
+
     public async Task<IActionResult> OnGetAsync(Guid id)
     {
         var template = await _templateService.GetByIdAsync(id);
@@ -48,9 +61,11 @@ public class EditTemplateModel : PageModel
         {
             Name = template.Name,
             HtmlBody = template.HtmlBody,
-            Description = template.Description
+            Description = template.Description,
+            IsSubTemplate = template.IsSubTemplate
         };
 
+        await LoadSubTemplateDataAsync(template.HtmlBody);
         return Page();
     }
 
@@ -64,6 +79,7 @@ public class EditTemplateModel : PageModel
             TemplateId = id;
             ChannelDisplay = existing.Channel.ToString();
             StatusDisplay = existing.Status.ToString();
+            await LoadSubTemplateDataAsync(Input.HtmlBody);
             return Page();
         }
 
@@ -73,7 +89,8 @@ public class EditTemplateModel : PageModel
             {
                 Name = Input.Name,
                 HtmlBody = Input.HtmlBody,
-                Description = string.IsNullOrWhiteSpace(Input.Description) ? null : Input.Description
+                Description = string.IsNullOrWhiteSpace(Input.Description) ? null : Input.Description,
+                IsSubTemplate = Input.IsSubTemplate
             };
 
             await _templateService.UpdateAsync(id, request);
@@ -83,16 +100,24 @@ public class EditTemplateModel : PageModel
         {
             return NotFound();
         }
-        catch (CampaignEngine.Domain.Exceptions.ValidationException ex)
+        catch (ValidationException ex)
         {
             // Re-populate read-only display fields
             var existing = await _templateService.GetByIdAsync(id);
             TemplateId = id;
             ChannelDisplay = existing?.Channel.ToString() ?? string.Empty;
             StatusDisplay = existing?.Status.ToString() ?? string.Empty;
+            await LoadSubTemplateDataAsync(Input.HtmlBody);
             ModelState.AddModelError(string.Empty, ex.Message);
             return Page();
         }
+    }
+
+    private async Task LoadSubTemplateDataAsync(string htmlBody)
+    {
+        AvailableSubTemplates = await _templateService.GetSubTemplatesAsync();
+        var refs = _subTemplateResolver.ExtractReferences(htmlBody ?? string.Empty);
+        ReferencedSubTemplates = refs.Select(r => r.Name).ToList().AsReadOnly();
     }
 }
 
@@ -108,4 +133,7 @@ public class EditTemplateInputModel
 
     [Required(ErrorMessage = "HTML body is required.")]
     public string HtmlBody { get; set; } = string.Empty;
+
+    /// <summary>When checked, marks this template as a reusable sub-template block.</summary>
+    public bool IsSubTemplate { get; set; } = false;
 }

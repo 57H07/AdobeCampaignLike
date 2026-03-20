@@ -32,4 +32,10 @@ public class CreateTemplateRequest
     /// </summary>
     [MaxLength(500)]
     public string? Description { get; set; }
+
+    /// <summary>
+    /// When true, marks this template as a reusable sub-template block
+    /// that can be embedded in parent templates via {{> name}} syntax.
+    /// </summary>
+    public bool IsSubTemplate { get; set; } = false;
 }

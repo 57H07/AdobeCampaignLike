@@ -106,10 +106,18 @@
                         };
                         <tr>
                             <td>
-                                <a asp-page="Detail" asp-route-id="@t.Id" class="fw-semibold text-decoration-none">@t.Name</a>
+                                <div class="d-flex align-items-center gap-1">
+                                    <a asp-page="Detail" asp-route-id="@t.Id" class="fw-semibold text-decoration-none">@t.Name</a>
+                                    @if (t.IsSubTemplate)
+                                    {
+                                        <span class="badge bg-info text-dark" style="font-size:0.65rem" title="Reusable sub-template block — embed with {{> @t.Name}}">
+                                            <i class="bi bi-puzzle-fill"></i> Sub
+                                        </span>
+                                    }
+                                </div>
                                 @if (!string.IsNullOrEmpty(t.Description))
                                 {
-                                    <br /><small class="text-muted">@t.Description</small>
+                                    <small class="text-muted">@t.Description</small>
                                 }
                             </td>
                             <td><span class="badge @channelBadge">@t.Channel</span></td>

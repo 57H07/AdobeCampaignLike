@@ -43,6 +43,21 @@
                     </div>
 
                     <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input asp-for="Input.IsSubTemplate" class="form-check-input" type="checkbox" role="switch" id="isSubTemplateSwitch" />
+                            <label class="form-check-label" for="isSubTemplateSwitch">
+                                <i class="bi bi-puzzle-fill text-info"></i>
+                                <strong>Sub-template block</strong>
+                                <span class="text-muted ms-1">— make this template reusable in parent templates</span>
+                            </label>
+                        </div>
+                        <div class="form-text">
+                            Sub-templates can be embedded in other templates using
+                            <code>{{&gt; template_name}}</code> syntax.
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
                         <label asp-for="Input.HtmlBody" class="form-label">HTML Body <span class="text-danger">*</span></label>
                         <textarea asp-for="Input.HtmlBody" class="form-control font-monospace"
                                   rows="15" placeholder="Enter HTML body with Scriban placeholders e.g. {{ recipient.name }}"></textarea>
@@ -50,7 +65,8 @@
                         <div class="form-text">
                             Supports Scriban syntax: <code>{{ variable }}</code> for scalar,
                             <code>{{ for item in list }} ... {{ end }}</code> for iteration,
-                            <code>{{ if condition }} ... {{ end }}</code> for conditionals.
+                            <code>{{ if condition }} ... {{ end }}</code> for conditionals,
+                            <code>{{&gt; sub_name}}</code> for sub-template embedding.
                         </div>
                     </div>
 

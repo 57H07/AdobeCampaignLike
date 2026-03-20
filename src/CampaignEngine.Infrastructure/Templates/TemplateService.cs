@@ -85,6 +85,7 @@ public sealed class TemplateService : ITemplateService
             Channel = request.Channel,
             HtmlBody = request.HtmlBody,
             Description = request.Description,
+            IsSubTemplate = request.IsSubTemplate,
             Status = TemplateStatus.Draft,
             Version = 1
         };
@@ -117,6 +118,9 @@ public sealed class TemplateService : ITemplateService
         template.HtmlBody = request.HtmlBody;
         template.Description = request.Description;
 
+        if (request.IsSubTemplate.HasValue)
+            template.IsSubTemplate = request.IsSubTemplate.Value;
+
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation(
@@ -141,6 +145,28 @@ public sealed class TemplateService : ITemplateService
 
         _logger.LogInformation(
             "Template soft-deleted: Id={TemplateId}, Name={Name}", template.Id, template.Name);
+    }
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<TemplateSummaryDto>> GetSubTemplatesAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var items = await _dbContext.Templates
+            .AsNoTracking()
+            .Where(t => t.IsSubTemplate)
+            .OrderBy(t => t.Channel)
+            .ThenBy(t => t.Name)
+            .ToListAsync(cancellationToken);
+
+        return items.Select(t => new TemplateSummaryDto
+        {
+            Id = t.Id,
+            Name = t.Name,
+            Channel = t.Channel.ToString(),
+            Status = t.Status.ToString(),
+            IsSubTemplate = t.IsSubTemplate,
+            Description = t.Description
+        }).ToList().AsReadOnly();
     }
 
     // ----------------------------------------------------------------

@@ -11,6 +11,17 @@
     </a>
 </div>
 
+@if (Model.Input.IsSubTemplate)
+{
+    <div class="alert alert-info d-flex align-items-center mb-3" role="alert">
+        <i class="bi bi-puzzle-fill me-2"></i>
+        <div>
+            <strong>Sub-template block</strong> — This template is a reusable component.
+            Embed it in parent templates using: <code class="ms-1">{{&gt; @Model.Input.Name}}</code>
+        </div>
+    </div>
+}
+
 <div class="row">
     <div class="col-lg-8">
         <div class="card">
@@ -33,6 +44,12 @@
                                 "Archived"  => "bg-danger",
                                 _           => "bg-secondary"
                             };
+                        }
+                        @if (Model.Input.IsSubTemplate)
+                        {
+                            <span class="badge bg-info me-1" title="This template is a reusable sub-template block">
+                                <i class="bi bi-puzzle-fill"></i> Sub-template
+                            </span>
                         }
                         <span class="badge @channelBadge me-1">@Model.ChannelDisplay</span>
                         <span class="badge @statusBadge">@Model.StatusDisplay</span>
@@ -63,8 +80,24 @@
                     </div>
 
                     <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input asp-for="Input.IsSubTemplate" class="form-check-input" type="checkbox" role="switch" id="isSubTemplateSwitch" />
+                            <label class="form-check-label" for="isSubTemplateSwitch">
+                                <i class="bi bi-puzzle-fill text-info"></i>
+                                <strong>Sub-template block</strong>
+                                <span class="text-muted ms-1">— make this template reusable via <code>{{&gt; @Model.Input.Name}}</code></span>
+                            </label>
+                        </div>
+                        <div class="form-text">
+                            Sub-templates can be embedded in parent templates using the
+                            <code>{{&gt; template_name}}</code> syntax.
+                            Maximum nesting depth: 5 levels.
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
                         <label asp-for="Input.HtmlBody" class="form-label">HTML Body <span class="text-danger">*</span></label>
-                        <textarea asp-for="Input.HtmlBody" class="form-control font-monospace" rows="15"></textarea>
+                        <textarea asp-for="Input.HtmlBody" class="form-control font-monospace" rows="15" id="htmlBodyEditor"></textarea>
                         <span asp-validation-for="Input.HtmlBody" class="text-danger"></span>
                     </div>
 
@@ -77,6 +110,29 @@
                 </form>
             </div>
         </div>
+
+        @if (Model.ReferencedSubTemplates.Count > 0)
+        {
+            <div class="card mt-3">
+                <div class="card-header bg-info bg-opacity-10">
+                    <h6 class="mb-0 text-info">
+                        <i class="bi bi-puzzle-fill me-1"></i>
+                        Referenced Sub-templates (@Model.ReferencedSubTemplates.Count)
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <p class="small text-muted mb-2">The following sub-templates are referenced in this template's HTML body and will be resolved at render time:</p>
+                    <div class="d-flex flex-wrap gap-2">
+                        @foreach (var refName in Model.ReferencedSubTemplates)
+                        {
+                            <span class="badge bg-info text-dark">
+                                <i class="bi bi-puzzle-fill me-1"></i>{{&gt; @refName}}
+                            </span>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
     </div>
 
     <div class="col-lg-4">
@@ -87,13 +143,105 @@
                 <ul class="list-unstyled small font-monospace">
                     <li class="mb-1"><code>{{ variable }}</code> — scalar value</li>
                     <li class="mb-1"><code>{{ for item in list }}<br />...<br />{{ end }}</code> — iteration</li>
-                    <li><code>{{ if condition }}<br />...<br />{{ end }}</code> — conditional</li>
+                    <li class="mb-2"><code>{{ if condition }}<br />...<br />{{ end }}</code> — conditional</li>
+                    <li class="border-top pt-2 mb-1 text-info">
+                        <strong>Sub-template syntax:</strong>
+                    </li>
+                    <li><code>{{&gt; name}}</code> — embed sub-template</li>
                 </ul>
             </div>
         </div>
+
+        @if (Model.AvailableSubTemplates.Count > 0)
+        {
+            <div class="card mt-3">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">
+                        <i class="bi bi-puzzle-fill text-info me-1"></i>
+                        Available Sub-templates
+                    </h6>
+                    <span class="badge bg-info">@Model.AvailableSubTemplates.Count</span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        @foreach (var sub in Model.AvailableSubTemplates)
+                        {
+                            var isReferenced = Model.ReferencedSubTemplates.Contains(sub.Name, StringComparer.OrdinalIgnoreCase);
+                            <div class="list-group-item list-group-item-action p-2 @(isReferenced ? "list-group-item-info" : "")">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <div class="fw-semibold small">@sub.Name</div>
+                                        @if (!string.IsNullOrEmpty(sub.Description))
+                                        {
+                                            <div class="text-muted" style="font-size:0.75rem">@sub.Description</div>
+                                        }
+                                    </div>
+                                    <div class="d-flex flex-column align-items-end gap-1">
+                                        @{
+                                            var chBadge = sub.Channel switch
+                                            {
+                                                "Email"  => "bg-primary",
+                                                "Letter" => "bg-warning text-dark",
+                                                "Sms"    => "bg-success",
+                                                _        => "bg-secondary"
+                                            };
+                                        }
+                                        <span class="badge @chBadge" style="font-size:0.65rem">@sub.Channel</span>
+                                        @if (isReferenced)
+                                        {
+                                            <span class="badge bg-info text-dark" style="font-size:0.65rem" title="Already referenced in this template">
+                                                <i class="bi bi-check-circle-fill"></i> Used
+                                            </span>
+                                        }
+                                    </div>
+                                </div>
+                                <div class="mt-1">
+                                    <code class="small text-info copy-subtemplate" style="cursor:pointer"
+                                          onclick="insertSubTemplate('@sub.Name')"
+                                          title="Click to copy insertion syntax">{{&gt; @sub.Name}}</code>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <small class="text-muted">Click <code>{{&gt; name}}</code> to insert at cursor position in the HTML editor.</small>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="bi bi-puzzle-fill text-muted me-1"></i>
+                        Sub-templates
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <p class="small text-muted mb-0">
+                        No sub-templates available yet.
+                        <a asp-page="Create">Create a template</a> and mark it as a sub-template block.
+                    </p>
+                </div>
+            </div>
+        }
     </div>
 </div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        function insertSubTemplate(name) {
+            var editor = document.getElementById('htmlBodyEditor');
+            if (!editor) return;
+            var syntax = '{{> ' + name + '}}';
+            var start = editor.selectionStart;
+            var end = editor.selectionEnd;
+            var text = editor.value;
+            editor.value = text.substring(0, start) + syntax + text.substring(end);
+            editor.selectionStart = editor.selectionEnd = start + syntax.length;
+            editor.focus();
+        }
+    </script>
 }

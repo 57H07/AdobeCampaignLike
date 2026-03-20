@@ -42,4 +42,11 @@ public interface ITemplateService
     /// Throws NotFoundException if id does not exist.
     /// </summary>
     Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Returns all non-deleted templates flagged as sub-templates (IsSubTemplate = true).
+    /// Used by the sub-template selector UI.
+    /// </summary>
+    Task<IReadOnlyList<TemplateSummaryDto>> GetSubTemplatesAsync(
+        CancellationToken cancellationToken = default);
 }
