@@ -439,7 +439,8 @@
 ---
 
 #### [US-009] - Template lifecycle workflow
-**Status:** ðŸŸ¡ TODO
+**Status:** 🔵 IN PROGRESS
+**Start date:** 2026-03-20
 **Priority:** ðŸŸ  Medium
 **Complexity:** S
 **Epic:** Template Management
