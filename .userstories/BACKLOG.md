@@ -353,8 +353,9 @@
 ---
 
 #### [US-007] - Sub-template composition
-**Status:** ðŸ”µ IN PROGRESS
+**Status:** âœ… DONE
 **Start date:** 2026-03-20
+**End date:** 2026-03-20
 **Priority:** ðŸ”´ High
 **Complexity:** M
 **Epic:** Template Management
@@ -367,22 +368,22 @@
 > Sub-template composition: Support reusable sub-templates (header, footer, signature blocks) that can be embedded in parent templates.
 
 **Acceptance criteria:**
-- [ ] Sub-templates can be created as standalone templates
-- [ ] Parent templates can reference sub-templates via placeholder syntax
-- [ ] Sub-templates are resolved recursively during rendering
-- [ ] Changes to sub-templates propagate to parent previews (not frozen campaigns)
-- [ ] Circular reference detection prevents infinite loops
+- [x] Sub-templates can be created as standalone templates
+- [x] Parent templates can reference sub-templates via placeholder syntax
+- [x] Sub-templates are resolved recursively during rendering
+- [x] Changes to sub-templates propagate to parent previews (not frozen campaigns)
+- [x] Circular reference detection prevents infinite loops
 
 **Technical tasks:**
-- [ ] `TASK-007-01` - **[Model]** Add IsSubTemplate flag to Template entity
-- [ ] `TASK-007-02` - **[Model]** Create TemplateReference value object
-- [ ] `TASK-007-03` - **[Service]** Implement sub-template resolution logic
-- [ ] `TASK-007-04` - **[Service]** Add circular reference detection
-- [ ] `TASK-007-05` - **[Frontend]** Sub-template selector in template editor
-- [ ] `TASK-007-06` - **[Frontend]** Visual indicator for sub-template usage
-- [ ] `TASK-007-07` - **[Test]** Unit tests for recursive resolution
-- [ ] `TASK-007-08` - **[Test]** Circular reference detection tests
-- [ ] `TASK-007-09` - **[Doc]** Sub-template composition guide
+- [x] `TASK-007-01` - **[Model]** Add IsSubTemplate flag to Template entity
+- [x] `TASK-007-02` - **[Model]** Create TemplateReference value object
+- [x] `TASK-007-03` - **[Service]** Implement sub-template resolution logic
+- [x] `TASK-007-04` - **[Service]** Add circular reference detection
+- [x] `TASK-007-05` - **[Frontend]** Sub-template selector in template editor
+- [x] `TASK-007-06` - **[Frontend]** Visual indicator for sub-template usage
+- [x] `TASK-007-07` - **[Test]** Unit tests for recursive resolution
+- [x] `TASK-007-08` - **[Test]** Circular reference detection tests
+- [x] `TASK-007-09` - **[Doc]** Sub-template composition guide
 
 **Business rules:**
 1. Sub-template syntax: `{{> subtemplate_name}}`
