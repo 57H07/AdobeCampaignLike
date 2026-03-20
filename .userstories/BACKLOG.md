@@ -1660,7 +1660,8 @@
 > Ongoing technical improvements, refactoring, infrastructure work, and maintenance tasks that keep the codebase healthy and the team productive.
 
 #### [US-037] - Fix build warnings: Scriban vulnerabilities and compiler warnings
-**Status:** 🟡 TODO
+**Status:** 🔵 IN PROGRESS
+**Start date:** 2026-03-20
 **Priority:** 🔴 High
 **Complexity:** S
 **Epic:** Epic 10
