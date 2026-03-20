@@ -924,8 +924,9 @@
 ---
 
 #### [US-020] - SMS dispatcher
-**Status:** ðŸ”µ IN PROGRESS
+**Status:** âœ… DONE
 **Start date:** 2026-03-20
+**End date:** 2026-03-20
 **Priority:** ðŸ”´ High
 **Complexity:** M
 **Epic:** Dispatch Engine
@@ -938,11 +939,11 @@
 > Send plain text messages via external SMS provider API. Open Question Q2: provider contract needed.
 
 **Acceptance criteria:**
-- [ ] SMS provider integration (Twilio, Nexmo, or configurable)
-- [ ] Plain text message sending
-- [ ] Phone number validation
-- [ ] Delivery status tracking (if supported by provider)
-- [ ] Error handling for invalid numbers
+- [x] SMS provider integration (Twilio, Nexmo, or configurable) ✅
+- [x] Plain text message sending ✅
+- [x] Phone number validation ✅
+- [x] Delivery status tracking (if supported by provider) ✅
+- [x] Error handling for invalid numbers ✅
 
 **Technical tasks:**
 - [x] `TASK-020-01` - **[Service]** Implement SmsDispatcher ✅ 2026-03-20
@@ -951,7 +952,7 @@
 - [x] `TASK-020-04` - **[Service]** Provider API client (Twilio or generic) ✅ 2026-03-20
 - [x] `TASK-020-05` - **[Service]** Delivery status callback handler ✅ 2026-03-20
 - [x] `TASK-020-06` - **[Test]** Integration tests with provider sandbox ✅ 2026-03-20
-- [ ] `TASK-020-07` - **[Doc]** SMS provider setup guide
+- [x] `TASK-020-07` - **[Doc]** SMS provider setup guide ✅ 2026-03-20
 
 **Business rules:**
 1. Phone numbers in E.164 format (+1234567890)

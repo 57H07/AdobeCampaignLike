@@ -1,4 +1,5 @@
 using CampaignEngine.Application.Interfaces;
+using CampaignEngine.Infrastructure.ApiKeys;
 using CampaignEngine.Infrastructure.Configuration;
 using CampaignEngine.Infrastructure.DataSources;
 using Microsoft.Extensions.Options;
@@ -213,6 +214,15 @@ public static class ServiceCollectionExtensions
 
         // Audit trail for authentication events.
         services.AddScoped<IAuthAuditService, AuthAuditService>();
+
+        // ----------------------------------------------------------------
+        // API key management and authentication (US-031)
+        // ApiKeyService handles key generation (BCrypt), validation, revocation, rotation.
+        // Registered as Scoped — requires DbContext (scoped).
+        // ----------------------------------------------------------------
+        services.Configure<ApiKeyOptions>(
+            configuration.GetSection(ApiKeyOptions.SectionName));
+        services.AddScoped<IApiKeyService, ApiKeyService>();
 
         return services;
     }

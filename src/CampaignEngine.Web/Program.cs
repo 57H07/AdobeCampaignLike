@@ -115,6 +115,12 @@ try
     app.UseMiddleware<GlobalExceptionMiddleware>();
 
     app.UseAuthentication();
+
+    // API key authentication middleware — must run after UseAuthentication so it can
+    // complement (not replace) cookie-based Identity authentication for UI routes.
+    // If X-Api-Key header is present it validates the key and synthesises a ClaimsPrincipal.
+    app.UseMiddleware<ApiKeyAuthenticationMiddleware>();
+
     app.UseAuthorization();
 
     app.MapRazorPages();

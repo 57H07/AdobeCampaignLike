@@ -1,0 +1,138 @@
+@page
+@model CampaignEngine.Web.Pages.Admin.ApiKeys.IndexModel
+@{
+    ViewData["Title"] = "API Key Management";
+}
+
+<h1>API Key Management</h1>
+<p class="text-muted">Manage API keys for external system integration. Keys are hashed in the database — the plaintext value is shown only once at creation.</p>
+
+@if (!string.IsNullOrEmpty(Model.Message))
+{
+    <div class="alert @(Model.IsSuccess ? "alert-success" : "alert-danger") alert-dismissible fade show" role="alert">
+        @Model.Message
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@if (Model.NewPlaintextKey != null)
+{
+    <div class="alert alert-warning border-warning" role="alert">
+        <h5 class="alert-heading"><i class="bi bi-exclamation-triangle-fill"></i> Save your API key now</h5>
+        <p>This is the <strong>only time</strong> this key will be displayed. Copy it now — it cannot be retrieved again.</p>
+        <div class="input-group mb-2">
+            <input type="text" class="form-control font-monospace" id="plaintextKey" value="@Model.NewPlaintextKey" readonly>
+            <button class="btn btn-outline-secondary" type="button" onclick="navigator.clipboard.writeText(document.getElementById('plaintextKey').value)">
+                <i class="bi bi-clipboard"></i> Copy
+            </button>
+        </div>
+        <hr>
+        <p class="mb-0 text-muted small">
+            Use this key in the <code>X-Api-Key</code> HTTP header when calling the API.
+            Example: <code>X-Api-Key: @Model.NewPlaintextKey</code>
+        </p>
+    </div>
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h5 class="mb-0">All API Keys (@Model.ApiKeys.Count)</h5>
+    <a asp-page="Create" class="btn btn-primary">
+        <i class="bi bi-plus-circle"></i> Create API Key
+    </a>
+</div>
+
+<table class="table table-striped table-hover">
+    <thead class="table-dark">
+        <tr>
+            <th>Name</th>
+            <th>Key Prefix</th>
+            <th>Status</th>
+            <th>Rate Limit</th>
+            <th>Expires</th>
+            <th>Last Used</th>
+            <th>Created By</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var key in Model.ApiKeys)
+        {
+            <tr class="@(!key.IsActive ? "table-secondary text-muted" : "")">
+                <td>
+                    <strong>@key.Name</strong>
+                    @if (!string.IsNullOrEmpty(key.Description))
+                    {
+                        <br><small class="text-muted">@key.Description</small>
+                    }
+                </td>
+                <td><code>@key.KeyPrefix...</code></td>
+                <td>
+                    @if (!key.IsActive)
+                    {
+                        <span class="badge bg-secondary">Revoked</span>
+                    }
+                    else if (key.IsExpired)
+                    {
+                        <span class="badge bg-danger">Expired</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-success">Active</span>
+                    }
+                </td>
+                <td>@(key.RateLimitPerMinute.HasValue ? $"{key.RateLimitPerMinute}/min" : "Default (1000/min)")</td>
+                <td>
+                    @if (key.ExpiresAt.HasValue)
+                    {
+                        <span class="@(key.IsExpired ? "text-danger" : "")">
+                            @key.ExpiresAt.Value.ToString("yyyy-MM-dd")
+                        </span>
+                    }
+                    else
+                    {
+                        <span class="text-muted">Never</span>
+                    }
+                </td>
+                <td>@(key.LastUsedAt.HasValue ? key.LastUsedAt.Value.ToString("yyyy-MM-dd HH:mm") : "Never")</td>
+                <td>@(key.CreatedBy ?? "-")</td>
+                <td>
+                    @if (key.IsActive)
+                    {
+                        <form method="post" asp-page-handler="Revoke" asp-route-id="@key.Id" style="display:inline;">
+                            <button type="submit" class="btn btn-sm btn-outline-danger"
+                                    onclick="return confirm('Revoke API key \'@key.Name\'? This cannot be undone.')">
+                                <i class="bi bi-x-circle"></i> Revoke
+                            </button>
+                        </form>
+                        <form method="post" asp-page-handler="Rotate" asp-route-id="@key.Id" style="display:inline;">
+                            <button type="submit" class="btn btn-sm btn-outline-warning"
+                                    onclick="return confirm('Rotate API key \'@key.Name\'? The old key will be revoked immediately.')">
+                                <i class="bi bi-arrow-repeat"></i> Rotate
+                            </button>
+                        </form>
+                    }
+                </td>
+            </tr>
+        }
+        @if (!Model.ApiKeys.Any())
+        {
+            <tr>
+                <td colspan="8" class="text-center text-muted">No API keys found. <a asp-page="Create">Create one</a>.</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<div class="card mt-4">
+    <div class="card-header">Usage</div>
+    <div class="card-body">
+        <p>Pass the API key in the <code>X-Api-Key</code> HTTP header for all API calls:</p>
+        <pre><code>POST /api/send HTTP/1.1
+Host: your-server.example.com
+X-Api-Key: ce_aBcDeFgH...
+Content-Type: application/json
+
+{ "templateId": "...", "channel": "Email", ... }</code></pre>
+        <p class="text-muted small mb-0">Rate limiting applies per key (default: 1000 requests/minute). A 429 Too Many Requests response is returned when the limit is exceeded.</p>
+    </div>
+</div>

@@ -112,7 +112,7 @@ public sealed class ApiKeyService : IApiKeyService
     public async Task RevokeAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var entity = await _db.ApiKeys.FindAsync([id], cancellationToken)
-            ?? throw new NotFoundException($"API key with Id '{id}' not found.");
+            ?? throw new NotFoundException("ApiKey", id);
 
         if (!entity.IsActive)
             throw new ValidationException($"API key '{entity.Name}' is already revoked.");
@@ -131,7 +131,7 @@ public sealed class ApiKeyService : IApiKeyService
         CancellationToken cancellationToken = default)
     {
         var existing = await _db.ApiKeys.FindAsync([id], cancellationToken)
-            ?? throw new NotFoundException($"API key with Id '{id}' not found.");
+            ?? throw new NotFoundException("ApiKey", id);
 
         // Revoke the old key
         existing.IsActive = false;
