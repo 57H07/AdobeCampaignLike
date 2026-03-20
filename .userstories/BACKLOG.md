@@ -898,11 +898,11 @@
 - [ ] SMTP error handling and retry logic
 
 **Technical tasks:**
-- [ ] `TASK-019-01` - **[Service]** Implement EmailDispatcher with MailKit
-- [ ] `TASK-019-02` - **[Config]** SMTP configuration model
-- [ ] `TASK-019-03` - **[Service]** Attachment handling from file paths
-- [ ] `TASK-019-04` - **[Service]** CC/BCC recipient list handling
-- [ ] `TASK-019-05` - **[Service]** SMTP error categorization (transient vs permanent)
+- [x] `TASK-019-01` - **[Service]** Implement EmailDispatcher with MailKit ✅ 2026-03-20
+- [x] `TASK-019-02` - **[Config]** SMTP configuration model ✅ 2026-03-20
+- [x] `TASK-019-03` - **[Service]** Attachment handling from file paths ✅ 2026-03-20
+- [x] `TASK-019-04` - **[Service]** CC/BCC recipient list handling ✅ 2026-03-20
+- [x] `TASK-019-05` - **[Service]** SMTP error categorization (transient vs permanent) ✅ 2026-03-20
 - [ ] `TASK-019-06` - **[Test]** Integration tests with local SMTP server
 - [ ] `TASK-019-07` - **[Test]** Attachment validation tests
 - [ ] `TASK-019-08` - **[Doc]** SMTP configuration guide

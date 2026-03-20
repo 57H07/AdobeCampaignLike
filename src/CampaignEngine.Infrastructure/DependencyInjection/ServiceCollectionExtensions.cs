@@ -1,6 +1,7 @@
 using CampaignEngine.Application.Interfaces;
 using CampaignEngine.Infrastructure.Configuration;
 using CampaignEngine.Infrastructure.DataSources;
+using Microsoft.Extensions.Options;
 using CampaignEngine.Infrastructure.Dispatch;
 using CampaignEngine.Infrastructure.Identity;
 using CampaignEngine.Infrastructure.Logging;
@@ -127,8 +128,9 @@ public static class ServiceCollectionExtensions
         // Channel dispatchers registered as IChannelDispatcher implementations.
         // Each dispatcher registers itself — the registry resolves by ChannelType at runtime.
         // To add a new channel: services.AddScoped<IChannelDispatcher, YourNewDispatcher>()
-        // Example (to be enabled when dispatchers are implemented):
-        // services.AddScoped<IChannelDispatcher, SmtpEmailDispatcher>();
+        //
+        // US-019: EmailDispatcher using MailKit — handles ChannelType.Email sends via SMTP.
+        services.AddScoped<IChannelDispatcher, EmailDispatcher>();
         // services.AddScoped<IChannelDispatcher, SmsApiDispatcher>();
         // services.AddScoped<IChannelDispatcher, PdfLetterDispatcher>();
 
@@ -142,9 +144,25 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IConnectionTestService, ConnectionTestService>();
         services.AddScoped<IDataSourceService, DataSourceService>();
 
-        // Data source connectors (strategy pattern)
-        // Example:
-        // services.AddScoped<IDataSourceConnector, SqlServerDataSourceConnector>();
+        // ----------------------------------------------------------------
+        // Data source connectors (strategy pattern keyed by DataSourceType)
+        // SqlServerConnector: Dapper-based, parameterized SQL, read-only.
+        // Registered as Scoped — opens/closes SqlConnection per call (ADO.NET pools handles reuse).
+        // ----------------------------------------------------------------
+        services.Configure<SqlServerConnectorOptions>(
+            configuration.GetSection(SqlServerConnectorOptions.SectionName));
+
+        services.AddScoped<SqlServerConnector>(sp =>
+        {
+            var opts = sp.GetRequiredService<IOptions<SqlServerConnectorOptions>>().Value;
+            var logger = sp.GetRequiredService<IAppLogger<SqlServerConnector>>();
+            return new SqlServerConnector(opts, logger);
+        });
+
+        // Register as IDataSourceConnector for consumers that inject by interface.
+        // When multiple connector implementations exist, resolve by DataSourceType via a registry.
+        services.AddScoped<IDataSourceConnector, SqlServerConnector>(sp =>
+            sp.GetRequiredService<SqlServerConnector>());
 
         // ----------------------------------------------------------------
         // ASP.NET Core Identity: user and role management
