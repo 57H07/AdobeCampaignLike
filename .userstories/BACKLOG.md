@@ -708,7 +708,8 @@
 ---
 
 #### [US-015] - SQL Server data connector implementation
-**Status:** ðŸŸ¡ TODO
+**Status:** ðµ IN PROGRESS
+**Start date:** 2026-03-20
 **Priority:** ðŸ”´ High
 **Complexity:** M
 **Epic:** Data Source Connector
@@ -876,7 +877,8 @@
 ---
 
 #### [US-019] - Email dispatcher (SMTP)
-**Status:** ðŸŸ¡ TODO
+**Status:** ðµ IN PROGRESS
+**Start date:** 2026-03-20
 **Priority:** ðŸ”´ High
 **Complexity:** M
 **Epic:** Dispatch Engine
