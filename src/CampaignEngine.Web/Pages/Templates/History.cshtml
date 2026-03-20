@@ -1,0 +1,265 @@
+@page "{id:guid}"
+@model CampaignEngine.Web.Pages.Templates.TemplateHistoryModel
+@{
+    ViewData["Title"] = Model.Template is not null ? $"Version History — {Model.Template.Name}" : "Version History";
+}
+
+@if (Model.Template is null)
+{
+    <div class="alert alert-warning">Template not found.</div>
+    <a asp-page="Index" class="btn btn-outline-secondary">Back to list</a>
+}
+else
+{
+    var channelBadge = Model.Template.Channel switch
+    {
+        "Email"  => "bg-primary",
+        "Letter" => "bg-warning text-dark",
+        "Sms"    => "bg-success",
+        _        => "bg-secondary"
+    };
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h1 class="mb-1">Version History</h1>
+            <h5 class="text-muted fw-normal">
+                <span class="badge @channelBadge me-1">@Model.Template.Channel</span>
+                @Model.Template.Name &mdash; current version: <strong>v@Model.Template.Version</strong>
+            </h5>
+        </div>
+        <div>
+            <a asp-page="Detail" asp-route-id="@Model.Template.Id" class="btn btn-outline-secondary me-1">
+                <i class="bi bi-file-text"></i> Template Detail
+            </a>
+            <a asp-page="Index" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back
+            </a>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(Request.Query["message"]))
+    {
+        var isSuccess = Request.Query["success"] == "true";
+        <div class="alert @(isSuccess ? "alert-success" : "alert-danger") alert-dismissible fade show mb-3" role="alert">
+            @Request.Query["message"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger mb-3" role="alert">@Model.ErrorMessage</div>
+    }
+
+    <div class="row g-4">
+        @* Version list *@
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">Versions (@(Model.History.Count + 1) total)</h6>
+                </div>
+                <div class="list-group list-group-flush">
+                    @* Current live version *@
+                    <div class="list-group-item">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <span class="badge bg-primary me-1">v@Model.Template.Version</span>
+                                <strong>Current</strong>
+                                <small class="text-muted d-block">@Model.Template.Name</small>
+                            </div>
+                            @if (Model.History.Count > 0)
+                            {
+                                <a asp-page="History"
+                                   asp-route-id="@Model.Template.Id"
+                                   asp-route-diffFrom="@Model.History.First().Version"
+                                   asp-route-diffTo="@Model.Template.Version"
+                                   class="btn btn-sm btn-outline-info">
+                                    <i class="bi bi-arrows-expand"></i> Diff
+                                </a>
+                            }
+                        </div>
+                        <small class="text-muted">Updated: @Model.Template.UpdatedAt.ToString("yyyy-MM-dd HH:mm") UTC</small>
+                    </div>
+                    @* Historic versions *@
+                    @foreach (var entry in Model.History)
+                    {
+                        var isSelected = Model.Diff is not null &&
+                                         (Model.DiffFrom == entry.Version || Model.DiffTo == entry.Version);
+                        <div class="list-group-item @(isSelected ? "active" : "")">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <span class="badge @(isSelected ? "bg-light text-dark" : "bg-secondary") me-1">v@entry.Version</span>
+                                    <span class="@(isSelected ? "text-white" : "")">@entry.Name</span>
+                                    @if (!string.IsNullOrEmpty(entry.ChangedBy))
+                                    {
+                                        <small class="@(isSelected ? "text-white-50" : "text-muted") d-block">
+                                            by @entry.ChangedBy
+                                        </small>
+                                    }
+                                </div>
+                                <div class="d-flex flex-column gap-1 align-items-end">
+                                    <a asp-page="History"
+                                       asp-route-id="@Model.Template.Id"
+                                       asp-route-diffFrom="@entry.Version"
+                                       class="btn btn-sm @(isSelected ? "btn-light text-dark" : "btn-outline-info")">
+                                        <i class="bi bi-arrows-expand"></i> Diff
+                                    </a>
+                                    @if (User.IsInRole("Designer") || User.IsInRole("Admin"))
+                                    {
+                                        <button type="button"
+                                                class="btn btn-sm @(isSelected ? "btn-light text-danger" : "btn-outline-danger")"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#revertModal"
+                                                data-version="@entry.Version"
+                                                data-name="@entry.Name"
+                                                data-template-id="@Model.Template.Id">
+                                            <i class="bi bi-arrow-counterclockwise"></i> Revert
+                                        </button>
+                                    }
+                                </div>
+                            </div>
+                            <small class="@(isSelected ? "text-white-50" : "text-muted")">
+                                @entry.CreatedAt.ToString("yyyy-MM-dd HH:mm") UTC
+                            </small>
+                        </div>
+                    }
+                    @if (Model.History.Count == 0)
+                    {
+                        <div class="list-group-item text-muted">
+                            <small>No version history yet. History is recorded after the first update.</small>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        @* Diff view *@
+        <div class="col-md-8">
+            @if (Model.Diff is not null)
+            {
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            Diff: v@Model.Diff.FromVersion &rarr; v@Model.Diff.ToVersion
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        @if (!Model.Diff.NameChanged && !Model.Diff.HtmlBodyChanged)
+                        {
+                            <p class="text-muted mb-0">No differences between these versions.</p>
+                        }
+                        else
+                        {
+                            @if (Model.Diff.NameChanged)
+                            {
+                                <div class="mb-3">
+                                    <h6>Name</h6>
+                                    <div class="d-flex gap-2">
+                                        <div class="flex-fill p-2 bg-danger bg-opacity-10 border border-danger rounded">
+                                            <small class="text-danger fw-bold">v@Model.Diff.FromVersion</small><br>
+                                            <span>@Model.Diff.FromName</span>
+                                        </div>
+                                        <div class="d-flex align-items-center"><i class="bi bi-arrow-right text-muted"></i></div>
+                                        <div class="flex-fill p-2 bg-success bg-opacity-10 border border-success rounded">
+                                            <small class="text-success fw-bold">v@Model.Diff.ToVersion</small><br>
+                                            <span>@Model.Diff.ToName</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+
+                            @if (Model.Diff.HtmlBodyChanged)
+                            {
+                                <div>
+                                    <h6>HTML Body</h6>
+                                    <div class="row g-2">
+                                        <div class="col-6">
+                                            <div class="p-2 bg-danger bg-opacity-10 border border-danger rounded">
+                                                <small class="text-danger fw-bold d-block mb-1">v@Model.Diff.FromVersion (before)</small>
+                                                <pre class="mb-0" style="font-size:0.75em; max-height:400px; overflow:auto; white-space:pre-wrap;">@Model.Diff.FromHtmlBody</pre>
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="p-2 bg-success bg-opacity-10 border border-success rounded">
+                                                <small class="text-success fw-bold d-block mb-1">v@Model.Diff.ToVersion (after)</small>
+                                                <pre class="mb-0" style="font-size:0.75em; max-height:400px; overflow:auto; white-space:pre-wrap;">@Model.Diff.ToHtmlBody</pre>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        }
+                    </div>
+                </div>
+            }
+            else if (Model.History.Count > 0)
+            {
+                <div class="card border-dashed">
+                    <div class="card-body text-center text-muted py-5">
+                        <i class="bi bi-arrows-expand display-4 d-block mb-2"></i>
+                        <p class="mb-0">Select a version from the list and click <strong>Diff</strong> to compare it with the current version.</p>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="card">
+                    <div class="card-body text-center text-muted py-5">
+                        <i class="bi bi-clock-history display-4 d-block mb-2"></i>
+                        <p class="mb-0">This template has not been edited yet. Version history will appear here after the first update.</p>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    @* Revert confirmation modal (TASK-008-07) *@
+    <div class="modal fade" id="revertModal" tabindex="-1" aria-labelledby="revertModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="revertModalLabel">
+                        <i class="bi bi-arrow-counterclockwise text-warning me-1"></i>
+                        Revert Template
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>
+                        You are about to revert <strong>@Model.Template.Name</strong> to
+                        <strong><span id="revertVersionLabel">version N</span></strong>.
+                    </p>
+                    <p class="text-muted mb-0">
+                        The current content will be saved as a new version before the revert is applied.
+                        This action does not delete any history — it creates a new version with the historic content.
+                    </p>
+                    <div class="alert alert-warning mt-3 mb-0" role="alert">
+                        <i class="bi bi-exclamation-triangle me-1"></i>
+                        <strong>Note:</strong> Reverting to a previous version will increment the version counter
+                        and may affect published campaigns that reference this template.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <form id="revertForm" method="post" asp-page-handler="Revert" asp-route-id="@Model.Template.Id">
+                        <input type="hidden" name="version" id="revertVersionInput" value="0" />
+                        <button type="submit" class="btn btn-warning">
+                            <i class="bi bi-arrow-counterclockwise me-1"></i>
+                            Revert to this version
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Populate modal with the version being reverted to
+        document.getElementById('revertModal').addEventListener('show.bs.modal', function (event) {
+            var button = event.relatedTarget;
+            var version = button.getAttribute('data-version');
+            document.getElementById('revertVersionLabel').textContent = 'version ' + version;
+            document.getElementById('revertVersionInput').value = version;
+        });
+    </script>
+}

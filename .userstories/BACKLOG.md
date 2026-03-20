@@ -464,7 +464,7 @@
 - [x] `TASK-009-02` - **[Service]** Implement status transition validation ✅ 2026-03-20
 - [x] `TASK-009-03` - **[API]** POST /api/templates/{id}/publish endpoint ✅ 2026-03-20
 - [x] `TASK-009-04` - **[API]** POST /api/templates/{id}/archive endpoint ✅ 2026-03-20
-- [ ] `TASK-009-05` - **[Frontend]** Status badges and transition buttons
+- [x] `TASK-009-05` - **[Frontend]** Status badges and transition buttons ✅ 2026-03-20
 - [ ] `TASK-009-06` - **[Test]** Status transition validation tests
 - [ ] `TASK-009-07` - **[Doc]** Template lifecycle documentation
 

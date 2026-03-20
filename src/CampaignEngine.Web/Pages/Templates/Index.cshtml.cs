@@ -2,6 +2,7 @@ using CampaignEngine.Application.DependencyInjection;
 using CampaignEngine.Application.DTOs.Templates;
 using CampaignEngine.Application.Interfaces;
 using CampaignEngine.Domain.Enums;
+using CampaignEngine.Domain.Exceptions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -53,7 +54,7 @@ public class TemplatesIndexModel : PageModel
     }
 
     /// <summary>
-    /// Soft-deletes a template.
+    /// Soft-deletes a template (sets IsDeleted = true).
     /// Access is role-checked in the handler: only Designer and Admin can proceed.
     /// </summary>
     public async Task<IActionResult> OnPostDeleteAsync(Guid id)
@@ -65,7 +66,55 @@ public class TemplatesIndexModel : PageModel
         try
         {
             await _templateService.DeleteAsync(id);
+            return RedirectToPage(new { message = "Template deleted successfully.", success = true });
+        }
+        catch (Exception)
+        {
+            return RedirectToPage(new { message = "Failed to delete template.", success = false });
+        }
+    }
+
+    /// <summary>
+    /// Publishes a template (transitions Draft → Published).
+    /// Access is role-checked: only Designer and Admin can proceed.
+    /// </summary>
+    public async Task<IActionResult> OnPostPublishAsync(Guid id)
+    {
+        if (!User.IsInRole("Designer") && !User.IsInRole("Admin"))
+            return Forbid();
+
+        try
+        {
+            await _templateService.PublishAsync(id);
+            return RedirectToPage(new { message = "Template published successfully.", success = true });
+        }
+        catch (ValidationException ex)
+        {
+            return RedirectToPage(new { message = ex.Message, success = false });
+        }
+        catch (Exception)
+        {
+            return RedirectToPage(new { message = "Failed to publish template.", success = false });
+        }
+    }
+
+    /// <summary>
+    /// Archives a template (transitions Draft or Published → Archived).
+    /// Access is role-checked: only Designer and Admin can proceed.
+    /// </summary>
+    public async Task<IActionResult> OnPostArchiveAsync(Guid id)
+    {
+        if (!User.IsInRole("Designer") && !User.IsInRole("Admin"))
+            return Forbid();
+
+        try
+        {
+            await _templateService.ArchiveAsync(id);
             return RedirectToPage(new { message = "Template archived successfully.", success = true });
+        }
+        catch (ValidationException ex)
+        {
+            return RedirectToPage(new { message = ex.Message, success = false });
         }
         catch (Exception)
         {

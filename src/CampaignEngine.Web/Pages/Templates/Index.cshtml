@@ -130,11 +130,26 @@
                                 <a asp-page="Detail" asp-route-id="@t.Id" class="btn btn-sm btn-outline-secondary">View</a>
                                 @if (User.IsInRole("Designer") || User.IsInRole("Admin"))
                                 {
-                                    <a asp-page="Edit" asp-route-id="@t.Id" class="btn btn-sm btn-outline-primary ms-1">Edit</a>
-                                    <form method="post" asp-page-handler="Delete" asp-route-id="@t.Id" style="display:inline;">
-                                        <button type="submit" class="btn btn-sm btn-outline-danger ms-1"
-                                                onclick="return confirm('Archive template \'@t.Name\'?')">Archive</button>
-                                    </form>
+                                    @if (t.Status != "Archived")
+                                    {
+                                        <a asp-page="Edit" asp-route-id="@t.Id" class="btn btn-sm btn-outline-primary ms-1">Edit</a>
+                                    }
+                                    @if (t.Status == "Draft")
+                                    {
+                                        <form method="post" asp-page-handler="Publish" asp-route-id="@t.Id" style="display:inline;">
+                                            <button type="submit" class="btn btn-sm btn-outline-success ms-1"
+                                                    onclick="return confirm('Publish template \'@t.Name\'?')"
+                                                    title="Transition from Draft to Published">Publish</button>
+                                        </form>
+                                    }
+                                    @if (t.Status != "Archived")
+                                    {
+                                        <form method="post" asp-page-handler="Archive" asp-route-id="@t.Id" style="display:inline;">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger ms-1"
+                                                    onclick="return confirm('Archive template \'@t.Name\'?\n\nArchived templates cannot be used in campaigns.')"
+                                                    title="Transition to Archived — cannot be undone">Archive</button>
+                                        </form>
+                                    }
                                 }
                             </td>
                         </tr>
