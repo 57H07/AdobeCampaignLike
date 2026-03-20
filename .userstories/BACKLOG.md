@@ -945,11 +945,11 @@
 - [ ] Error handling for invalid numbers
 
 **Technical tasks:**
-- [ ] `TASK-020-01` - **[Service]** Implement SmsDispatcher
-- [ ] `TASK-020-02` - **[Config]** SMS provider configuration (API key, endpoint)
-- [ ] `TASK-020-03` - **[Service]** Phone number validation (international format)
-- [ ] `TASK-020-04` - **[Service]** Provider API client (Twilio or generic)
-- [ ] `TASK-020-05` - **[Service]** Delivery status callback handler
+- [x] `TASK-020-01` - **[Service]** Implement SmsDispatcher ✅ 2026-03-20
+- [x] `TASK-020-02` - **[Config]** SMS provider configuration (API key, endpoint) ✅ 2026-03-20
+- [x] `TASK-020-03` - **[Service]** Phone number validation (international format) ✅ 2026-03-20
+- [x] `TASK-020-04` - **[Service]** Provider API client (Twilio or generic) ✅ 2026-03-20
+- [x] `TASK-020-05` - **[Service]** Delivery status callback handler ✅ 2026-03-20
 - [ ] `TASK-020-06` - **[Test]** Integration tests with provider sandbox
 - [ ] `TASK-020-07` - **[Doc]** SMS provider setup guide
 

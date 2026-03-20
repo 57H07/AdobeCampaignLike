@@ -157,6 +157,59 @@ public class SendLogService : ISendLogService
             .FirstOrDefaultAsync(l => l.Id == id, cancellationToken);
     }
 
+    /// <inheritdoc />
+    public async Task UpdateDeliveryStatusAsync(
+        string externalMessageId,
+        bool delivered,
+        string? errorDetail,
+        CancellationToken cancellationToken = default)
+    {
+        var entry = await _db.SendLogs
+            .FirstOrDefaultAsync(l => l.ExternalMessageId == externalMessageId, cancellationToken);
+
+        if (entry is null)
+        {
+            _logger.LogWarning(
+                "SMS delivery status callback received for unknown ExternalMessageId={ExternalMessageId}",
+                externalMessageId);
+            return;
+        }
+
+        if (delivered)
+        {
+            entry.Status = SendStatus.Sent;
+            entry.SentAt ??= DateTime.UtcNow;
+            entry.ErrorDetail = null;
+        }
+        else
+        {
+            entry.Status = SendStatus.Failed;
+            entry.ErrorDetail = errorDetail;
+        }
+
+        await _db.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation(
+            "SendLog delivery status updated via callback — " +
+            "Id={SendLogId} ExternalMessageId={ExternalMessageId} Delivered={Delivered}",
+            entry.Id, externalMessageId, delivered);
+    }
+
+    /// <inheritdoc />
+    public async Task SetExternalMessageIdAsync(
+        Guid sendLogId,
+        string externalMessageId,
+        CancellationToken cancellationToken = default)
+    {
+        var entry = await FindOrThrowAsync(sendLogId, cancellationToken);
+        entry.ExternalMessageId = externalMessageId;
+        await _db.SaveChangesAsync(cancellationToken);
+
+        _logger.LogDebug(
+            "SendLog ExternalMessageId set — Id={SendLogId} ExternalMessageId={ExternalMessageId}",
+            sendLogId, externalMessageId);
+    }
+
     // ----------------------------------------------------------------
     // Private helpers
     // ----------------------------------------------------------------

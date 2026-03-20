@@ -17,6 +17,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace CampaignEngine.Infrastructure.DependencyInjection;
 
@@ -35,6 +36,8 @@ public static class ServiceCollectionExtensions
             configuration.GetSection(CampaignEngineOptions.SectionName));
         services.Configure<SmtpOptions>(
             configuration.GetSection(SmtpOptions.SectionName));
+        services.Configure<SmsOptions>(
+            configuration.GetSection(SmsOptions.SectionName));
 
         // Register cross-cutting logging abstraction
         services.AddSingleton(typeof(IAppLogger<>), typeof(AppLogger<>));
@@ -131,7 +134,19 @@ public static class ServiceCollectionExtensions
         //
         // US-019: EmailDispatcher using MailKit — handles ChannelType.Email sends via SMTP.
         services.AddScoped<IChannelDispatcher, EmailDispatcher>();
-        // services.AddScoped<IChannelDispatcher, SmsApiDispatcher>();
+
+        // US-020: SmsDispatcher — handles ChannelType.Sms sends via configurable HTTP provider.
+        // SmsProviderClient is registered separately (wraps IHttpClientFactory) so it can be
+        // overridden in tests by subclassing.
+        services.AddHttpClient("SmsProvider");
+        services.AddScoped<SmsProviderClient>(sp =>
+        {
+            var opts = sp.GetRequiredService<IOptions<SmsOptions>>().Value;
+            var factory = sp.GetRequiredService<IHttpClientFactory>();
+            var logger = sp.GetRequiredService<ILogger<SmsProviderClient>>();
+            return new SmsProviderClient(opts, factory, logger);
+        });
+        services.AddScoped<IChannelDispatcher, SmsDispatcher>();
         // services.AddScoped<IChannelDispatcher, PdfLetterDispatcher>();
 
         // ----------------------------------------------------------------

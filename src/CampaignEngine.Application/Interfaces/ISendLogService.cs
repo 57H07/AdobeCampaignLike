@@ -79,4 +79,31 @@ public interface ISendLogService
     /// Returns a single send log by ID.
     /// </summary>
     Task<SendLog?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Updates the delivery status of a send log entry based on an inbound provider callback.
+    /// Looks up the send log by the provider-assigned external message ID.
+    /// If no matching entry is found, the call is a no-op (provider may have retried).
+    ///
+    /// TASK-020-05: Delivery status callback tracking.
+    /// </summary>
+    /// <param name="externalMessageId">Provider message ID (e.g. Twilio MessageSid).</param>
+    /// <param name="delivered">True if the provider confirmed delivery; false if failed.</param>
+    /// <param name="errorDetail">Optional error description when <paramref name="delivered"/> is false.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    Task UpdateDeliveryStatusAsync(
+        string externalMessageId,
+        bool delivered,
+        string? errorDetail,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Stores the provider-assigned external message ID on a send log entry.
+    /// Called after a successful dispatch to enable delivery receipt correlation.
+    /// TASK-020-05.
+    /// </summary>
+    Task SetExternalMessageIdAsync(
+        Guid sendLogId,
+        string externalMessageId,
+        CancellationToken cancellationToken = default);
 }

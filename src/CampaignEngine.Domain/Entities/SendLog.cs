@@ -26,6 +26,14 @@ public class SendLog : AuditableEntity
     /// </summary>
     public string? CorrelationId { get; set; }
 
+    /// <summary>
+    /// Provider-assigned message identifier returned after a successful dispatch.
+    /// Used to correlate inbound delivery status callbacks with this log entry.
+    /// E.g. Twilio MessageSid, or the "id" field from a generic SMS provider response.
+    /// TASK-020-05: delivery status tracking.
+    /// </summary>
+    public string? ExternalMessageId { get; set; }
+
     // Navigation properties
     public Campaign? Campaign { get; set; }
 }

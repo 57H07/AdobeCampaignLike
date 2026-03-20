@@ -20,8 +20,15 @@ public class ApiKeyConfiguration : IEntityTypeConfiguration<ApiKey>
             .IsRequired()
             .HasMaxLength(500);
 
+        builder.Property(k => k.KeyPrefix)
+            .IsRequired()
+            .HasMaxLength(16);
+
         builder.Property(k => k.CreatedBy)
             .HasMaxLength(200);
+
+        builder.Property(k => k.Description)
+            .HasMaxLength(500);
 
         builder.Property(k => k.IsActive)
             .IsRequired()
@@ -32,6 +39,10 @@ public class ApiKeyConfiguration : IEntityTypeConfiguration<ApiKey>
 
         builder.Property(k => k.UpdatedAt)
             .IsRequired();
+
+        // Computed columns (IsExpired, IsValid) are ignored — not mapped to the DB.
+        builder.Ignore(k => k.IsExpired);
+        builder.Ignore(k => k.IsValid);
 
         builder.HasIndex(k => k.Name)
             .IsUnique()
