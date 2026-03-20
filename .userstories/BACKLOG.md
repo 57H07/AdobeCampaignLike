@@ -1,4 +1,4 @@
-﻿﻿﻿﻿# ðŸ“‹ Backlog - CampaignEngine
+﻿﻿﻿﻿﻿# ðŸ“‹ Backlog - CampaignEngine
 
 **Source:** _docs/prd.md
 **Created:** 2026-03-19
@@ -1414,7 +1414,8 @@
 ---
 
 #### [US-031] - API authentication and authorization
-**Status:** ðŸŸ¡ TODO
+**Status:** ðŸŔµ IN PROGRESS
+**Start date:** 2026-03-20
 **Priority:** ðŸ”´ High
 **Complexity:** M
 **Epic:** Generic Send API
