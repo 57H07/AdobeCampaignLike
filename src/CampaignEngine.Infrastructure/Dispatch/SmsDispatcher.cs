@@ -169,7 +169,7 @@ public class SmsDispatcher : IChannelDispatcher
     /// preserving whole words at the truncation boundary where possible.
     /// Uses the same algorithm as SmsPostProcessor.TruncateWholeWords.
     /// </summary>
-    internal static string TruncateMessage(string text, int maxLength)
+    public static string TruncateMessage(string text, int maxLength)
     {
         if (string.IsNullOrEmpty(text) || text.Length <= maxLength)
             return text;
