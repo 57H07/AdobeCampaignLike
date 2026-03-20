@@ -1437,12 +1437,12 @@
 - [ ] Rate limiting per API key
 
 **Technical tasks:**
-- [ ] `TASK-031-01` - **[Model]** Create ApiKey entity
-- [ ] `TASK-031-02` - **[Auth]** Implement API key authentication middleware
-- [ ] `TASK-031-03` - **[Service]** API key generation and hashing service
-- [ ] `TASK-031-04` - **[API]** API key management endpoints (Admin only)
-- [ ] `TASK-031-05` - **[Frontend]** API key management UI
-- [ ] `TASK-031-06` - **[Config]** HTTPS enforcement configuration
+- [x] `TASK-031-01` - **[Model]** Create ApiKey entity ✅ 2026-03-20
+- [x] `TASK-031-02` - **[Auth]** Implement API key authentication middleware ✅ 2026-03-20
+- [x] `TASK-031-03` - **[Service]** API key generation and hashing service ✅ 2026-03-20
+- [x] `TASK-031-04` - **[API]** API key management endpoints (Admin only) ✅ 2026-03-20
+- [x] `TASK-031-05` - **[Frontend]** API key management UI ✅ 2026-03-20
+- [x] `TASK-031-06` - **[Config]** HTTPS enforcement configuration ✅ 2026-03-20
 - [ ] `TASK-031-07` - **[Test]** Authentication tests
 - [ ] `TASK-031-08` - **[Doc]** API authentication guide
 

@@ -121,6 +121,11 @@ try
     // If X-Api-Key header is present it validates the key and synthesises a ClaimsPrincipal.
     app.UseMiddleware<ApiKeyAuthenticationMiddleware>();
 
+    // API key rate limiting — must run after ApiKeyAuthenticationMiddleware so
+    // ApiKeyId and ApiKeyRateLimitPerMinute context items are already populated.
+    // Only requests authenticated via API key are subject to per-key rate limits.
+    app.UseMiddleware<ApiKeyRateLimitingMiddleware>();
+
     app.UseAuthorization();
 
     app.MapRazorPages();
