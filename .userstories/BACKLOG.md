@@ -878,8 +878,9 @@
 ---
 
 #### [US-019] - Email dispatcher (SMTP)
-**Status:** ðµ IN PROGRESS
+**Status:** ✅ DONE
 **Start date:** 2026-03-20
+**End date:** 2026-03-20
 **Priority:** ðŸ”´ High
 **Complexity:** M
 **Epic:** Dispatch Engine
@@ -892,11 +893,11 @@
 > Send resolved HTML emails via configurable SMTP server with attachment and CC support.
 
 **Acceptance criteria:**
-- [ ] SMTP configuration in appsettings (server, port, credentials)
-- [ ] HTML email sending with proper headers
-- [ ] Attachment support (multiple files)
-- [ ] CC and BCC support
-- [ ] SMTP error handling and retry logic
+- [x] SMTP configuration in appsettings (server, port, credentials) ✅
+- [x] HTML email sending with proper headers ✅
+- [x] Attachment support (multiple files) ✅
+- [x] CC and BCC support ✅
+- [x] SMTP error handling and retry logic ✅
 
 **Technical tasks:**
 - [x] `TASK-019-01` - **[Service]** Implement EmailDispatcher with MailKit ✅ 2026-03-20
