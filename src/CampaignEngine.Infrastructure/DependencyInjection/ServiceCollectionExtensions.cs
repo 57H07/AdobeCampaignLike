@@ -1,5 +1,6 @@
 using CampaignEngine.Application.Interfaces;
 using CampaignEngine.Infrastructure.Configuration;
+using CampaignEngine.Infrastructure.DataSources;
 using CampaignEngine.Infrastructure.Dispatch;
 using CampaignEngine.Infrastructure.Identity;
 using CampaignEngine.Infrastructure.Logging;
@@ -7,6 +8,10 @@ using CampaignEngine.Infrastructure.Persistence;
 using CampaignEngine.Infrastructure.Persistence.Security;
 using CampaignEngine.Infrastructure.Persistence.Seed;
 using CampaignEngine.Infrastructure.Rendering;
+using CampaignEngine.Infrastructure.Rendering.PostProcessors;
+using CampaignEngine.Infrastructure.Templates;
+using DinkToPdf;
+using DinkToPdf.Contracts;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -70,12 +75,42 @@ public static class ServiceCollectionExtensions
         // ----------------------------------------------------------------
         services.AddSingleton<ITemplateRenderer, ScribanTemplateRenderer>();
 
+        // ----------------------------------------------------------------
+        // Channel post-processors (US-013)
+        // Strategy pattern: each channel registers its IChannelPostProcessor implementation.
+        // The registry resolves the correct processor at runtime based on ChannelType.
+        //
+        // DinkToPdf (Letter channel):
+        //   Requires libwkhtmltox.dll (x64) in the application root on Windows.
+        //   Download: https://wkhtmltopdf.org/downloads.html
+        //   The SynchronizedConverter is Singleton (thread-safe via internal lock).
+        // ----------------------------------------------------------------
+        services.Configure<LetterPostProcessorOptions>(
+            configuration.GetSection(LetterPostProcessorOptions.SectionName));
+
+        // DinkToPdf converter: Singleton — SynchronizedConverter serializes native calls.
+        services.AddSingleton<IConverter>(new SynchronizedConverter(new PdfTools()));
+
+        // Post-processor implementations (Scoped — safe to use scoped logger)
+        services.AddScoped<IChannelPostProcessor, EmailPostProcessor>();
+        services.AddScoped<IChannelPostProcessor, LetterPostProcessor>();
+        services.AddScoped<IChannelPostProcessor, SmsPostProcessor>();
+
+        // Registry resolves IChannelPostProcessor by ChannelType at runtime.
+        services.AddScoped<IChannelPostProcessorRegistry, ChannelPostProcessorRegistry>();
+
+        // PDF consolidation (PdfSharp — pure .NET, no native deps)
+        services.AddScoped<IPdfConsolidationService, PdfConsolidationService>();
+
         // Channel dispatcher registry — resolves dispatchers by ChannelType via DI strategy pattern.
         // Register as scoped so it can aggregate scoped IChannelDispatcher instances.
         services.AddScoped<IChannelDispatcherRegistry, ChannelDispatcherRegistry>();
 
         // Send log service — SEND_LOG is the source of truth for all dispatch activity.
         services.AddScoped<ISendLogService, SendLogService>();
+
+        // Template service — CRUD operations with soft delete and unique-name enforcement.
+        services.AddScoped<ITemplateService, TemplateService>();
 
         // Logging dispatch orchestrator — wraps dispatchers with before/after SEND_LOG recording.
         services.AddScoped<ILoggingDispatchOrchestrator, LoggingDispatchOrchestrator>();
@@ -87,6 +122,16 @@ public static class ServiceCollectionExtensions
         // services.AddScoped<IChannelDispatcher, SmtpEmailDispatcher>();
         // services.AddScoped<IChannelDispatcher, SmsApiDispatcher>();
         // services.AddScoped<IChannelDispatcher, PdfLetterDispatcher>();
+
+        // ----------------------------------------------------------------
+        // Data source management — declaration, schema, and connection testing
+        // ----------------------------------------------------------------
+        // IHttpClientFactory is used by ConnectionTestService for REST API tests.
+        // AddHttpClient() is idempotent and already called in Program.cs via AddControllers/Razor,
+        // but registering it here makes the Infrastructure layer self-contained.
+        services.AddHttpClient("ConnectionTest");
+        services.AddScoped<IConnectionTestService, ConnectionTestService>();
+        services.AddScoped<IDataSourceService, DataSourceService>();
 
         // Data source connectors (strategy pattern)
         // Example:

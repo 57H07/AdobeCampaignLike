@@ -1,0 +1,180 @@
+@page
+@model CampaignEngine.Web.Pages.Templates.TemplatesIndexModel
+@{
+    ViewData["Title"] = "Templates";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h1 class="mb-1">Templates</h1>
+        <p class="text-muted mb-0">Manage reusable message templates for Email, SMS, and Letter channels.</p>
+    </div>
+    @if (User.IsInRole("Designer") || User.IsInRole("Admin"))
+    {
+        <a asp-page="Create" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> New Template
+        </a>
+    }
+</div>
+
+@if (!string.IsNullOrEmpty(Model.StatusMessage))
+{
+    <div class="alert @(Model.IsSuccess ? "alert-success" : "alert-danger") alert-dismissible fade show" role="alert">
+        @Model.StatusMessage
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@* ------------------------------------------------------------------ *@
+@* Filter Panel                                                         *@
+@* ------------------------------------------------------------------ *@
+<div class="card mb-4">
+    <div class="card-header">
+        <h6 class="mb-0">Filters</h6>
+    </div>
+    <div class="card-body">
+        <form method="get" asp-page="Index">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">Channel</label>
+                    <select class="form-select" name="channel">
+                        <option value="">All Channels</option>
+                        <option value="1" selected="@(Model.Filter.Channel == "1")">Email</option>
+                        <option value="2" selected="@(Model.Filter.Channel == "2")">Letter</option>
+                        <option value="3" selected="@(Model.Filter.Channel == "3")">SMS</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Status</label>
+                    <select class="form-select" name="status">
+                        <option value="">All Statuses</option>
+                        <option value="1" selected="@(Model.Filter.Status == "1")">Draft</option>
+                        <option value="2" selected="@(Model.Filter.Status == "2")">Published</option>
+                        <option value="3" selected="@(Model.Filter.Status == "3")">Archived</option>
+                    </select>
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-search"></i> Search
+                    </button>
+                    <a asp-page="Index" class="btn btn-outline-secondary ms-2">Clear</a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@* ------------------------------------------------------------------ *@
+@* Results Grid                                                         *@
+@* ------------------------------------------------------------------ *@
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span>Templates: <strong>@Model.Total</strong></span>
+        <small class="text-muted">Page @Model.Page of @Model.TotalPages</small>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-sm table-striped table-hover mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Name</th>
+                        <th>Channel</th>
+                        <th>Status</th>
+                        <th>Version</th>
+                        <th>Updated (UTC)</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var t in Model.Items)
+                    {
+                        var channelBadge = t.Channel switch
+                        {
+                            "Email"  => "bg-primary",
+                            "Letter" => "bg-warning text-dark",
+                            "Sms"    => "bg-success",
+                            _        => "bg-secondary"
+                        };
+                        var statusBadge = t.Status switch
+                        {
+                            "Published" => "bg-success",
+                            "Draft"     => "bg-secondary",
+                            "Archived"  => "bg-danger",
+                            _           => "bg-secondary"
+                        };
+                        <tr>
+                            <td>
+                                <a asp-page="Detail" asp-route-id="@t.Id" class="fw-semibold text-decoration-none">@t.Name</a>
+                                @if (!string.IsNullOrEmpty(t.Description))
+                                {
+                                    <br /><small class="text-muted">@t.Description</small>
+                                }
+                            </td>
+                            <td><span class="badge @channelBadge">@t.Channel</span></td>
+                            <td><span class="badge @statusBadge">@t.Status</span></td>
+                            <td class="text-center">v@t.Version</td>
+                            <td class="text-nowrap">
+                                <small>@t.UpdatedAt.ToString("yyyy-MM-dd HH:mm")</small>
+                            </td>
+                            <td class="text-nowrap">
+                                <a asp-page="Detail" asp-route-id="@t.Id" class="btn btn-sm btn-outline-secondary">View</a>
+                                @if (User.IsInRole("Designer") || User.IsInRole("Admin"))
+                                {
+                                    <a asp-page="Edit" asp-route-id="@t.Id" class="btn btn-sm btn-outline-primary ms-1">Edit</a>
+                                    <form method="post" asp-page-handler="Delete" asp-route-id="@t.Id" style="display:inline;">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger ms-1"
+                                                onclick="return confirm('Archive template \'@t.Name\'?')">Archive</button>
+                                    </form>
+                                }
+                            </td>
+                        </tr>
+                    }
+                    @if (!Model.Items.Any())
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-4">
+                                No templates match the current filters.
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    @* Pagination *@
+    @if (Model.TotalPages > 1)
+    {
+        <div class="card-footer d-flex justify-content-between align-items-center">
+            <small class="text-muted">
+                Showing @((Model.Page - 1) * Model.PageSize + 1)–@(Math.Min(Model.Page * Model.PageSize, Model.Total)) of @Model.Total
+            </small>
+            <nav>
+                <ul class="pagination pagination-sm mb-0">
+                    @if (Model.Page > 1)
+                    {
+                        <li class="page-item">
+                            <a class="page-link"
+                               asp-page="Index"
+                               asp-route-page="@(Model.Page - 1)"
+                               asp-route-channel="@Model.Filter.Channel"
+                               asp-route-status="@Model.Filter.Status">Previous</a>
+                        </li>
+                    }
+                    @if (Model.Page < Model.TotalPages)
+                    {
+                        <li class="page-item">
+                            <a class="page-link"
+                               asp-page="Index"
+                               asp-route-page="@(Model.Page + 1)"
+                               asp-route-channel="@Model.Filter.Channel"
+                               asp-route-status="@Model.Filter.Status">Next</a>
+                        </li>
+                    }
+                </ul>
+            </nav>
+        </div>
+    }
+</div>

@@ -1,0 +1,103 @@
+@page "{id:guid}"
+@model CampaignEngine.Web.Pages.Templates.TemplateDetailModel
+@{
+    ViewData["Title"] = Model.Template?.Name ?? "Template Detail";
+}
+
+@if (Model.Template is null)
+{
+    <div class="alert alert-warning">Template not found.</div>
+    <a asp-page="Index" class="btn btn-outline-secondary">Back to list</a>
+}
+else
+{
+    var channelBadge = Model.Template.Channel switch
+    {
+        "Email"  => "bg-primary",
+        "Letter" => "bg-warning text-dark",
+        "Sms"    => "bg-success",
+        _        => "bg-secondary"
+    };
+    var statusBadge = Model.Template.Status switch
+    {
+        "Published" => "bg-success",
+        "Draft"     => "bg-secondary",
+        "Archived"  => "bg-danger",
+        _           => "bg-secondary"
+    };
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h1 class="mb-1">@Model.Template.Name</h1>
+            <span class="badge @channelBadge me-1">@Model.Template.Channel</span>
+            <span class="badge @statusBadge">@Model.Template.Status</span>
+            @if (Model.Template.IsSubTemplate)
+            {
+                <span class="badge bg-info ms-1">Sub-template</span>
+            }
+        </div>
+        <div>
+            @if (User.IsInRole("Designer") || User.IsInRole("Admin"))
+            {
+                <a asp-page="Edit" asp-route-id="@Model.Template.Id" class="btn btn-outline-primary me-1">
+                    <i class="bi bi-pencil"></i> Edit
+                </a>
+            }
+            <a asp-page="Index" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        @* Metadata card *@
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-header"><h6 class="mb-0">Metadata</h6></div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-5">ID</dt>
+                        <dd class="col-7"><code style="font-size:0.75em">@Model.Template.Id</code></dd>
+
+                        <dt class="col-5">Channel</dt>
+                        <dd class="col-7"><span class="badge @channelBadge">@Model.Template.Channel</span></dd>
+
+                        <dt class="col-5">Status</dt>
+                        <dd class="col-7"><span class="badge @statusBadge">@Model.Template.Status</span></dd>
+
+                        <dt class="col-5">Version</dt>
+                        <dd class="col-7">v@Model.Template.Version</dd>
+
+                        <dt class="col-5">Sub-template</dt>
+                        <dd class="col-7">@(Model.Template.IsSubTemplate ? "Yes" : "No")</dd>
+
+                        <dt class="col-5">Created</dt>
+                        <dd class="col-7"><small>@Model.Template.CreatedAt.ToString("yyyy-MM-dd HH:mm")</small></dd>
+
+                        <dt class="col-5">Updated</dt>
+                        <dd class="col-7"><small>@Model.Template.UpdatedAt.ToString("yyyy-MM-dd HH:mm")</small></dd>
+
+                        @if (!string.IsNullOrEmpty(Model.Template.Description))
+                        {
+                            <dt class="col-5">Description</dt>
+                            <dd class="col-7">@Model.Template.Description</dd>
+                        }
+                    </dl>
+                </div>
+            </div>
+        </div>
+
+        @* HTML Body card *@
+        <div class="col-md-8">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">HTML Body</h6>
+                    <small class="text-muted">Scriban template syntax</small>
+                </div>
+                <div class="card-body p-0">
+                    <pre class="p-3 mb-0" style="max-height:500px; overflow:auto; font-size:0.8em; white-space:pre-wrap; background:#f8f9fa;">@Model.Template.HtmlBody</pre>
+                </div>
+            </div>
+        </div>
+    </div>
+}

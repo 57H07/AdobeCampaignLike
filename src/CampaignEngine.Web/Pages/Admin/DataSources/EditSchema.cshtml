@@ -1,0 +1,134 @@
+@page "{id:guid}"
+@model CampaignEngine.Web.Pages.Admin.DataSources.EditSchemaModel
+@{
+    ViewData["Title"] = "Edit Schema";
+}
+
+<div class="d-flex align-items-center mb-3">
+    <a asp-page="Details" asp-route-id="@Model.DataSourceId" class="btn btn-outline-secondary me-3">
+        <i class="bi bi-arrow-left"></i> Back
+    </a>
+    <div>
+        <h1 class="mb-0">Edit Field Schema</h1>
+        <p class="text-muted mb-0">Define the fields available for filtering and recipient mapping.</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-10">
+        <div class="alert alert-warning">
+            <i class="bi bi-exclamation-triangle"></i>
+            Saving will <strong>replace all existing fields</strong> with the list below.
+        </div>
+
+        <form method="post">
+            <div asp-validation-summary="All" class="alert alert-danger" style="display:none;"></div>
+
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">Fields</h6>
+                    <button type="button" class="btn btn-sm btn-outline-primary" id="addFieldBtn">
+                        <i class="bi bi-plus"></i> Add Field
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="row g-2 mb-2 text-muted small fw-semibold">
+                        <div class="col-md-3">Field Name</div>
+                        <div class="col-md-2">Data Type</div>
+                        <div class="col-md-2">Filterable</div>
+                        <div class="col-md-3">Recipient Address</div>
+                        <div class="col-md-2">Description</div>
+                    </div>
+
+                    <div id="fieldsContainer">
+                        @for (int i = 0; i < Model.Fields.Count; i++)
+                        {
+                            <div class="field-row row g-2 mb-2 align-items-center">
+                                <div class="col-md-3">
+                                    <input name="Fields[@i].FieldName" class="form-control form-control-sm"
+                                           value="@Model.Fields[i].FieldName" placeholder="e.g. Email" />
+                                </div>
+                                <div class="col-md-2">
+                                    <select name="Fields[@i].DataType" class="form-select form-select-sm">
+                                        @foreach (var dt in Model.DataTypes)
+                                        {
+                                            <option value="@dt.Value" selected="@(Model.Fields[i].DataType == dt.Value)">@dt.Label</option>
+                                        }
+                                    </select>
+                                </div>
+                                <div class="col-md-2 text-center">
+                                    <input name="Fields[@i].IsFilterable" type="checkbox" class="form-check-input"
+                                           checked="@Model.Fields[i].IsFilterable" value="true" />
+                                </div>
+                                <div class="col-md-3 text-center">
+                                    <input name="Fields[@i].IsRecipientAddress" type="checkbox" class="form-check-input"
+                                           checked="@Model.Fields[i].IsRecipientAddress" value="true" />
+                                </div>
+                                <div class="col-md-1">
+                                    <button type="button" class="btn btn-sm btn-outline-danger remove-field-btn">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-save"></i> Save Schema
+                </button>
+                <a asp-page="Details" asp-route-id="@Model.DataSourceId" class="btn btn-outline-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let fieldCount = @Model.Fields.Count;
+
+        const dataTypes = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.DataTypes));
+
+        document.getElementById('addFieldBtn').addEventListener('click', function () {
+            const container = document.getElementById('fieldsContainer');
+            const idx = fieldCount++;
+
+            const typeOptions = dataTypes.map(dt =>
+                `<option value="${dt.value}">${dt.label}</option>`
+            ).join('');
+
+            const row = document.createElement('div');
+            row.className = 'field-row row g-2 mb-2 align-items-center';
+            row.innerHTML = `
+                <div class="col-md-3">
+                    <input name="Fields[${idx}].FieldName" class="form-control form-control-sm" placeholder="e.g. Email" />
+                </div>
+                <div class="col-md-2">
+                    <select name="Fields[${idx}].DataType" class="form-select form-select-sm">${typeOptions}</select>
+                </div>
+                <div class="col-md-2 text-center">
+                    <input name="Fields[${idx}].IsFilterable" type="checkbox" class="form-check-input" checked value="true" />
+                </div>
+                <div class="col-md-3 text-center">
+                    <input name="Fields[${idx}].IsRecipientAddress" type="checkbox" class="form-check-input" value="true" />
+                </div>
+                <div class="col-md-1">
+                    <button type="button" class="btn btn-sm btn-outline-danger remove-field-btn">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            `;
+            container.appendChild(row);
+            attachRemoveHandlers();
+        });
+
+        function attachRemoveHandlers() {
+            document.querySelectorAll('.remove-field-btn').forEach(btn => {
+                btn.onclick = function () { this.closest('.field-row').remove(); };
+            });
+        }
+        attachRemoveHandlers();
+    </script>
+}

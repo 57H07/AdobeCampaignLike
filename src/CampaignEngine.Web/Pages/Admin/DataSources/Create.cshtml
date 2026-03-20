@@ -1,0 +1,278 @@
+@page
+@model CampaignEngine.Web.Pages.Admin.DataSources.CreateModel
+@{
+    ViewData["Title"] = "Create Data Source";
+}
+
+<div class="d-flex align-items-center mb-3">
+    <a asp-page="Index" class="btn btn-outline-secondary me-3">
+        <i class="bi bi-arrow-left"></i> Back
+    </a>
+    <div>
+        <h1 class="mb-0">Create Data Source</h1>
+        <p class="text-muted mb-0">Register a new external data repository.</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <form method="post">
+            <div asp-validation-summary="All" class="alert alert-danger" style="display:none;"></div>
+
+            @* ------------------------------------------------------------------ *@
+            @* Basic Info                                                           *@
+            @* ------------------------------------------------------------------ *@
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0">Connection Details</h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label asp-for="Input.Name" class="form-label">Name <span class="text-danger">*</span></label>
+                        <input asp-for="Input.Name" class="form-control" placeholder="e.g., Customer Database" />
+                        <span asp-validation-for="Input.Name" class="text-danger small"></span>
+                        <div class="form-text">Must be unique across all data sources.</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Input.Description" class="form-label">Description</label>
+                        <textarea asp-for="Input.Description" class="form-control" rows="2"
+                                  placeholder="Optional: describe the purpose of this data source."></textarea>
+                        <span asp-validation-for="Input.Description" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Input.Type" class="form-label">Type <span class="text-danger">*</span></label>
+                        <select asp-for="Input.Type" class="form-select" id="typeSelect">
+                            <option value="">-- Select Type --</option>
+                            <option value="1">SQL Server</option>
+                            <option value="2">REST API</option>
+                        </select>
+                        <span asp-validation-for="Input.Type" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Input.ConnectionString" class="form-label">
+                            Connection String <span class="text-danger">*</span>
+                        </label>
+                        <div class="input-group">
+                            <input asp-for="Input.ConnectionString"
+                                   type="password"
+                                   id="connectionStringInput"
+                                   class="form-control font-monospace"
+                                   placeholder="Enter connection string..." />
+                            <button type="button" class="btn btn-outline-secondary"
+                                    id="toggleCsVisibility" title="Show/Hide">
+                                <i class="bi bi-eye" id="eyeIcon"></i>
+                            </button>
+                        </div>
+                        <span asp-validation-for="Input.ConnectionString" class="text-danger small"></span>
+                        <div class="form-text" id="csHint">
+                            <span id="sqlHint" style="display:none;">
+                                Example: <code>Server=myserver;Database=mydb;User Id=myuser;Password=mypass;</code>
+                            </span>
+                            <span id="restHint" style="display:none;">
+                                Enter the base URL of the REST API endpoint.
+                                Example: <code>https://api.example.com/v1</code>
+                            </span>
+                            Connection strings are encrypted at rest using ASP.NET Core Data Protection.
+                        </div>
+                    </div>
+
+                    @* Test Connection *@
+                    <div id="testConnectionPanel">
+                        <button type="button" class="btn btn-outline-info btn-sm" id="testConnectionBtn">
+                            <i class="bi bi-plug"></i> Test Connection
+                        </button>
+                        <span id="testResult" class="ms-2 small" style="display:none;"></span>
+                    </div>
+                </div>
+            </div>
+
+            @* ------------------------------------------------------------------ *@
+            @* Field Schema (optional at creation)                                 *@
+            @* ------------------------------------------------------------------ *@
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">Field Schema <span class="badge bg-secondary ms-2">Optional</span></h6>
+                    <button type="button" class="btn btn-sm btn-outline-primary" id="addFieldBtn">
+                        <i class="bi bi-plus"></i> Add Field
+                    </button>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted small">
+                        Define the fields available from this data source for filter expressions and recipient mapping.
+                        You can also add fields after creation.
+                    </p>
+
+                    <div id="fieldsContainer">
+                        @for (int i = 0; i < Model.Input.Fields.Count; i++)
+                        {
+                            <div class="field-row row g-2 mb-2 align-items-end" data-index="@i">
+                                <div class="col-md-3">
+                                    <input asp-for="Input.Fields[i].FieldName" class="form-control form-control-sm"
+                                           placeholder="Field name" />
+                                </div>
+                                <div class="col-md-2">
+                                    <select asp-for="Input.Fields[i].DataType" class="form-select form-select-sm">
+                                        <option value="nvarchar">Text (nvarchar)</option>
+                                        <option value="int">Integer (int)</option>
+                                        <option value="datetime">Date/Time</option>
+                                        <option value="bit">Boolean (bit)</option>
+                                        <option value="decimal">Decimal</option>
+                                        <option value="uniqueidentifier">GUID</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="form-check form-check-inline">
+                                        <input asp-for="Input.Fields[i].IsFilterable" class="form-check-input" />
+                                        <label class="form-check-label small">Filterable</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-check form-check-inline">
+                                        <input asp-for="Input.Fields[i].IsRecipientAddress" class="form-check-input" />
+                                        <label class="form-check-label small">Recipient Address</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-1">
+                                    <button type="button" class="btn btn-sm btn-outline-danger remove-field-btn">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-save"></i> Create Data Source
+                </button>
+                <a asp-page="Index" class="btn btn-outline-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        // Show/hide connection string
+        document.getElementById('toggleCsVisibility').addEventListener('click', function () {
+            const input = document.getElementById('connectionStringInput');
+            const icon = document.getElementById('eyeIcon');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.className = 'bi bi-eye-slash';
+            } else {
+                input.type = 'password';
+                icon.className = 'bi bi-eye';
+            }
+        });
+
+        // Show type-specific hints
+        document.getElementById('typeSelect').addEventListener('change', function () {
+            const sqlHint = document.getElementById('sqlHint');
+            const restHint = document.getElementById('restHint');
+            sqlHint.style.display = this.value === '1' ? 'inline' : 'none';
+            restHint.style.display = this.value === '2' ? 'inline' : 'none';
+        });
+
+        // Dynamic field rows
+        let fieldCount = @Model.Input.Fields.Count;
+
+        document.getElementById('addFieldBtn').addEventListener('click', function () {
+            const container = document.getElementById('fieldsContainer');
+            const idx = fieldCount++;
+            const row = document.createElement('div');
+            row.className = 'field-row row g-2 mb-2 align-items-end';
+            row.dataset.index = idx;
+            row.innerHTML = `
+                <div class="col-md-3">
+                    <input name="Input.Fields[${idx}].FieldName" class="form-control form-control-sm" placeholder="Field name" />
+                </div>
+                <div class="col-md-2">
+                    <select name="Input.Fields[${idx}].DataType" class="form-select form-select-sm">
+                        <option value="nvarchar">Text (nvarchar)</option>
+                        <option value="int">Integer (int)</option>
+                        <option value="datetime">Date/Time</option>
+                        <option value="bit">Boolean (bit)</option>
+                        <option value="decimal">Decimal</option>
+                        <option value="uniqueidentifier">GUID</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <div class="form-check form-check-inline">
+                        <input name="Input.Fields[${idx}].IsFilterable" type="checkbox" class="form-check-input" checked />
+                        <label class="form-check-label small">Filterable</label>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-check form-check-inline">
+                        <input name="Input.Fields[${idx}].IsRecipientAddress" type="checkbox" class="form-check-input" />
+                        <label class="form-check-label small">Recipient Address</label>
+                    </div>
+                </div>
+                <div class="col-md-1">
+                    <button type="button" class="btn btn-sm btn-outline-danger remove-field-btn">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            `;
+            container.appendChild(row);
+            attachRemoveHandlers();
+        });
+
+        function attachRemoveHandlers() {
+            document.querySelectorAll('.remove-field-btn').forEach(btn => {
+                btn.onclick = function () {
+                    this.closest('.field-row').remove();
+                };
+            });
+        }
+        attachRemoveHandlers();
+
+        // Test connection via API
+        document.getElementById('testConnectionBtn').addEventListener('click', async function () {
+            const typeVal = document.getElementById('typeSelect').value;
+            const cs = document.getElementById('connectionStringInput').value;
+            const resultEl = document.getElementById('testResult');
+
+            if (!typeVal || !cs) {
+                resultEl.style.display = 'inline';
+                resultEl.className = 'ms-2 small text-warning';
+                resultEl.textContent = 'Please select a type and enter a connection string first.';
+                return;
+            }
+
+            this.disabled = true;
+            resultEl.style.display = 'inline';
+            resultEl.className = 'ms-2 small text-muted';
+            resultEl.textContent = 'Testing...';
+
+            try {
+                const response = await fetch('/api/datasources/test-connection', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? '' },
+                    body: JSON.stringify({ type: parseInt(typeVal), connectionString: cs })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    resultEl.className = data.success ? 'ms-2 small text-success' : 'ms-2 small text-danger';
+                    resultEl.textContent = data.message;
+                } else {
+                    resultEl.className = 'ms-2 small text-danger';
+                    resultEl.textContent = 'Test request failed (HTTP ' + response.status + ')';
+                }
+            } catch (e) {
+                resultEl.className = 'ms-2 small text-danger';
+                resultEl.textContent = 'Network error: ' + e.message;
+            }
+
+            this.disabled = false;
+        });
+    </script>
+}

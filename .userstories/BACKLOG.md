@@ -264,7 +264,9 @@
 > Create, manage, and version message templates with dynamic content support
 
 #### [US-005] - Template CRUD operations
-**Status:** 🟡 TODO
+**Status:** ✅ DONE
+**Start date:** 2026-03-20 00:00:00
+**End date:** 2026-03-20
 **Priority:** 🔴 High
 **Complexity:** M
 **Epic:** Template Management
@@ -277,23 +279,23 @@
 > Template CRUD: Create, read, update, delete templates with name, channel (Email/Letter/SMS), HTML body, and placeholder manifest.
 
 **Acceptance criteria:**
-- [ ] Templates can be created with name, channel type, HTML body
-- [ ] Templates can be edited and updated
-- [ ] Templates can be soft-deleted (archived)
-- [ ] Template list view with filtering by channel and status
-- [ ] Template detail view showing all metadata
+- [x] Templates can be created with name, channel type, HTML body ✅
+- [x] Templates can be edited and updated ✅
+- [x] Templates can be soft-deleted (archived) ✅
+- [x] Template list view with filtering by channel and status ✅
+- [x] Template detail view showing all metadata ✅
 
 **Technical tasks:**
-- [ ] `TASK-005-01` - **[Model]** Create Template entity with channel enum
-- [ ] `TASK-005-02` - **[API]** POST /api/templates endpoint with validation
-- [ ] `TASK-005-03` - **[API]** GET /api/templates with filtering and pagination
-- [ ] `TASK-005-04` - **[API]** PUT /api/templates/{id} endpoint
-- [ ] `TASK-005-05` - **[API]** DELETE /api/templates/{id} (soft delete)
-- [ ] `TASK-005-06` - **[Frontend]** Template list Razor page with grid
-- [ ] `TASK-005-07` - **[Frontend]** Template create/edit form with validation
-- [ ] `TASK-005-08` - **[Test]** Unit tests for template service
-- [ ] `TASK-005-09` - **[Test]** Integration tests for template API
-- [ ] `TASK-005-10` - **[Doc]** API documentation for template endpoints
+- [x] `TASK-005-01` - **[Model]** Create Template entity with channel enum ✅ 2026-03-20
+- [x] `TASK-005-02` - **[API]** POST /api/templates endpoint with validation ✅ 2026-03-20
+- [x] `TASK-005-03` - **[API]** GET /api/templates with filtering and pagination ✅ 2026-03-20
+- [x] `TASK-005-04` - **[API]** PUT /api/templates/{id} endpoint ✅ 2026-03-20
+- [x] `TASK-005-05` - **[API]** DELETE /api/templates/{id} (soft delete) ✅ 2026-03-20
+- [x] `TASK-005-06` - **[Frontend]** Template list Razor page with grid ✅ 2026-03-20
+- [x] `TASK-005-07` - **[Frontend]** Template create/edit form with validation ✅ 2026-03-20
+- [x] `TASK-005-08` - **[Test]** Unit tests for template service ✅ 2026-03-20
+- [x] `TASK-005-09` - **[Test]** Integration tests for template API ✅ 2026-03-20
+- [x] `TASK-005-10` - **[Doc]** API documentation for template endpoints ✅ 2026-03-20
 
 **Business rules:**
 1. Template names must be unique within same channel
@@ -605,7 +607,9 @@
 ---
 
 #### [US-013] - Channel-specific post-processing
-**Status:** 🟡 TODO
+**Status:** ✅ DONE
+**Start date:** 2026-03-20
+**End date:** 2026-03-20
 **Priority:** 🔴 High
 **Complexity:** L
 **Epic:** Rendering Engine
@@ -618,23 +622,23 @@
 > Email: CSS inlining + HTML sanitization. Letter: HTML→PDF conversion. SMS: plain text extraction + truncation.
 
 **Acceptance criteria:**
-- [ ] Email channel: inline CSS using PreMailer.Net
-- [ ] Letter channel: convert HTML to PDF using chosen tool (POC required)
-- [ ] SMS channel: strip HTML tags and truncate to 160 characters
-- [ ] Multi-page PDF consolidation for letter batches
-- [ ] Error handling for conversion failures
+- [x] Email channel: inline CSS using PreMailer.Net ✅
+- [x] Letter channel: convert HTML to PDF using chosen tool (POC required) ✅
+- [x] SMS channel: strip HTML tags and truncate to 160 characters ✅
+- [x] Multi-page PDF consolidation for letter batches ✅
+- [x] Error handling for conversion failures ✅
 
 **Technical tasks:**
-- [ ] `TASK-013-01` - **[POC]** PDF generation POC (wkhtmltopdf vs DinkToPdf vs Puppeteer)
-- [ ] `TASK-013-02` - **[Service]** Implement EmailPostProcessor with PreMailer.Net
-- [ ] `TASK-013-03` - **[Service]** Implement LetterPostProcessor with chosen PDF tool
-- [ ] `TASK-013-04` - **[Service]** Implement SmsPostProcessor with HTML stripping
-- [ ] `TASK-013-05` - **[Service]** Implement PDF consolidation with PdfSharp
-- [ ] `TASK-013-06` - **[Interface]** Define IChannelPostProcessor abstraction
-- [ ] `TASK-013-07` - **[Test]** Unit tests for each post-processor
-- [ ] `TASK-013-08` - **[Test]** PDF generation performance tests
-- [ ] `TASK-013-09` - **[Test]** Email CSS inlining tests (Outlook compatibility)
-- [ ] `TASK-013-10` - **[Doc]** Channel post-processing documentation
+- [x] `TASK-013-01` - **[POC]** PDF generation POC (wkhtmltopdf vs DinkToPdf vs Puppeteer) ✅ 2026-03-20
+- [x] `TASK-013-02` - **[Service]** Implement EmailPostProcessor with PreMailer.Net ✅ 2026-03-20
+- [x] `TASK-013-03` - **[Service]** Implement LetterPostProcessor with chosen PDF tool ✅ 2026-03-20
+- [x] `TASK-013-04` - **[Service]** Implement SmsPostProcessor with HTML stripping ✅ 2026-03-20
+- [x] `TASK-013-05` - **[Service]** Implement PDF consolidation with PdfSharp ✅ 2026-03-20
+- [x] `TASK-013-06` - **[Interface]** Define IChannelPostProcessor abstraction ✅ 2026-03-20
+- [x] `TASK-013-07` - **[Test]** Unit tests for each post-processor ✅ 2026-03-20
+- [x] `TASK-013-08` - **[Test]** PDF generation performance tests ✅ 2026-03-20
+- [x] `TASK-013-09` - **[Test]** Email CSS inlining tests (Outlook compatibility) ✅ 2026-03-20
+- [x] `TASK-013-10` - **[Doc]** Channel post-processing documentation ✅ 2026-03-20
 
 **Business rules:**
 1. Email CSS inlining required for Outlook compatibility
@@ -656,7 +660,9 @@
 > Connect to external data repositories to fetch recipient data
 
 #### [US-014] - Data source declaration and management
-**Status:** 🟡 TODO
+**Status:** ✅ DONE
+**Start date:** 2026-03-20
+**End date:** 2026-03-20
 **Priority:** 🔴 High
 **Complexity:** M
 **Epic:** Data Source Connector
@@ -669,22 +675,22 @@
 > Register data sources with name, connection type, connection string, and schema definition (fields, types, filterability).
 
 **Acceptance criteria:**
-- [ ] Data sources can be created with name, type, connection string
-- [ ] Schema can be defined with field names and types
-- [ ] Connection testing validates connectivity
-- [ ] Field metadata includes filterability and data type
-- [ ] Data source list view with status indicators
+- [x] Data sources can be created with name, type, connection string ✅
+- [x] Schema can be defined with field names and types ✅
+- [x] Connection testing validates connectivity ✅
+- [x] Field metadata includes filterability and data type ✅
+- [x] Data source list view with status indicators ✅
 
 **Technical tasks:**
-- [ ] `TASK-014-01` - **[Model]** Create DataSource entity with connection metadata
-- [ ] `TASK-014-02` - **[Model]** Create FieldDefinition value object for schema
-- [ ] `TASK-014-03` - **[API]** POST /api/datasources endpoint
-- [ ] `TASK-014-04` - **[API]** GET /api/datasources with filtering
-- [ ] `TASK-014-05` - **[Service]** Connection testing service
-- [ ] `TASK-014-06` - **[Frontend]** Data source management UI
-- [ ] `TASK-014-07` - **[Frontend]** Connection string encryption in UI
-- [ ] `TASK-014-08` - **[Test]** Connection validation tests
-- [ ] `TASK-014-09` - **[Doc]** Data source configuration guide
+- [x] `TASK-014-01` - **[Model]** Create DataSource entity with connection metadata ✅ 2026-03-20
+- [x] `TASK-014-02` - **[Model]** Create FieldDefinition value object for schema ✅ 2026-03-20
+- [x] `TASK-014-03` - **[API]** POST /api/datasources endpoint ✅ 2026-03-20
+- [x] `TASK-014-04` - **[API]** GET /api/datasources with filtering ✅ 2026-03-20
+- [x] `TASK-014-05` - **[Service]** Connection testing service ✅ 2026-03-20
+- [x] `TASK-014-06` - **[Frontend]** Data source management UI ✅ 2026-03-20
+- [x] `TASK-014-07` - **[Frontend]** Connection string encryption in UI ✅ 2026-03-20
+- [x] `TASK-014-08` - **[Test]** Connection validation tests ✅ 2026-03-20
+- [x] `TASK-014-09` - **[Doc]** Data source configuration guide ✅ 2026-03-20
 
 **Business rules:**
 1. Data source types: SQL Server, REST API (Phase 1)

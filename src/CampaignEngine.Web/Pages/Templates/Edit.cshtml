@@ -1,0 +1,99 @@
+@page "{id:guid}"
+@model CampaignEngine.Web.Pages.Templates.EditTemplateModel
+@{
+    ViewData["Title"] = $"Edit Template — {Model.Input.Name}";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1>Edit Template</h1>
+    <a asp-page="Index" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Back to list
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">Template Details</h6>
+                    <div>
+                        @{
+                            var channelBadge = Model.ChannelDisplay switch
+                            {
+                                "Email"  => "bg-primary",
+                                "Letter" => "bg-warning text-dark",
+                                "Sms"    => "bg-success",
+                                _        => "bg-secondary"
+                            };
+                            var statusBadge = Model.StatusDisplay switch
+                            {
+                                "Published" => "bg-success",
+                                "Draft"     => "bg-secondary",
+                                "Archived"  => "bg-danger",
+                                _           => "bg-secondary"
+                            };
+                        }
+                        <span class="badge @channelBadge me-1">@Model.ChannelDisplay</span>
+                        <span class="badge @statusBadge">@Model.StatusDisplay</span>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+                    <div class="mb-3">
+                        <label asp-for="Input.Name" class="form-label">Name <span class="text-danger">*</span></label>
+                        <input asp-for="Input.Name" class="form-control" />
+                        <span asp-validation-for="Input.Name" class="text-danger"></span>
+                        <div class="form-text">Must be unique within the <strong>@Model.ChannelDisplay</strong> channel.</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Channel</label>
+                        <input type="text" class="form-control" value="@Model.ChannelDisplay" disabled />
+                        <div class="form-text">Channel cannot be changed after creation.</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Input.Description" class="form-label">Description</label>
+                        <input asp-for="Input.Description" class="form-control" placeholder="Optional description" />
+                        <span asp-validation-for="Input.Description" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Input.HtmlBody" class="form-label">HTML Body <span class="text-danger">*</span></label>
+                        <textarea asp-for="Input.HtmlBody" class="form-control font-monospace" rows="15"></textarea>
+                        <span asp-validation-for="Input.HtmlBody" class="text-danger"></span>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-floppy"></i> Save Changes
+                        </button>
+                        <a asp-page="Detail" asp-route-id="@Model.TemplateId" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header"><h6 class="mb-0">Scriban Syntax</h6></div>
+            <div class="card-body">
+                <p class="small">Use Scriban placeholders in your template:</p>
+                <ul class="list-unstyled small font-monospace">
+                    <li class="mb-1"><code>{{ variable }}</code> — scalar value</li>
+                    <li class="mb-1"><code>{{ for item in list }}<br />...<br />{{ end }}</code> — iteration</li>
+                    <li><code>{{ if condition }}<br />...<br />{{ end }}</code> — conditional</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

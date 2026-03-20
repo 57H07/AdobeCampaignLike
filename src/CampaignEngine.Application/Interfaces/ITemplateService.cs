@@ -1,0 +1,45 @@
+using CampaignEngine.Application.DTOs.Templates;
+using CampaignEngine.Domain.Entities;
+using CampaignEngine.Domain.Enums;
+
+namespace CampaignEngine.Application.Interfaces;
+
+/// <summary>
+/// Application service for Template CRUD operations.
+/// Enforces business rules: unique name per channel, soft delete, status management.
+/// Only Designer and Admin roles can create/edit templates (enforced at controller level).
+/// </summary>
+public interface ITemplateService
+{
+    /// <summary>
+    /// Returns a paginated, optionally-filtered list of non-deleted templates.
+    /// </summary>
+    Task<TemplatePagedResult> GetPagedAsync(
+        ChannelType? channel,
+        TemplateStatus? status,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Returns a single template by ID, or null if not found (or soft-deleted).
+    /// </summary>
+    Task<Template?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Creates a new template. Throws if name is not unique within the channel.
+    /// </summary>
+    Task<Template> CreateAsync(CreateTemplateRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Updates name, HTML body, and description of an existing template.
+    /// Throws NotFoundException if id does not exist. Throws ValidationException if name conflicts.
+    /// </summary>
+    Task<Template> UpdateAsync(Guid id, UpdateTemplateRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Soft-deletes a template by setting IsDeleted = true and recording DeletedAt.
+    /// Throws NotFoundException if id does not exist.
+    /// </summary>
+    Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
+}
