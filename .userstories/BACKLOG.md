@@ -708,8 +708,9 @@
 ---
 
 #### [US-015] - SQL Server data connector implementation
-**Status:** ðµ IN PROGRESS
+**Status:** âœ… DONE
 **Start date:** 2026-03-20
+**End date:** 2026-03-20
 **Priority:** ðŸ”´ High
 **Complexity:** M
 **Epic:** Data Source Connector
@@ -722,21 +723,21 @@
 > IDataSourceConnector with SQL Server implementation. Schema-agnostic querying with parameterized SQL for security.
 
 **Acceptance criteria:**
-- [ ] IDataSourceConnector interface defined
-- [ ] SqlServerConnector implementation with Dapper
-- [ ] Schema auto-discovery from SQL Server metadata
-- [ ] Parameterized query generation prevents SQL injection
-- [ ] Connection pooling and timeout configuration
+- [x] IDataSourceConnector interface defined âœ…
+- [x] SqlServerConnector implementation with Dapper âœ…
+- [x] Schema auto-discovery from SQL Server metadata âœ…
+- [x] Parameterized query generation prevents SQL injection âœ…
+- [x] Connection pooling and timeout configuration âœ…
 
 **Technical tasks:**
-- [ ] `TASK-015-01` - **[Interface]** Define IDataSourceConnector interface
-- [ ] `TASK-015-02` - **[Service]** Implement SqlServerConnector with Dapper
-- [ ] `TASK-015-03` - **[Service]** Schema discovery from INFORMATION_SCHEMA
-- [ ] `TASK-015-04` - **[Service]** Query builder with parameterization
-- [ ] `TASK-015-05` - **[Service]** Connection pool configuration
-- [ ] `TASK-015-06` - **[Test]** Integration tests with test database
-- [ ] `TASK-015-07` - **[Test]** SQL injection prevention tests
-- [ ] `TASK-015-08` - **[Doc]** SQL connector configuration guide
+- [x] `TASK-015-01` - **[Interface]** Define IDataSourceConnector interface âœ… 2026-03-20
+- [x] `TASK-015-02` - **[Service]** Implement SqlServerConnector with Dapper âœ… 2026-03-20
+- [x] `TASK-015-03` - **[Service]** Schema discovery from INFORMATION_SCHEMA âœ… 2026-03-20
+- [x] `TASK-015-04` - **[Service]** Query builder with parameterization âœ… 2026-03-20
+- [x] `TASK-015-05` - **[Service]** Connection pool configuration âœ… 2026-03-20
+- [x] `TASK-015-06` - **[Test]** Integration tests with test database âœ… 2026-03-20
+- [x] `TASK-015-07` - **[Test]** SQL injection prevention tests âœ… 2026-03-20
+- [x] `TASK-015-08` - **[Doc]** SQL connector configuration guide âœ… 2026-03-20
 
 **Business rules:**
 1. All queries must use parameterized SQL (no string concatenation)
