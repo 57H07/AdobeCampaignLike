@@ -1443,7 +1443,7 @@
 - [x] `TASK-031-04` - **[API]** API key management endpoints (Admin only) ✅ 2026-03-20
 - [x] `TASK-031-05` - **[Frontend]** API key management UI ✅ 2026-03-20
 - [x] `TASK-031-06` - **[Config]** HTTPS enforcement configuration ✅ 2026-03-20
-- [ ] `TASK-031-07` - **[Test]** Authentication tests
+- [x] `TASK-031-07` - **[Test]** Authentication tests ✅ 2026-03-20
 - [ ] `TASK-031-08` - **[Doc]** API authentication guide
 
 **Business rules:**
