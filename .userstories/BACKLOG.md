@@ -1444,7 +1444,7 @@
 - [x] `TASK-031-05` - **[Frontend]** API key management UI ✅ 2026-03-20
 - [x] `TASK-031-06` - **[Config]** HTTPS enforcement configuration ✅ 2026-03-20
 - [x] `TASK-031-07` - **[Test]** Authentication tests ✅ 2026-03-20
-- [ ] `TASK-031-08` - **[Doc]** API authentication guide
+- [x] `TASK-031-08` - **[Doc]** API authentication guide ✅ 2026-03-20
 
 **Business rules:**
 1. API keys hashed in database (bcrypt)
