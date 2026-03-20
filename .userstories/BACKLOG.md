@@ -990,11 +990,11 @@
 - [ ] Error handling for generation failures
 
 **Technical tasks:**
-- [ ] `TASK-021-01` - **[Service]** Implement LetterDispatcher
-- [ ] `TASK-021-02` - **[Service]** PDF generation wrapper (using US-013 post-processor)
-- [ ] `TASK-021-03` - **[Service]** PDF consolidation service with PdfSharp
-- [ ] `TASK-021-04` - **[Service]** Print provider file drop handler (UNC or API)
-- [ ] `TASK-021-05` - **[Service]** PDF metadata generation (manifest file)
+- [x] `TASK-021-01` - **[Service]** Implement LetterDispatcher ✅ 2026-03-20
+- [x] `TASK-021-02` - **[Service]** PDF generation wrapper (using US-013 post-processor) ✅ 2026-03-20
+- [x] `TASK-021-03` - **[Service]** PDF consolidation service with PdfSharp ✅ 2026-03-20
+- [x] `TASK-021-04` - **[Service]** Print provider file drop handler (UNC or API) ✅ 2026-03-20
+- [x] `TASK-021-05` - **[Service]** PDF metadata generation (manifest file) ✅ 2026-03-20
 - [ ] `TASK-021-06` - **[Test]** PDF generation tests
 - [ ] `TASK-021-07` - **[Test]** Consolidation tests (verify page order)
 - [ ] `TASK-021-08` - **[Doc]** Letter channel configuration guide

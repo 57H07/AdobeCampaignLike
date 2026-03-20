@@ -148,7 +148,13 @@ public static class ServiceCollectionExtensions
             return new SmsProviderClient(opts, factory, logger);
         });
         services.AddScoped<IChannelDispatcher, SmsDispatcher>();
-        // services.AddScoped<IChannelDispatcher, PdfLetterDispatcher>();
+
+        // US-021: LetterDispatcher — handles ChannelType.Letter sends via PDF generation + file drop.
+        // PrintProviderFileDropHandler is registered separately so it can be overridden in tests.
+        services.Configure<LetterOptions>(
+            configuration.GetSection(LetterOptions.SectionName));
+        services.AddScoped<PrintProviderFileDropHandler>();
+        services.AddScoped<IChannelDispatcher, LetterDispatcher>();
 
         // ----------------------------------------------------------------
         // Data source management — declaration, schema, and connection testing

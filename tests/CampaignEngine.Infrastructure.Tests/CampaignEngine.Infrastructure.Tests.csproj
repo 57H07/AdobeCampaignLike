@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
@@ -33,6 +33,7 @@
     <ProjectReference Include="..\..\src\CampaignEngine.Domain\CampaignEngine.Domain.csproj" />
     <ProjectReference Include="..\..\src\CampaignEngine.Application\CampaignEngine.Application.csproj" />
     <ProjectReference Include="..\..\src\CampaignEngine.Infrastructure\CampaignEngine.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\CampaignEngine.Web\CampaignEngine.Web.csproj" />
   </ItemGroup>
 
 </Project>
