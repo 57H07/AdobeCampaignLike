@@ -1660,8 +1660,9 @@
 > Ongoing technical improvements, refactoring, infrastructure work, and maintenance tasks that keep the codebase healthy and the team productive.
 
 #### [US-037] - Fix build warnings: Scriban vulnerabilities and compiler warnings
-**Status:** ðŸ”µ IN PROGRESS
+**Status:** ✅ DONE
 **Start date:** 2026-03-20
+**End date:** 2026-03-20
 **Priority:** ðŸ”´ High
 **Complexity:** S
 **Epic:** Epic 10
@@ -1675,18 +1676,18 @@
 > Build output reports 3 Scriban CVEs (1 moderate, 2 high severity), 2 CS8604 null-ref warnings in SingleSendService, 1 CS1998 spurious-async warning in PdfConsolidationService, and 2 CS0108 member-hiding warnings in Web page models.
 
 **Acceptance criteria:**
-- [ ] Scriban upgraded to a version with no known CVEs (NU1902/NU1903 warnings gone)
-- [ ] CS8604 null-ref warnings in SingleSendService.cs resolved (lines 197 and 215)
-- [ ] CS1998 spurious-async warning in PdfConsolidationService.cs resolved (line 36)
-- [ ] CS0108 member-hiding warnings in SendLogsIndexModel and TemplatesIndexModel resolved
-- [ ] Build completes with 0 warnings
+- [x] Scriban upgraded to a version with no known CVEs (NU1902/NU1903 warnings gone) ✅
+- [x] CS8604 null-ref warnings in SingleSendService.cs resolved (lines 197 and 215) ✅
+- [x] CS1998 spurious-async warning in PdfConsolidationService.cs resolved (line 36) ✅
+- [x] CS0108 member-hiding warnings in SendLogsIndexModel and TemplatesIndexModel resolved ✅
+- [x] Build completes with 0 warnings ✅
 
 **Technical tasks:**
-- [ ] `TASK-037-01` - **[TechDebt]** Upgrade Scriban package to latest non-vulnerable version in CampaignEngine.Infrastructure.csproj
-- [ ] `TASK-037-02` - **[Fix]** Resolve CS8604: add null-guard or null-forgiving operator for `args` in SingleSendService.cs lines 197 & 215
-- [ ] `TASK-037-03` - **[Fix]** Resolve CS1998: remove `async` keyword or add meaningful await in PdfConsolidationService.cs line 36
-- [ ] `TASK-037-04` - **[Fix]** Resolve CS0108: add `new` keyword to `Page` property in SendLogsIndexModel and TemplatesIndexModel, or rename to avoid hiding
-- [ ] `TASK-037-05` - **[Test]** Verify build output is warning-free after all fixes
+- [x] `TASK-037-01` - **[TechDebt]** Upgrade Scriban package to latest non-vulnerable version in CampaignEngine.Infrastructure.csproj ✅ 2026-03-20
+- [x] `TASK-037-02` - **[Fix]** Resolve CS8604: add null-guard or null-forgiving operator for `args` in SingleSendService.cs lines 197 & 215 ✅ 2026-03-20
+- [x] `TASK-037-03` - **[Fix]** Resolve CS1998: remove `async` keyword or add meaningful await in PdfConsolidationService.cs line 36 ✅ 2026-03-20
+- [x] `TASK-037-04` - **[Fix]** Resolve CS0108: add `new` keyword to `Page` property in SendLogsIndexModel and TemplatesIndexModel, or rename to avoid hiding ✅ 2026-03-20
+- [x] `TASK-037-05` - **[Test]** Verify build output is warning-free after all fixes ✅ 2026-03-20
 
 **Dependencies:** None
 **Estimation:** 1-2 days
