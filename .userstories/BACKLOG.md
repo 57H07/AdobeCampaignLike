@@ -969,7 +969,8 @@
 ---
 
 #### [US-021] - PDF letter dispatcher
-**Status:** 🔵 IN PROGRESS
+**Status:** ✅ DONE
+**End date:** 2026-03-20
 **Start date:** 2026-03-20
 **Priority:** ðŸ”´ High
 **Complexity:** L
@@ -983,11 +984,11 @@
 > Generate PDF files and transmit to print/mail provider; support multi-page consolidation. Open Question Q5: provider format.
 
 **Acceptance criteria:**
-- [ ] PDF generation from HTML content
-- [ ] Multi-page PDF consolidation (500 pages max per batch)
-- [ ] File transmission to print provider (file drop or API)
-- [ ] PDF metadata (recipient info, page count)
-- [ ] Error handling for generation failures
+- [x] PDF generation from HTML content ✅
+- [x] Multi-page PDF consolidation (500 pages max per batch) ✅
+- [x] File transmission to print provider (file drop or API) ✅
+- [x] PDF metadata (recipient info, page count) ✅
+- [x] Error handling for generation failures ✅
 
 **Technical tasks:**
 - [x] `TASK-021-01` - **[Service]** Implement LetterDispatcher ✅ 2026-03-20
