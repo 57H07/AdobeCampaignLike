@@ -1,4 +1,4 @@
-﻿# ðŸ“‹ Backlog - CampaignEngine
+﻿﻿﻿# ðŸ“‹ Backlog - CampaignEngine
 
 **Source:** _docs/prd.md
 **Created:** 2026-03-19
@@ -309,7 +309,9 @@
 ---
 
 #### [US-006] - Placeholder manifest declaration
-**Status:** ðŸŸ¡ TODO
+**Status:** âœ… DONE
+**Start date:** 2026-03-20
+**End date:** 2026-03-20
 **Priority:** ðŸ”´ High
 **Complexity:** M
 **Epic:** Template Management
@@ -322,22 +324,22 @@
 > Typed placeholder declarations (scalar, table, list, freeField) with source indication (datasource vs operator input).
 
 **Acceptance criteria:**
-- [ ] Placeholder manifest can be defined for each template
-- [ ] Placeholder types supported: scalar, table, list, freeField
-- [ ] Each placeholder indicates source: dataSource or operatorInput
-- [ ] Manifest validation ensures all template placeholders are declared
-- [ ] UI shows placeholder manifest in template editor
+- [x] Placeholder manifest can be defined for each template
+- [x] Placeholder types supported: scalar, table, list, freeField
+- [x] Each placeholder indicates source: dataSource or operatorInput
+- [x] Manifest validation ensures all template placeholders are declared
+- [x] UI shows placeholder manifest in template editor
 
 **Technical tasks:**
-- [ ] `TASK-006-01` - **[Model]** Create PlaceholderManifest value object with type enum
-- [ ] `TASK-006-02` - **[Model]** Add PlaceholderManifests collection to Template entity
-- [ ] `TASK-006-03` - **[Service]** Create placeholder parser to extract from template HTML
-- [ ] `TASK-006-04` - **[Service]** Validate manifest completeness against template
-- [ ] `TASK-006-05` - **[Frontend]** Placeholder manifest editor UI component
-- [ ] `TASK-006-06` - **[Frontend]** Auto-detect placeholders from template HTML
-- [ ] `TASK-006-07` - **[Test]** Unit tests for placeholder extraction
-- [ ] `TASK-006-08` - **[Test]** Validation tests for manifest completeness
-- [ ] `TASK-006-09` - **[Doc]** Placeholder syntax guide
+- [x] `TASK-006-01` - **[Model]** Create PlaceholderManifest value object with type enum
+- [x] `TASK-006-02` - **[Model]** Add PlaceholderManifests collection to Template entity
+- [x] `TASK-006-03` - **[Service]** Create placeholder parser to extract from template HTML
+- [x] `TASK-006-04` - **[Service]** Validate manifest completeness against template
+- [x] `TASK-006-05` - **[Frontend]** Placeholder manifest editor UI component
+- [x] `TASK-006-06` - **[Frontend]** Auto-detect placeholders from template HTML
+- [x] `TASK-006-07` - **[Test]** Unit tests for placeholder extraction
+- [x] `TASK-006-08` - **[Test]** Validation tests for manifest completeness
+- [x] `TASK-006-09` - **[Doc]** Placeholder syntax guide
 
 **Business rules:**
 1. Placeholder syntax: `{{key}}` for scalar, `{{#table}}...{{/table}}` for iteration
