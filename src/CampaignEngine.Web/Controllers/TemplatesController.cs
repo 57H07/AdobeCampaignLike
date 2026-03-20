@@ -23,17 +23,20 @@ public class TemplatesController : ControllerBase
     private readonly IPlaceholderManifestService _manifestService;
     private readonly IPlaceholderParserService _parserService;
     private readonly ISubTemplateResolverService _subTemplateResolver;
+    private readonly ICurrentUserService _currentUserService;
 
     public TemplatesController(
         ITemplateService templateService,
         IPlaceholderManifestService manifestService,
         IPlaceholderParserService parserService,
-        ISubTemplateResolverService subTemplateResolver)
+        ISubTemplateResolverService subTemplateResolver,
+        ICurrentUserService currentUserService)
     {
         _templateService = templateService;
         _manifestService = manifestService;
         _parserService = parserService;
         _subTemplateResolver = subTemplateResolver;
+        _currentUserService = currentUserService;
     }
 
     // ----------------------------------------------------------------
@@ -171,6 +174,8 @@ public class TemplatesController : ControllerBase
         [FromBody] UpdateTemplateRequest request,
         CancellationToken cancellationToken = default)
     {
+        // Populate ChangedBy from the authenticated user for version history (US-008)
+        request.ChangedBy = _currentUserService.UserName;
         var template = await _templateService.UpdateAsync(id, request, cancellationToken);
 
         return Ok(new TemplateDto
@@ -213,6 +218,94 @@ public class TemplatesController : ControllerBase
     {
         await _templateService.DeleteAsync(id, cancellationToken);
         return NoContent();
+    }
+
+    // ================================================================
+    // Status Lifecycle Endpoints
+    // ================================================================
+
+    // ----------------------------------------------------------------
+    // POST /api/templates/{id}/publish
+    // ----------------------------------------------------------------
+
+    /// <summary>
+    /// Publishes a template, transitioning it from Draft to Published.
+    /// </summary>
+    /// <remarks>
+    /// Business rules:
+    /// - Template must currently be in Draft status.
+    /// - All placeholders used in the HTML body must be declared in the manifest.
+    /// - Only Designer and Admin roles can publish templates.
+    /// </remarks>
+    /// <param name="id">Template GUID.</param>
+    [HttpPost("{id:guid}/publish")]
+    [Authorize(Policy = AuthorizationPolicies.RequireDesignerOrAdmin)]
+    [ProducesResponseType(typeof(TemplateDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult<TemplateDto>> PublishTemplate(
+        Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        var template = await _templateService.PublishAsync(id, cancellationToken);
+
+        return Ok(new TemplateDto
+        {
+            Id = template.Id,
+            Name = template.Name,
+            Channel = template.Channel.ToString(),
+            HtmlBody = template.HtmlBody,
+            Status = template.Status.ToString(),
+            Version = template.Version,
+            IsSubTemplate = template.IsSubTemplate,
+            Description = template.Description,
+            CreatedAt = template.CreatedAt,
+            UpdatedAt = template.UpdatedAt
+        });
+    }
+
+    // ----------------------------------------------------------------
+    // POST /api/templates/{id}/archive
+    // ----------------------------------------------------------------
+
+    /// <summary>
+    /// Archives a template, transitioning it from Draft or Published to Archived.
+    /// </summary>
+    /// <remarks>
+    /// Business rules:
+    /// - Template must not already be Archived.
+    /// - Archived templates cannot transition back to Published.
+    /// - Only Designer and Admin roles can archive templates.
+    /// </remarks>
+    /// <param name="id">Template GUID.</param>
+    [HttpPost("{id:guid}/archive")]
+    [Authorize(Policy = AuthorizationPolicies.RequireDesignerOrAdmin)]
+    [ProducesResponseType(typeof(TemplateDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult<TemplateDto>> ArchiveTemplate(
+        Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        var template = await _templateService.ArchiveAsync(id, cancellationToken);
+
+        return Ok(new TemplateDto
+        {
+            Id = template.Id,
+            Name = template.Name,
+            Channel = template.Channel.ToString(),
+            HtmlBody = template.HtmlBody,
+            Status = template.Status.ToString(),
+            Version = template.Version,
+            IsSubTemplate = template.IsSubTemplate,
+            Description = template.Description,
+            CreatedAt = template.CreatedAt,
+            UpdatedAt = template.UpdatedAt
+        });
     }
 
     // ================================================================
@@ -536,6 +629,109 @@ public class TemplatesController : ControllerBase
                 Message = ex.Message
             });
         }
+    }
+
+    // ================================================================
+    // Versioning Endpoints (US-008)
+    // ================================================================
+
+    // ----------------------------------------------------------------
+    // GET /api/templates/{id}/history
+    // ----------------------------------------------------------------
+
+    /// <summary>
+    /// Returns the full version history of the specified template, ordered by version descending.
+    /// Version history is never deleted (audit requirement).
+    /// </summary>
+    /// <param name="id">Template GUID.</param>
+    [HttpGet("{id:guid}/history")]
+    [Authorize(Policy = AuthorizationPolicies.RequireAuthenticated)]
+    [ProducesResponseType(typeof(IReadOnlyList<TemplateHistoryDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<IReadOnlyList<TemplateHistoryDto>>> GetHistory(
+        Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        var history = await _templateService.GetHistoryAsync(id, cancellationToken);
+        return Ok(history);
+    }
+
+    // ----------------------------------------------------------------
+    // GET /api/templates/{id}/history/diff
+    // ----------------------------------------------------------------
+
+    /// <summary>
+    /// Returns a diff between two versions of a template.
+    /// If toVersion is not provided, compares fromVersion against the current live version.
+    /// </summary>
+    /// <param name="id">Template GUID.</param>
+    /// <param name="fromVersion">The older (base) version number.</param>
+    /// <param name="toVersion">The newer version number (omit to compare against current).</param>
+    [HttpGet("{id:guid}/history/diff")]
+    [Authorize(Policy = AuthorizationPolicies.RequireAuthenticated)]
+    [ProducesResponseType(typeof(TemplateDiffDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<TemplateDiffDto>> GetDiff(
+        Guid id,
+        [FromQuery] int fromVersion,
+        [FromQuery] int? toVersion = null,
+        CancellationToken cancellationToken = default)
+    {
+        if (fromVersion < 1)
+            return BadRequest("fromVersion must be >= 1.");
+
+        var diff = await _templateService.GetDiffAsync(id, fromVersion, toVersion, cancellationToken);
+        return Ok(diff);
+    }
+
+    // ----------------------------------------------------------------
+    // POST /api/templates/{id}/revert/{version}
+    // ----------------------------------------------------------------
+
+    /// <summary>
+    /// Reverts a template to a previous version by creating a new version with the historic content.
+    /// Business rule: revert creates a new version — it does not overwrite existing history.
+    /// </summary>
+    /// <remarks>
+    /// The current template content is saved to history before the revert is applied.
+    /// The template version counter increments normally.
+    /// </remarks>
+    /// <param name="id">Template GUID.</param>
+    /// <param name="version">The version number to revert to.</param>
+    [HttpPost("{id:guid}/revert/{version:int}")]
+    [Authorize(Policy = AuthorizationPolicies.RequireDesignerOrAdmin)]
+    [ProducesResponseType(typeof(TemplateDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult<TemplateDto>> RevertToVersion(
+        Guid id,
+        int version,
+        CancellationToken cancellationToken = default)
+    {
+        if (version < 1)
+            return BadRequest("version must be >= 1.");
+
+        var changedBy = _currentUserService.UserName;
+        var template = await _templateService.RevertToVersionAsync(id, version, changedBy, cancellationToken);
+
+        return Ok(new TemplateDto
+        {
+            Id = template.Id,
+            Name = template.Name,
+            Channel = template.Channel.ToString(),
+            HtmlBody = template.HtmlBody,
+            Status = template.Status.ToString(),
+            Version = template.Version,
+            IsSubTemplate = template.IsSubTemplate,
+            Description = template.Description,
+            CreatedAt = template.CreatedAt,
+            UpdatedAt = template.UpdatedAt
+        });
     }
 }
 

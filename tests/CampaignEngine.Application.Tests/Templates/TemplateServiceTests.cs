@@ -27,7 +27,9 @@ public class TemplateServiceTests : IDisposable
         _context = new CampaignEngineDbContext(options);
 
         var logger = new Mock<IAppLogger<TemplateService>>();
-        _service = new TemplateService(_context, logger.Object);
+        var manifestService = new Mock<IPlaceholderManifestService>();
+        var parserService = new Mock<IPlaceholderParserService>();
+        _service = new TemplateService(_context, logger.Object, manifestService.Object, parserService.Object);
     }
 
     public void Dispose()

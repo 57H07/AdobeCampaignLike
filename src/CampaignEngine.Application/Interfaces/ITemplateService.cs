@@ -69,4 +69,35 @@ public interface ITemplateService
     /// Throws ValidationException if transition is not allowed.
     /// </summary>
     Task<Template> ArchiveAsync(Guid id, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Returns the full version history for the specified template, ordered by version descending.
+    /// Returns an empty list if the template has no history entries.
+    /// Throws NotFoundException if the template does not exist.
+    /// </summary>
+    Task<IReadOnlyList<TemplateHistoryDto>> GetHistoryAsync(
+        Guid id,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Returns the diff between two versions of a template.
+    /// If toVersion is null, compares fromVersion against the current live version.
+    /// Throws NotFoundException if the template or either version does not exist.
+    /// </summary>
+    Task<TemplateDiffDto> GetDiffAsync(
+        Guid id,
+        int fromVersion,
+        int? toVersion,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Reverts a template to a previous version by creating a new version with the historic content.
+    /// Business rule: revert creates a new version — it does not overwrite existing history.
+    /// Throws NotFoundException if the template or target version does not exist.
+    /// </summary>
+    Task<Template> RevertToVersionAsync(
+        Guid id,
+        int version,
+        string? changedBy,
+        CancellationToken cancellationToken = default);
 }

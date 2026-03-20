@@ -20,7 +20,9 @@ public class TemplateServiceIntegrationTests : DbContextTestBase
     public TemplateServiceIntegrationTests()
     {
         var logger = new Mock<IAppLogger<TemplateService>>();
-        _service = new TemplateService(Context, logger.Object);
+        var manifestService = new Mock<IPlaceholderManifestService>();
+        var parserService = new Mock<IPlaceholderParserService>();
+        _service = new TemplateService(Context, logger.Object, manifestService.Object, parserService.Object);
     }
 
     // ----------------------------------------------------------------

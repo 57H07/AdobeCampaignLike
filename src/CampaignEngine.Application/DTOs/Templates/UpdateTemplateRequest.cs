@@ -32,4 +32,11 @@ public class UpdateTemplateRequest
     /// When true, marks this template as a reusable sub-template block.
     /// </summary>
     public bool? IsSubTemplate { get; set; }
+
+    /// <summary>
+    /// Username of the user making the change. Recorded in version history.
+    /// Optional — populated by the controller from the authenticated user identity.
+    /// </summary>
+    [MaxLength(200)]
+    public string? ChangedBy { get; set; }
 }

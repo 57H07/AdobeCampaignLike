@@ -121,9 +121,24 @@ public sealed class TemplateService : ITemplateService
 
         await EnsureNameUniqueAsync(request.Name, template.Channel, id, cancellationToken);
 
+        // Business rule (US-008): snapshot current state before applying changes.
+        // Version history is never deleted (audit requirement).
+        var snapshot = new TemplateHistory
+        {
+            TemplateId = template.Id,
+            Version = template.Version,
+            Name = template.Name,
+            HtmlBody = template.HtmlBody,
+            Channel = template.Channel,
+            ChangedBy = request.ChangedBy
+        };
+        _dbContext.TemplateHistories.Add(snapshot);
+
+        // Apply changes and increment version
         template.Name = request.Name;
         template.HtmlBody = request.HtmlBody;
         template.Description = request.Description;
+        template.Version++;
 
         if (request.IsSubTemplate.HasValue)
             template.IsSubTemplate = request.IsSubTemplate.Value;
@@ -131,7 +146,8 @@ public sealed class TemplateService : ITemplateService
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation(
-            "Template updated: Id={TemplateId}, Name={Name}", template.Id, template.Name);
+            "Template updated: Id={TemplateId}, Name={Name}, Version={Version}",
+            template.Id, template.Name, template.Version);
 
         return template;
     }
@@ -251,6 +267,153 @@ public sealed class TemplateService : ITemplateService
     }
 
     // ----------------------------------------------------------------
+    // Versioning: History, Diff, Revert (US-008)
+    // ----------------------------------------------------------------
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<TemplateHistoryDto>> GetHistoryAsync(
+        Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        // Ensure template exists (including soft-deleted — history is always accessible)
+        var exists = await _dbContext.Templates
+            .IgnoreQueryFilters()
+            .AnyAsync(t => t.Id == id, cancellationToken);
+
+        if (!exists)
+            throw new NotFoundException(nameof(Template), id);
+
+        var history = await _dbContext.TemplateHistories
+            .AsNoTracking()
+            .Where(h => h.TemplateId == id)
+            .OrderByDescending(h => h.Version)
+            .ToListAsync(cancellationToken);
+
+        return history.Select(MapHistoryToDto).ToList().AsReadOnly();
+    }
+
+    /// <inheritdoc />
+    public async Task<TemplateDiffDto> GetDiffAsync(
+        Guid id,
+        int fromVersion,
+        int? toVersion,
+        CancellationToken cancellationToken = default)
+    {
+        // Get template (fromVersion and toVersion must exist)
+        var template = await _dbContext.Templates
+            .IgnoreQueryFilters()
+            .AsNoTracking()
+            .FirstOrDefaultAsync(t => t.Id == id, cancellationToken);
+
+        if (template is null)
+            throw new NotFoundException(nameof(Template), id);
+
+        // Resolve 'from' snapshot
+        var fromEntry = await _dbContext.TemplateHistories
+            .AsNoTracking()
+            .FirstOrDefaultAsync(h => h.TemplateId == id && h.Version == fromVersion, cancellationToken);
+
+        if (fromEntry is null)
+            throw new NotFoundException($"Version {fromVersion} of template", id);
+
+        // Resolve 'to': use specified version snapshot, or current live version
+        string toHtmlBody;
+        string toName;
+        int resolvedToVersion;
+
+        if (toVersion.HasValue)
+        {
+            if (toVersion.Value == template.Version)
+            {
+                // 'to' is the current live version
+                toHtmlBody = template.HtmlBody;
+                toName = template.Name;
+                resolvedToVersion = template.Version;
+            }
+            else
+            {
+                var toEntry = await _dbContext.TemplateHistories
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(h => h.TemplateId == id && h.Version == toVersion.Value, cancellationToken);
+
+                if (toEntry is null)
+                    throw new NotFoundException($"Version {toVersion.Value} of template", id);
+
+                toHtmlBody = toEntry.HtmlBody;
+                toName = toEntry.Name;
+                resolvedToVersion = toEntry.Version;
+            }
+        }
+        else
+        {
+            // Default: compare against current live version
+            toHtmlBody = template.HtmlBody;
+            toName = template.Name;
+            resolvedToVersion = template.Version;
+        }
+
+        return new TemplateDiffDto
+        {
+            TemplateId = id,
+            FromVersion = fromVersion,
+            ToVersion = resolvedToVersion,
+            FromHtmlBody = fromEntry.HtmlBody,
+            ToHtmlBody = toHtmlBody,
+            FromName = fromEntry.Name,
+            ToName = toName,
+            NameChanged = fromEntry.Name != toName,
+            HtmlBodyChanged = fromEntry.HtmlBody != toHtmlBody
+        };
+    }
+
+    /// <inheritdoc />
+    public async Task<Template> RevertToVersionAsync(
+        Guid id,
+        int version,
+        string? changedBy,
+        CancellationToken cancellationToken = default)
+    {
+        var template = await _dbContext.Templates
+            .FirstOrDefaultAsync(t => t.Id == id, cancellationToken);
+
+        if (template is null)
+            throw new NotFoundException(nameof(Template), id);
+
+        var historyEntry = await _dbContext.TemplateHistories
+            .AsNoTracking()
+            .FirstOrDefaultAsync(h => h.TemplateId == id && h.Version == version, cancellationToken);
+
+        if (historyEntry is null)
+            throw new NotFoundException($"Version {version} of template", id);
+
+        // Business rule: revert creates a new version — it does not overwrite history.
+        // Snapshot the current state before reverting.
+        var snapshot = new TemplateHistory
+        {
+            TemplateId = template.Id,
+            Version = template.Version,
+            Name = template.Name,
+            HtmlBody = template.HtmlBody,
+            Channel = template.Channel,
+            ChangedBy = changedBy
+        };
+        _dbContext.TemplateHistories.Add(snapshot);
+
+        // Apply the historic content as a new version
+        template.Name = historyEntry.Name;
+        template.HtmlBody = historyEntry.HtmlBody;
+        template.Version++;
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation(
+            "Template reverted: Id={TemplateId}, RevertedToVersion={RevertedVersion}, NewVersion={NewVersion}",
+            template.Id, version, template.Version);
+
+        return template;
+    }
+
+    // ----------------------------------------------------------------
     // Helpers
     // ----------------------------------------------------------------
 
@@ -288,5 +451,17 @@ public sealed class TemplateService : ITemplateService
         Description = t.Description,
         CreatedAt = t.CreatedAt,
         UpdatedAt = t.UpdatedAt
+    };
+
+    private static TemplateHistoryDto MapHistoryToDto(TemplateHistory h) => new()
+    {
+        Id = h.Id,
+        TemplateId = h.TemplateId,
+        Version = h.Version,
+        Name = h.Name,
+        Channel = h.Channel.ToString(),
+        HtmlBody = h.HtmlBody,
+        ChangedBy = h.ChangedBy,
+        CreatedAt = h.CreatedAt
     };
 }
