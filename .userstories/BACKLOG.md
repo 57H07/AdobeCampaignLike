@@ -1,4 +1,4 @@
-﻿﻿﻿# ðŸ“‹ Backlog - CampaignEngine
+﻿﻿﻿﻿# ðŸ“‹ Backlog - CampaignEngine
 
 **Source:** _docs/prd.md
 **Created:** 2026-03-19
@@ -353,7 +353,8 @@
 ---
 
 #### [US-007] - Sub-template composition
-**Status:** ðŸŸ¡ TODO
+**Status:** ðŸ”µ IN PROGRESS
+**Start date:** 2026-03-20
 **Priority:** ðŸ”´ High
 **Complexity:** M
 **Epic:** Template Management
