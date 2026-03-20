@@ -2,6 +2,7 @@ using CampaignEngine.Application.DependencyInjection;
 using CampaignEngine.Application.DTOs.Templates;
 using CampaignEngine.Application.Interfaces;
 using CampaignEngine.Domain.Enums;
+using CampaignEngine.Domain.Exceptions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -18,10 +19,17 @@ namespace CampaignEngine.Web.Controllers;
 public class TemplatesController : ControllerBase
 {
     private readonly ITemplateService _templateService;
+    private readonly IPlaceholderManifestService _manifestService;
+    private readonly IPlaceholderParserService _parserService;
 
-    public TemplatesController(ITemplateService templateService)
+    public TemplatesController(
+        ITemplateService templateService,
+        IPlaceholderManifestService manifestService,
+        IPlaceholderParserService parserService)
     {
         _templateService = templateService;
+        _manifestService = manifestService;
+        _parserService = parserService;
     }
 
     // ----------------------------------------------------------------
@@ -201,5 +209,196 @@ public class TemplatesController : ControllerBase
     {
         await _templateService.DeleteAsync(id, cancellationToken);
         return NoContent();
+    }
+
+    // ================================================================
+    // Placeholder Manifest Endpoints
+    // ================================================================
+
+    // ----------------------------------------------------------------
+    // GET /api/templates/{id}/placeholders
+    // ----------------------------------------------------------------
+
+    /// <summary>
+    /// Returns all placeholder manifest entries declared for the specified template.
+    /// </summary>
+    /// <param name="id">Template GUID.</param>
+    [HttpGet("{id:guid}/placeholders")]
+    [Authorize(Policy = AuthorizationPolicies.RequireAuthenticated)]
+    [ProducesResponseType(typeof(IReadOnlyList<PlaceholderManifestEntryDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<IReadOnlyList<PlaceholderManifestEntryDto>>> GetPlaceholders(
+        Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        var template = await _templateService.GetByIdAsync(id, cancellationToken);
+        if (template is null) return NotFound();
+
+        var entries = await _manifestService.GetByTemplateIdAsync(id, cancellationToken);
+        return Ok(entries);
+    }
+
+    // ----------------------------------------------------------------
+    // POST /api/templates/{id}/placeholders
+    // ----------------------------------------------------------------
+
+    /// <summary>
+    /// Adds a new placeholder manifest entry to the specified template.
+    /// </summary>
+    /// <remarks>
+    /// Business rules:
+    /// - Placeholder key must be unique within the template manifest.
+    /// - FreeField type always implies IsFromDataSource = false.
+    /// - Only Designer and Admin roles can modify the manifest.
+    /// </remarks>
+    /// <param name="id">Template GUID.</param>
+    /// <param name="request">Placeholder entry data.</param>
+    [HttpPost("{id:guid}/placeholders")]
+    [Authorize(Policy = AuthorizationPolicies.RequireDesignerOrAdmin)]
+    [ProducesResponseType(typeof(PlaceholderManifestEntryDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult<PlaceholderManifestEntryDto>> AddPlaceholder(
+        Guid id,
+        [FromBody] UpsertPlaceholderManifestRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var entry = await _manifestService.AddEntryAsync(id, request, cancellationToken);
+        return CreatedAtAction(nameof(GetPlaceholders), new { id }, entry);
+    }
+
+    // ----------------------------------------------------------------
+    // PUT /api/templates/{id}/placeholders/{entryId}
+    // ----------------------------------------------------------------
+
+    /// <summary>
+    /// Updates an existing placeholder manifest entry.
+    /// </summary>
+    /// <param name="id">Template GUID.</param>
+    /// <param name="entryId">Manifest entry GUID.</param>
+    /// <param name="request">Updated placeholder data.</param>
+    [HttpPut("{id:guid}/placeholders/{entryId:guid}")]
+    [Authorize(Policy = AuthorizationPolicies.RequireDesignerOrAdmin)]
+    [ProducesResponseType(typeof(PlaceholderManifestEntryDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult<PlaceholderManifestEntryDto>> UpdatePlaceholder(
+        Guid id,
+        Guid entryId,
+        [FromBody] UpsertPlaceholderManifestRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var entry = await _manifestService.UpdateEntryAsync(id, entryId, request, cancellationToken);
+        return Ok(entry);
+    }
+
+    // ----------------------------------------------------------------
+    // DELETE /api/templates/{id}/placeholders/{entryId}
+    // ----------------------------------------------------------------
+
+    /// <summary>
+    /// Removes a placeholder manifest entry from the specified template.
+    /// </summary>
+    /// <param name="id">Template GUID.</param>
+    /// <param name="entryId">Manifest entry GUID.</param>
+    [HttpDelete("{id:guid}/placeholders/{entryId:guid}")]
+    [Authorize(Policy = AuthorizationPolicies.RequireDesignerOrAdmin)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> DeletePlaceholder(
+        Guid id,
+        Guid entryId,
+        CancellationToken cancellationToken = default)
+    {
+        await _manifestService.DeleteEntryAsync(id, entryId, cancellationToken);
+        return NoContent();
+    }
+
+    // ----------------------------------------------------------------
+    // PUT /api/templates/{id}/placeholders/bulk
+    // ----------------------------------------------------------------
+
+    /// <summary>
+    /// Replaces the entire placeholder manifest for a template with the provided set.
+    /// Existing entries are removed and replaced atomically.
+    /// </summary>
+    /// <remarks>
+    /// Use this endpoint for bulk save from the manifest editor UI.
+    /// All keys in the provided list must be unique.
+    /// </remarks>
+    /// <param name="id">Template GUID.</param>
+    /// <param name="entries">Complete replacement manifest entries.</param>
+    [HttpPut("{id:guid}/placeholders/bulk")]
+    [Authorize(Policy = AuthorizationPolicies.RequireDesignerOrAdmin)]
+    [ProducesResponseType(typeof(IReadOnlyList<PlaceholderManifestEntryDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult<IReadOnlyList<PlaceholderManifestEntryDto>>> ReplacePlaceholders(
+        Guid id,
+        [FromBody] IEnumerable<UpsertPlaceholderManifestRequest> entries,
+        CancellationToken cancellationToken = default)
+    {
+        var result = await _manifestService.ReplaceManifestAsync(id, entries, cancellationToken);
+        return Ok(result);
+    }
+
+    // ----------------------------------------------------------------
+    // GET /api/templates/{id}/placeholders/extract
+    // ----------------------------------------------------------------
+
+    /// <summary>
+    /// Extracts placeholder keys from the template HTML body without persisting anything.
+    /// Use this to auto-detect which placeholders need to be declared.
+    /// </summary>
+    /// <param name="id">Template GUID.</param>
+    [HttpGet("{id:guid}/placeholders/extract")]
+    [Authorize(Policy = AuthorizationPolicies.RequireAuthenticated)]
+    [ProducesResponseType(typeof(PlaceholderExtractionResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<PlaceholderExtractionResult>> ExtractPlaceholders(
+        Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        var template = await _templateService.GetByIdAsync(id, cancellationToken);
+        if (template is null) return NotFound();
+
+        var result = _parserService.ExtractPlaceholders(template.HtmlBody);
+        return Ok(result);
+    }
+
+    // ----------------------------------------------------------------
+    // GET /api/templates/{id}/placeholders/validate
+    // ----------------------------------------------------------------
+
+    /// <summary>
+    /// Validates that all placeholders used in the template HTML are declared in the manifest.
+    /// Returns undeclared keys and orphan manifest entries (informational).
+    /// </summary>
+    /// <param name="id">Template GUID.</param>
+    [HttpGet("{id:guid}/placeholders/validate")]
+    [Authorize(Policy = AuthorizationPolicies.RequireAuthenticated)]
+    [ProducesResponseType(typeof(ManifestValidationResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<ManifestValidationResult>> ValidatePlaceholderManifest(
+        Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        var template = await _templateService.GetByIdAsync(id, cancellationToken);
+        if (template is null) return NotFound();
+
+        var manifestEntries = await _manifestService.GetByTemplateIdAsync(id, cancellationToken);
+        var result = _parserService.ValidateManifestCompleteness(template.HtmlBody, manifestEntries);
+        return Ok(result);
     }
 }

@@ -1,0 +1,407 @@
+@page "{id:guid}"
+@model CampaignEngine.Web.Pages.Templates.TemplateManifestModel
+@{
+    ViewData["Title"] = $"Placeholder Manifest — {Model.TemplateName}";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h1>Placeholder Manifest</h1>
+        <p class="text-muted mb-0">Template: <strong>@Model.TemplateName</strong></p>
+    </div>
+    <a asp-page="Detail" asp-route-id="@Model.TemplateId" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Back to template
+    </a>
+</div>
+
+@if (!string.IsNullOrEmpty(Model.SuccessMessage))
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @Model.SuccessMessage
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @Model.ErrorMessage
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="row g-4">
+    @* Left: Manifest Editor *@
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">Declared Placeholders</h6>
+                <button type="button" class="btn btn-sm btn-outline-info" id="btnAutoDetect">
+                    <i class="bi bi-magic"></i> Auto-detect from HTML
+                </button>
+            </div>
+            <div class="card-body">
+                @if (Model.ValidationResult is not null && !Model.ValidationResult.IsComplete)
+                {
+                    <div class="alert alert-warning" role="alert">
+                        <strong>Incomplete manifest:</strong> @Model.ValidationResult.Summary
+                        @if (Model.ValidationResult.UndeclaredKeys.Count > 0)
+                        {
+                            <ul class="mb-0 mt-1">
+                                @foreach (var key in Model.ValidationResult.UndeclaredKeys)
+                                {
+                                    <li>Missing: <code>{{ @key }}</code></li>
+                                }
+                            </ul>
+                        }
+                    </div>
+                }
+
+                <form method="post">
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+                    <div id="manifestEntries">
+                        @for (int i = 0; i < Model.Entries.Count; i++)
+                        {
+                            <div class="manifest-entry border rounded p-3 mb-3" data-index="@i">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <h6 class="mb-0">Placeholder #<span class="entry-number">@(i + 1)</span></h6>
+                                    <button type="button" class="btn btn-sm btn-outline-danger btn-remove-entry">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                                <input type="hidden" name="Entries[@i].Id" value="@Model.Entries[i].Id" />
+                                <div class="row g-2">
+                                    <div class="col-md-4">
+                                        <label class="form-label form-label-sm">Key <span class="text-danger">*</span></label>
+                                        <input type="text" name="Entries[@i].Key" value="@Model.Entries[i].Key"
+                                               class="form-control form-control-sm font-monospace"
+                                               placeholder="e.g. customerName" required
+                                               pattern="[a-zA-Z_][a-zA-Z0-9_]*" />
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label form-label-sm">Type <span class="text-danger">*</span></label>
+                                        <select name="Entries[@i].Type" class="form-select form-select-sm entry-type">
+                                            @foreach (var opt in Model.PlaceholderTypeOptions)
+                                            {
+                                                var selected = opt.Value == Model.Entries[i].Type.ToString() ? "selected" : "";
+                                                <option value="@opt.Value" @selected>@opt.Text</option>
+                                            }
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label form-label-sm">Source <span class="text-danger">*</span></label>
+                                        <select name="Entries[@i].IsFromDataSource" class="form-select form-select-sm entry-source">
+                                            <option value="true" @(Model.Entries[i].IsFromDataSource ? "selected" : "")>Data Source</option>
+                                            <option value="false" @(!Model.Entries[i].IsFromDataSource ? "selected" : "")>Operator Input</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2 d-flex align-items-end">
+                                        <div class="form-check">
+                                            @* Placeholder for future required toggle *@
+                                        </div>
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label form-label-sm">Description</label>
+                                        <input type="text" name="Entries[@i].Description" value="@Model.Entries[i].Description"
+                                               class="form-control form-control-sm"
+                                               placeholder="Optional description" maxlength="500" />
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="d-flex gap-2 mt-3">
+                        <button type="button" class="btn btn-outline-secondary btn-sm" id="btnAddEntry">
+                            <i class="bi bi-plus-circle"></i> Add Placeholder
+                        </button>
+                    </div>
+
+                    <hr />
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-floppy"></i> Save Manifest
+                        </button>
+                        <a asp-page="Detail" asp-route-id="@Model.TemplateId" class="btn btn-outline-secondary">
+                            Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    @* Right: Syntax Guide and Auto-detect panel *@
+    <div class="col-lg-4">
+        @* Auto-detect panel (initially hidden) *@
+        <div class="card mb-3 d-none" id="autoDetectPanel">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0"><i class="bi bi-magic"></i> Detected Placeholders</h6>
+            </div>
+            <div class="card-body" id="autoDetectContent">
+                <p class="text-muted small">Loading...</p>
+            </div>
+        </div>
+
+        @* Syntax Guide *@
+        <div class="card">
+            <div class="card-header"><h6 class="mb-0">Placeholder Syntax Guide</h6></div>
+            <div class="card-body">
+                <h6 class="small fw-bold text-uppercase text-muted">Scalar</h6>
+                <p class="small">Simple values: strings, numbers, dates.</p>
+                <pre class="bg-light p-2 rounded small">{{ customerName }}
+{{ invoiceDate }}</pre>
+
+                <h6 class="small fw-bold text-uppercase text-muted mt-3">Table / List</h6>
+                <p class="small">Iteration over collections of rows.</p>
+                <pre class="bg-light p-2 rounded small">{{ for row in orders }}
+  {{ row.product }}
+{{ end }}</pre>
+
+                <h6 class="small fw-bold text-uppercase text-muted mt-3">FreeField</h6>
+                <p class="small">Values provided by the operator at campaign creation. Set source to <strong>Operator Input</strong>.</p>
+                <pre class="bg-light p-2 rounded small">{{ campaignTitle }}
+{{ customMessage }}</pre>
+
+                <h6 class="small fw-bold text-uppercase text-muted mt-3">Source</h6>
+                <ul class="small ps-3 mb-0">
+                    <li><strong>Data Source</strong> — value fetched from the configured data repository</li>
+                    <li><strong>Operator Input</strong> — value entered manually at campaign creation</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* Entry template for JavaScript *@
+<template id="entryTemplate">
+    <div class="manifest-entry border rounded p-3 mb-3" data-index="__INDEX__">
+        <div class="d-flex justify-content-between align-items-start mb-2">
+            <h6 class="mb-0">Placeholder #<span class="entry-number">__NUM__</span></h6>
+            <button type="button" class="btn btn-sm btn-outline-danger btn-remove-entry">
+                <i class="bi bi-trash"></i>
+            </button>
+        </div>
+        <input type="hidden" name="Entries[__INDEX__].Id" value="" />
+        <div class="row g-2">
+            <div class="col-md-4">
+                <label class="form-label form-label-sm">Key <span class="text-danger">*</span></label>
+                <input type="text" name="Entries[__INDEX__].Key" value=""
+                       class="form-control form-control-sm font-monospace"
+                       placeholder="e.g. customerName" required
+                       pattern="[a-zA-Z_][a-zA-Z0-9_]*" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label form-label-sm">Type <span class="text-danger">*</span></label>
+                <select name="Entries[__INDEX__].Type" class="form-select form-select-sm entry-type">
+                    <option value="1">Scalar</option>
+                    <option value="2">Table</option>
+                    <option value="3">List</option>
+                    <option value="4">FreeField</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label form-label-sm">Source <span class="text-danger">*</span></label>
+                <select name="Entries[__INDEX__].IsFromDataSource" class="form-select form-select-sm entry-source">
+                    <option value="true">Data Source</option>
+                    <option value="false">Operator Input</option>
+                </select>
+            </div>
+            <div class="col-12">
+                <label class="form-label form-label-sm">Description</label>
+                <input type="text" name="Entries[__INDEX__].Description" value=""
+                       class="form-control form-control-sm"
+                       placeholder="Optional description" maxlength="500" />
+            </div>
+        </div>
+    </div>
+</template>
+
+@section Scripts {
+    <script>
+        (function () {
+            const templateId = '@Model.TemplateId';
+            const container = document.getElementById('manifestEntries');
+            const tmpl = document.getElementById('entryTemplate');
+
+            // ----------------------------------------------------------------
+            // Add entry
+            // ----------------------------------------------------------------
+            document.getElementById('btnAddEntry').addEventListener('click', function () {
+                addEntry();
+            });
+
+            function addEntry(key, type, isFromDataSource, description) {
+                const index = container.querySelectorAll('.manifest-entry').length;
+                let html = tmpl.innerHTML
+                    .replaceAll('__INDEX__', index)
+                    .replaceAll('__NUM__', index + 1);
+
+                const wrapper = document.createElement('div');
+                wrapper.innerHTML = html;
+                const entry = wrapper.firstElementChild;
+                container.appendChild(entry);
+
+                if (key) entry.querySelector('input[name$=".Key"]').value = key;
+                if (type) {
+                    const sel = entry.querySelector('select[name$=".Type"]');
+                    for (let opt of sel.options) {
+                        if (opt.text === type || opt.value === String(type)) {
+                            sel.value = opt.value;
+                            break;
+                        }
+                    }
+                }
+                if (isFromDataSource !== undefined) {
+                    const src = entry.querySelector('select[name$=".IsFromDataSource"]');
+                    src.value = isFromDataSource ? 'true' : 'false';
+                }
+                if (description) entry.querySelector('input[name$=".Description"]').value = description;
+
+                // Auto-update source when type changes to FreeField
+                entry.querySelector('.entry-type').addEventListener('change', onTypeChange);
+
+                reindexEntries();
+            }
+
+            // ----------------------------------------------------------------
+            // Remove entry (event delegation)
+            // ----------------------------------------------------------------
+            container.addEventListener('click', function (e) {
+                const btn = e.target.closest('.btn-remove-entry');
+                if (btn) {
+                    btn.closest('.manifest-entry').remove();
+                    reindexEntries();
+                }
+            });
+
+            // ----------------------------------------------------------------
+            // Auto-update source when FreeField selected
+            // ----------------------------------------------------------------
+            container.addEventListener('change', function (e) {
+                if (e.target.classList.contains('entry-type')) {
+                    onTypeChange.call(e.target);
+                }
+            });
+
+            function onTypeChange() {
+                const entry = this.closest('.manifest-entry');
+                const srcSelect = entry.querySelector('.entry-source');
+                if (this.options[this.selectedIndex].text === 'FreeField') {
+                    srcSelect.value = 'false';
+                    srcSelect.disabled = true;
+                } else {
+                    srcSelect.disabled = false;
+                }
+            }
+
+            // Initialize existing entries type-change handlers
+            container.querySelectorAll('.entry-type').forEach(function (sel) {
+                sel.addEventListener('change', onTypeChange);
+                // Apply disabled state if FreeField on load
+                if (sel.options[sel.selectedIndex].text === 'FreeField') {
+                    const srcSel = sel.closest('.manifest-entry').querySelector('.entry-source');
+                    srcSel.disabled = true;
+                }
+            });
+
+            // ----------------------------------------------------------------
+            // Reindex entries after add/remove
+            // ----------------------------------------------------------------
+            function reindexEntries() {
+                const entries = container.querySelectorAll('.manifest-entry');
+                entries.forEach(function (entry, idx) {
+                    entry.setAttribute('data-index', idx);
+                    entry.querySelector('.entry-number').textContent = idx + 1;
+
+                    // Update all name attributes
+                    entry.querySelectorAll('[name]').forEach(function (el) {
+                        el.name = el.name.replace(/Entries\[\d+\]/, 'Entries[' + idx + ']');
+                    });
+                });
+            }
+
+            // ----------------------------------------------------------------
+            // Auto-detect from HTML
+            // ----------------------------------------------------------------
+            document.getElementById('btnAutoDetect').addEventListener('click', async function () {
+                const panel = document.getElementById('autoDetectPanel');
+                const content = document.getElementById('autoDetectContent');
+                panel.classList.remove('d-none');
+                content.innerHTML = '<p class="text-muted small">Detecting placeholders...</p>';
+
+                try {
+                    const resp = await fetch('/api/templates/' + templateId + '/placeholders/extract', {
+                        headers: { 'Accept': 'application/json' }
+                    });
+
+                    if (!resp.ok) {
+                        content.innerHTML = '<p class="text-danger small">Failed to extract placeholders.</p>';
+                        return;
+                    }
+
+                    const data = await resp.json();
+
+                    if (data.allKeys.length === 0) {
+                        content.innerHTML = '<p class="text-muted small">No placeholders detected in template HTML.</p>';
+                        return;
+                    }
+
+                    // Collect already declared keys
+                    const declaredKeys = new Set(
+                        Array.from(container.querySelectorAll('input[name$=".Key"]'))
+                            .map(el => el.value.toLowerCase().trim())
+                            .filter(v => v)
+                    );
+
+                    let html = '<p class="small mb-2">Detected placeholders:</p><div class="d-flex flex-wrap gap-1 mb-2">';
+
+                    data.scalarKeys.forEach(function (key) {
+                        const declared = declaredKeys.has(key.toLowerCase());
+                        html += '<span class="badge ' + (declared ? 'bg-success' : 'bg-primary') + '">'
+                             + (declared ? '<i class="bi bi-check"></i> ' : '')
+                             + key + ' (scalar)</span>';
+                    });
+                    data.iterationKeys.forEach(function (key) {
+                        const declared = declaredKeys.has(key.toLowerCase());
+                        html += '<span class="badge ' + (declared ? 'bg-success' : 'bg-info text-dark') + '">'
+                             + (declared ? '<i class="bi bi-check"></i> ' : '')
+                             + key + ' (table)</span>';
+                    });
+
+                    html += '</div>';
+
+                    const newKeys = data.allKeys.filter(k => !declaredKeys.has(k.toLowerCase()));
+                    if (newKeys.length > 0) {
+                        html += '<button type="button" class="btn btn-sm btn-outline-primary" id="btnAddDetected">'
+                              + '<i class="bi bi-plus-circle"></i> Add ' + newKeys.length + ' undeclared placeholder(s)'
+                              + '</button>';
+                    } else {
+                        html += '<p class="text-success small mb-0"><i class="bi bi-check-circle"></i> All placeholders already declared.</p>';
+                    }
+
+                    content.innerHTML = html;
+
+                    const addBtn = content.querySelector('#btnAddDetected');
+                    if (addBtn) {
+                        addBtn.addEventListener('click', function () {
+                            newKeys.forEach(function (key) {
+                                const isIteration = data.iterationKeys.some(
+                                    k => k.toLowerCase() === key.toLowerCase()
+                                );
+                                addEntry(key, isIteration ? 'Table' : 'Scalar', true, '');
+                            });
+                            addBtn.disabled = true;
+                            addBtn.textContent = 'Added!';
+                        });
+                    }
+                } catch (err) {
+                    content.innerHTML = '<p class="text-danger small">Error: ' + err.message + '</p>';
+                }
+            });
+
+        })();
+    </script>
+}

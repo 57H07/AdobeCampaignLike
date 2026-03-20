@@ -16,18 +16,28 @@ namespace CampaignEngine.Web.Pages.Templates;
 public class TemplateDetailModel : PageModel
 {
     private readonly ITemplateService _templateService;
+    private readonly IPlaceholderManifestService _manifestService;
+    private readonly IPlaceholderParserService _parserService;
 
-    public TemplateDetailModel(ITemplateService templateService)
+    public TemplateDetailModel(
+        ITemplateService templateService,
+        IPlaceholderManifestService manifestService,
+        IPlaceholderParserService parserService)
     {
         _templateService = templateService;
+        _manifestService = manifestService;
+        _parserService = parserService;
     }
 
     public TemplateDto? Template { get; private set; }
+    public ManifestValidationResult? ValidationResult { get; private set; }
 
     public async Task<IActionResult> OnGetAsync(Guid id)
     {
         var template = await _templateService.GetByIdAsync(id);
         if (template is null) return NotFound();
+
+        var manifests = await _manifestService.GetByTemplateIdAsync(id);
 
         Template = new TemplateDto
         {
@@ -40,8 +50,11 @@ public class TemplateDetailModel : PageModel
             IsSubTemplate = template.IsSubTemplate,
             Description = template.Description,
             CreatedAt = template.CreatedAt,
-            UpdatedAt = template.UpdatedAt
+            UpdatedAt = template.UpdatedAt,
+            PlaceholderManifests = manifests
         };
+
+        ValidationResult = _parserService.ValidateManifestCompleteness(template.HtmlBody, manifests);
 
         return Page();
     }
