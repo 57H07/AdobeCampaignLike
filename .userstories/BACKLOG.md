@@ -997,7 +997,7 @@
 - [x] `TASK-021-05` - **[Service]** PDF metadata generation (manifest file) ✅ 2026-03-20
 - [x] `TASK-021-06` - **[Test]** PDF generation tests ✅ 2026-03-20
 - [x] `TASK-021-07` - **[Test]** Consolidation tests (verify page order) ✅ 2026-03-20
-- [ ] `TASK-021-08` - **[Doc]** Letter channel configuration guide
+- [x] `TASK-021-08` - **[Doc]** Letter channel configuration guide ✅ 2026-03-20
 
 **Business rules:**
 1. A4 format, portrait orientation
