@@ -906,7 +906,7 @@
 - [x] `TASK-019-05` - **[Service]** SMTP error categorization (transient vs permanent) ✅ 2026-03-20
 - [x] `TASK-019-06` - **[Test]** Integration tests with local SMTP server ✅ 2026-03-20
 - [x] `TASK-019-07` - **[Test]** Attachment validation tests ✅ 2026-03-20
-- [ ] `TASK-019-08` - **[Doc]** SMTP configuration guide
+- [x] `TASK-019-08` - **[Doc]** SMTP configuration guide ✅ 2026-03-20
 
 **Business rules:**
 1. From address configurable per environment
