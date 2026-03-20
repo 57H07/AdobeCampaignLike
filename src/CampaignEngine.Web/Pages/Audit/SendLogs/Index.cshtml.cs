@@ -30,7 +30,7 @@ public class SendLogsIndexModel : PageModel
     public SendLogFilterViewModel Filter { get; set; } = new();
 
     [BindProperty(SupportsGet = true)]
-    public int Page { get; set; } = 1;
+    public new int Page { get; set; } = 1;
 
     // ----------------------------------------------------------------
     // Result properties
