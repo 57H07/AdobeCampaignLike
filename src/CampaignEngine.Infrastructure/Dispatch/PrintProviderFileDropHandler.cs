@@ -18,7 +18,7 @@ namespace CampaignEngine.Infrastructure.Dispatch;
 /// File naming convention (BR-4): CAMPAIGN_{campaignId}_{timestamp}_{batchNumber}.pdf
 /// Manifest naming:               CAMPAIGN_{campaignId}_{timestamp}_{batchNumber}_manifest.csv
 /// </summary>
-public sealed class PrintProviderFileDropHandler
+public class PrintProviderFileDropHandler
 {
     private readonly LetterOptions _options;
     private readonly ILogger<PrintProviderFileDropHandler> _logger;
@@ -45,7 +45,7 @@ public sealed class PrintProviderFileDropHandler
     /// <param name="timestamp">Timestamp used in the file name. Defaults to UtcNow when null.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Full path of the written PDF file.</returns>
-    public async Task<string> WriteAsync(
+    public virtual async Task<string> WriteAsync(
         byte[] pdfBytes,
         string? manifestCsv,
         Guid campaignId,

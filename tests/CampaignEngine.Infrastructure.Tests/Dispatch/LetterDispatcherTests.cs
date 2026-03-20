@@ -45,7 +45,7 @@ public class LetterDispatcherTests
     private static LetterDispatcher CreateDispatcher(
         MockLetterPostProcessorRegistry? registry = null,
         MockPdfConsolidationService? consolidation = null,
-        NoOpFileDropHandler? fileDropHandler = null,
+        PrintProviderFileDropHandler? fileDropHandler = null,
         LetterOptions? options = null)
     {
         var reg = registry ?? new MockLetterPostProcessorRegistry(
@@ -144,7 +144,7 @@ public class LetterDispatcherTests
     [Fact]
     public async Task SendAsync_ChannelDisabled_ReturnsPermanentFailure()
     {
-        var opts = DefaultOptions with { IsEnabled = false };
+        var opts = new LetterOptions { IsEnabled = false, OutputDirectory = "/tmp" };
         var dispatcher = CreateDispatcher(options: opts);
 
         var result = await dispatcher.SendAsync(BuildRequest());
@@ -302,7 +302,7 @@ public class LetterDispatcherTests
     public async Task FlushBatchAsync_ManifestCsvGenerated_WhenEnabled()
     {
         var campaignId = Guid.NewGuid();
-        var options = DefaultOptions with { GenerateManifest = true };
+        var options = new LetterOptions { IsEnabled = true, OutputDirectory = "/tmp", GenerateManifest = true };
         var fileDropHandler = new NoOpFileDropHandler(options);
         var dispatcher = CreateDispatcher(fileDropHandler: fileDropHandler, options: options);
 
@@ -317,7 +317,7 @@ public class LetterDispatcherTests
     public async Task FlushBatchAsync_ManifestNotGenerated_WhenDisabled()
     {
         var campaignId = Guid.NewGuid();
-        var options = DefaultOptions with { GenerateManifest = false };
+        var options = new LetterOptions { IsEnabled = true, OutputDirectory = "/tmp", GenerateManifest = false };
         var fileDropHandler = new NoOpFileDropHandler(options);
         var dispatcher = CreateDispatcher(fileDropHandler: fileDropHandler, options: options);
 
@@ -536,6 +536,10 @@ internal class MockLetterPostProcessorRegistry : IChannelPostProcessorRegistry
     {
         _exception = exception;
     }
+
+    public IEnumerable<ChannelType> RegisteredChannels => [ChannelType.Letter];
+
+    public bool HasProcessor(ChannelType channel) => channel == ChannelType.Letter;
 
     public IChannelPostProcessor GetProcessor(ChannelType channel)
     {

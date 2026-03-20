@@ -995,8 +995,8 @@
 - [x] `TASK-021-03` - **[Service]** PDF consolidation service with PdfSharp ✅ 2026-03-20
 - [x] `TASK-021-04` - **[Service]** Print provider file drop handler (UNC or API) ✅ 2026-03-20
 - [x] `TASK-021-05` - **[Service]** PDF metadata generation (manifest file) ✅ 2026-03-20
-- [ ] `TASK-021-06` - **[Test]** PDF generation tests
-- [ ] `TASK-021-07` - **[Test]** Consolidation tests (verify page order)
+- [x] `TASK-021-06` - **[Test]** PDF generation tests ✅ 2026-03-20
+- [x] `TASK-021-07` - **[Test]** Consolidation tests (verify page order) ✅ 2026-03-20
 - [ ] `TASK-021-08` - **[Doc]** Letter channel configuration guide
 
 **Business rules:**
@@ -1416,9 +1416,10 @@
 ---
 
 #### [US-031] - API authentication and authorization
-**Status:** ðŸŔµ IN PROGRESS
+**Status:** ✅ DONE
 **Start date:** 2026-03-20
-**Priority:** ðŸ”´ High
+**End date:** 2026-03-20
+**Priority:** 🔴 High
 **Complexity:** M
 **Epic:** Generic Send API
 
@@ -1430,11 +1431,11 @@
 > API key or OAuth2 client credentials for external consumers. HTTPS only. Security critical.
 
 **Acceptance criteria:**
-- [ ] API key authentication mechanism
-- [ ] API key management UI (create, revoke, rotate)
+- [x] API key authentication mechanism ✅
+- [x] API key management UI (create, revoke, rotate) ✅
 - [ ] OAuth2 client credentials flow support (optional)
-- [ ] HTTPS enforcement for all API calls
-- [ ] Rate limiting per API key
+- [x] HTTPS enforcement for all API calls ✅
+- [x] Rate limiting per API key ✅
 
 **Technical tasks:**
 - [x] `TASK-031-01` - **[Model]** Create ApiKey entity ✅ 2026-03-20
