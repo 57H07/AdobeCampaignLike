@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿# ðŸ“‹ Backlog - CampaignEngine
+﻿﻿﻿﻿﻿﻿﻿﻿﻿# ðŸ“‹ Backlog - CampaignEngine
 
 **Source:** _docs/prd.md
 **Created:** 2026-03-19
@@ -397,8 +397,9 @@
 ---
 
 #### [US-008] - Template versioning
-**Status:** 🔵 IN PROGRESS
+**Status:** ✅ DONE
 **Start date:** 2026-03-20
+**End date:** 2026-03-20
 **Priority:** ðŸŸ  Medium
 **Complexity:** M
 **Epic:** Template Management
@@ -411,22 +412,24 @@
 > Auto-increment version on each update; maintain version history. Template snapshots guarantee campaign reproducibility.
 
 **Acceptance criteria:**
-- [ ] Version number auto-increments on every template update
-- [ ] Full version history maintained in separate table
-- [ ] Version diff view showing changes between versions
-- [ ] Ability to view/preview any historical version
-- [ ] Ability to revert to previous version (creates new version)
+- [x] Version number auto-increments on every template update
+- [x] Full version history maintained in separate table
+- [x] Version diff view showing changes between versions
+- [x] Ability to view/preview any historical version
+- [x] Ability to revert to previous version (creates new version)
 
 **Technical tasks:**
-- [ ] `TASK-008-01` - **[Model]** Add Version field to Template entity
-- [ ] `TASK-008-02` - **[Model]** Create TemplateHistory entity for snapshots
-- [ ] `TASK-008-03` - **[Service]** Auto-snapshot on template update
-- [ ] `TASK-008-04` - **[API]** GET /api/templates/{id}/history endpoint
-- [ ] `TASK-008-05` - **[API]** POST /api/templates/{id}/revert/{version} endpoint
-- [ ] `TASK-008-06` - **[Frontend]** Version history view with diff display
-- [ ] `TASK-008-07` - **[Frontend]** Revert confirmation dialog
-- [ ] `TASK-008-08` - **[Test]** Versioning logic tests
-- [ ] `TASK-008-09` - **[Doc]** Version management guide
+- [x]  
+    param($m) $m.Value.TrimEnd() + ' ' + [char]0x2705 + ' 2026-03-20' 
+
+- [x] `TASK-008-02` - **[Model]** Create TemplateHistory entity for snapshots ✅ 2026-03-20
+- [x] `TASK-008-03` - **[Service]** Auto-snapshot on template update ✅ 2026-03-20
+- [x] `TASK-008-04` - **[API]** GET /api/templates/{id}/history endpoint ✅ 2026-03-20
+- [x] `TASK-008-05` - **[API]** POST /api/templates/{id}/revert/{version} endpoint ✅ 2026-03-20
+- [x] `TASK-008-06` - **[Frontend]** Version history view with diff display ✅ 2026-03-20
+- [x] `TASK-008-07` - **[Frontend]** Revert confirmation dialog ✅ 2026-03-20
+- [x] `TASK-008-08` - **[Test]** Versioning logic tests ✅ 2026-03-20
+- [x] `TASK-008-09` - **[Doc]** Version management guide ✅ 2026-03-20
 
 **Business rules:**
 1. Version starts at 1, increments on every save
@@ -453,11 +456,11 @@
 > Status management: Draft â†’ Published â†’ Archived. Incomplete templates cannot be used in production.
 
 **Acceptance criteria:**
-- [ ] Templates have status: Draft, Published, Archived
-- [ ] Only Published templates available for campaign creation
-- [ ] Draft templates can be edited freely without affecting campaigns
-- [ ] Archived templates visible for audit but not usable
-- [ ] Status transition validation and audit logging
+- [x] Templates have status: Draft, Published, Archived ✅
+- [x] Only Published templates available for campaign creation ✅
+- [x] Draft templates can be edited freely without affecting campaigns ✅
+- [x] Archived templates visible for audit but not usable ✅
+- [x] Status transition validation and audit logging ✅
 
 **Technical tasks:**
 - [x] `TASK-009-01` - **[Model]** Add Status enum to Template entity ✅ 2026-03-20
