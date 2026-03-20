@@ -194,7 +194,7 @@ public sealed class SingleSendService : ISingleSendService
 
             _logger.LogInformation(
                 "Single send succeeded. TrackingId={TrackingId}, Channel={Channel}, MessageId={MessageId}",
-                trackingId, request.Channel, dispatchResult.MessageId);
+                trackingId, request.Channel, dispatchResult.MessageId!);
 
             return SendResponse.Ok(
                 trackingId,
@@ -212,7 +212,7 @@ public sealed class SingleSendService : ISingleSendService
 
             _logger.LogWarning(
                 "Single send failed at dispatch. TrackingId={TrackingId}, Channel={Channel}, Error={Error}",
-                trackingId, request.Channel, dispatchResult.ErrorDetail);
+                trackingId, request.Channel, dispatchResult.ErrorDetail!);
 
             return SendResponse.Fail(trackingId, request.Channel,
                 dispatchResult.ErrorDetail ?? "Dispatch failed with an unknown error.");
