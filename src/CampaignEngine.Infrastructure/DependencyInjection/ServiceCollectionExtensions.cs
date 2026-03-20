@@ -112,6 +112,12 @@ public static class ServiceCollectionExtensions
         // Template service — CRUD operations with soft delete and unique-name enforcement.
         services.AddScoped<ITemplateService, TemplateService>();
 
+        // Placeholder manifest service — manages typed placeholder declarations per template.
+        services.AddScoped<IPlaceholderManifestService, PlaceholderManifestService>();
+
+        // Placeholder parser service — extracts placeholder keys from template HTML and validates completeness.
+        services.AddSingleton<IPlaceholderParserService, PlaceholderParserService>();
+
         // Logging dispatch orchestrator — wraps dispatchers with before/after SEND_LOG recording.
         services.AddScoped<ILoggingDispatchOrchestrator, LoggingDispatchOrchestrator>();
 
