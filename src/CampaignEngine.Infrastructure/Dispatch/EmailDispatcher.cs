@@ -25,8 +25,11 @@ namespace CampaignEngine.Infrastructure.Dispatch;
 ///   2. Reply-To address optional per campaign (DispatchRequest.ReplyToAddress overrides SmtpOptions.ReplyToAddress).
 ///   3. Attachment whitelist: PDF, DOCX, XLSX, PNG, JPG.
 ///   4. Attachment size limits: 10 MB per file, 25 MB total.
+///
+/// The class is not sealed to allow test subclasses to override SendViaSmtpAsync
+/// for unit-testing message construction without a live SMTP server.
 /// </summary>
-public sealed class EmailDispatcher : IChannelDispatcher
+public class EmailDispatcher : IChannelDispatcher
 {
     private readonly SmtpOptions _smtpOptions;
     private readonly ILogger<EmailDispatcher> _logger;
@@ -166,7 +169,7 @@ public sealed class EmailDispatcher : IChannelDispatcher
     /// <summary>
     /// Builds the MIME body part. When attachments are present, creates a multipart/mixed message.
     /// </summary>
-    private MimePart BuildHtmlPart(string htmlContent)
+    private static MimePart BuildHtmlPart(string htmlContent)
     {
         return new TextPart(TextFormat.Html)
         {
@@ -283,13 +286,15 @@ public sealed class EmailDispatcher : IChannelDispatcher
 
     // ----------------------------------------------------------------
     // SMTP transport (TASK-019-01)
+    // Protected virtual to allow test overrides without live SMTP server.
     // ----------------------------------------------------------------
 
     /// <summary>
     /// Connects to the SMTP server and sends the message.
     /// TASK-019-05: Categorizes exceptions as transient or permanent.
+    /// Virtual to allow test subclasses to override SMTP transport.
     /// </summary>
-    private async Task SendViaSmtpAsync(MimeMessage message, CancellationToken cancellationToken)
+    protected virtual async Task SendViaSmtpAsync(MimeMessage message, CancellationToken cancellationToken)
     {
         using var client = new SmtpClient();
         client.Timeout = _smtpOptions.TimeoutSeconds * 1000;

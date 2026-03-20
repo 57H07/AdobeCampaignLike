@@ -904,8 +904,8 @@
 - [x] `TASK-019-03` - **[Service]** Attachment handling from file paths ✅ 2026-03-20
 - [x] `TASK-019-04` - **[Service]** CC/BCC recipient list handling ✅ 2026-03-20
 - [x] `TASK-019-05` - **[Service]** SMTP error categorization (transient vs permanent) ✅ 2026-03-20
-- [ ] `TASK-019-06` - **[Test]** Integration tests with local SMTP server
-- [ ] `TASK-019-07` - **[Test]** Attachment validation tests
+- [x] `TASK-019-06` - **[Test]** Integration tests with local SMTP server ✅ 2026-03-20
+- [x] `TASK-019-07` - **[Test]** Attachment validation tests ✅ 2026-03-20
 - [ ] `TASK-019-08` - **[Doc]** SMTP configuration guide
 
 **Business rules:**
