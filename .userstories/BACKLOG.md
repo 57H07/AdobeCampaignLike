@@ -419,9 +419,7 @@
 - [x] Ability to revert to previous version (creates new version)
 
 **Technical tasks:**
-- [x]  
-    param($m) $m.Value.TrimEnd() + ' ' + [char]0x2705 + ' 2026-03-20' 
-
+- [x] `TASK-008-01` - **[Model]** Add Version field to Template entity ✅ 2026-03-20
 - [x] `TASK-008-02` - **[Model]** Create TemplateHistory entity for snapshots ✅ 2026-03-20
 - [x] `TASK-008-03` - **[Service]** Auto-snapshot on template update ✅ 2026-03-20
 - [x] `TASK-008-04` - **[API]** GET /api/templates/{id}/history endpoint ✅ 2026-03-20
