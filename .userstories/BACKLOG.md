@@ -924,7 +924,8 @@
 ---
 
 #### [US-020] - SMS dispatcher
-**Status:** ðŸŸ¡ TODO
+**Status:** ðŸ”µ IN PROGRESS
+**Start date:** 2026-03-20
 **Priority:** ðŸ”´ High
 **Complexity:** M
 **Epic:** Dispatch Engine
