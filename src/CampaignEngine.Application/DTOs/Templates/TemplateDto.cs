@@ -34,4 +34,12 @@ public class TemplateDto
 
     /// <summary>UTC last-update timestamp.</summary>
     public DateTime UpdatedAt { get; init; }
+
+    /// <summary>
+    /// Declared placeholder manifest entries.
+    /// Populated when the template is loaded with its manifest (e.g., from detail view).
+    /// May be empty if placeholders are not loaded in the current context.
+    /// </summary>
+    public IReadOnlyList<PlaceholderManifestEntryDto> PlaceholderManifests { get; init; }
+        = Array.Empty<PlaceholderManifestEntryDto>();
 }
