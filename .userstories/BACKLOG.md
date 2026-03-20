@@ -1,4 +1,4 @@
-# 📋 Backlog - CampaignEngine
+﻿# ðŸ“‹ Backlog - CampaignEngine
 
 **Source:** _docs/prd.md
 **Created:** 2026-03-19
@@ -6,16 +6,16 @@
 
 ---
 
-## 📊 Overview
+## ðŸ“Š Overview
 
 **Total User Stories:** 36
 **Estimated complexity:** 52-68 person-weeks (260-340 person-days)
-**Overall status:** 🟡 Planning
+**Overall status:** ðŸŸ¡ Planning
 
 ### Statistics by Priority
-- 🔴 High priority (MVP): 25 stories
-- 🟠 Medium priority (Phase 2): 9 stories
-- 🟢 Low priority (Phase 3): 1 story
+- ðŸ”´ High priority (MVP): 25 stories
+- ðŸŸ  Medium priority (Phase 2): 9 stories
+- ðŸŸ¢ Low priority (Phase 3): 1 story
 
 ### Statistics by Complexity
 - **S (Small)**: 8 stories
@@ -25,7 +25,7 @@
 
 ---
 
-## 🎭 Personas / Actors
+## ðŸŽ­ Personas / Actors
 
 ### [DESIGNER] - Marie, Template Designer
 **Role:** Communication/marketing team member with HTML/CSS skills
@@ -62,7 +62,7 @@
 
 ---
 
-## 🏗️ Architecture & Technical Stack
+## ðŸ—ï¸ Architecture & Technical Stack
 
 **Runtime:** .NET 8 (LTS)
 **Web Framework:** ASP.NET Core (Razor Pages + Web API)
@@ -86,17 +86,17 @@
 
 ---
 
-## 🎯 User Stories
+## ðŸŽ¯ User Stories
 
 ### Epic 1: Foundation & Infrastructure
 
 > Core infrastructure setup including database, authentication, and layered architecture
 
 #### [US-001] - Project scaffold and layered architecture setup
-**Status:** ✅ DONE
+**Status:** âœ… DONE
 **Start date:** 2026-03-19
 **End date:** 2026-03-19
-**Priority:** 🔴 High
+**Priority:** ðŸ”´ High
 **Complexity:** M
 **Epic:** Foundation & Infrastructure
 
@@ -108,19 +108,19 @@
 > Layered architecture (Domain / Application / Infrastructure / Web). All cross-cutting concerns behind interfaces. DI-based strategy pattern for channels and data connectors.
 
 **Acceptance criteria:**
-- [x] Solution structure follows Domain / Application / Infrastructure / Web layers ✅
-- [x] All projects properly reference each other with correct dependencies ✅
-- [x] Microsoft.Extensions.DependencyInjection configured as DI container ✅
-- [x] Cross-cutting concerns (logging, error handling) abstracted behind interfaces ✅
-- [x] Unit test projects created with xUnit + Moq + FluentAssertions ✅
+- [x] Solution structure follows Domain / Application / Infrastructure / Web layers âœ…
+- [x] All projects properly reference each other with correct dependencies âœ…
+- [x] Microsoft.Extensions.DependencyInjection configured as DI container âœ…
+- [x] Cross-cutting concerns (logging, error handling) abstracted behind interfaces âœ…
+- [x] Unit test projects created with xUnit + Moq + FluentAssertions âœ…
 
 **Technical tasks:**
-- [x] `TASK-001-01` - **[Setup]** Create solution with 4 projects (Domain, Application, Infrastructure, Web) ✅ 2026-03-19
-- [x] `TASK-001-02` - **[Setup]** Configure project dependencies and package references ✅ 2026-03-19
-- [x] `TASK-001-03` - **[Config]** Set up DI container registration patterns ✅ 2026-03-19
-- [x] `TASK-001-04` - **[Setup]** Add test projects (Domain.Tests, Application.Tests, Infrastructure.Tests) ✅ 2026-03-19
-- [x] `TASK-001-05` - **[Config]** Configure appsettings.json structure for environments ✅ 2026-03-19
-- [x] `TASK-001-06` - **[Doc]** Create README with architecture diagram ✅ 2026-03-19
+- [x] `TASK-001-01` - **[Setup]** Create solution with 4 projects (Domain, Application, Infrastructure, Web) âœ… 2026-03-19
+- [x] `TASK-001-02` - **[Setup]** Configure project dependencies and package references âœ… 2026-03-19
+- [x] `TASK-001-03` - **[Config]** Set up DI container registration patterns âœ… 2026-03-19
+- [x] `TASK-001-04` - **[Setup]** Add test projects (Domain.Tests, Application.Tests, Infrastructure.Tests) âœ… 2026-03-19
+- [x] `TASK-001-05` - **[Config]** Configure appsettings.json structure for environments âœ… 2026-03-19
+- [x] `TASK-001-06` - **[Doc]** Create README with architecture diagram âœ… 2026-03-19
 
 **Business rules:**
 1. No circular dependencies between layers
@@ -133,10 +133,10 @@
 ---
 
 #### [US-002] - Database provisioning and EF Core setup
-**Status:** ✅ DONE
+**Status:** âœ… DONE
 **Start date:** 2026-03-19
 **End date:** 2026-03-19
-**Priority:** 🔴 High
+**Priority:** ðŸ”´ High
 **Complexity:** M
 **Epic:** Foundation & Infrastructure
 
@@ -148,19 +148,19 @@
 > SQL Server as enterprise standard with EF Core for migrations and LINQ support
 
 **Acceptance criteria:**
-- [x] SQL Server database created with appropriate connection string ✅
-- [x] DbContext configured with all entity mappings ✅
-- [x] Initial migration created and applied ✅
-- [x] Seed data mechanism for development environment ✅
-- [x] Connection string encryption configured ✅
+- [x] SQL Server database created with appropriate connection string âœ…
+- [x] DbContext configured with all entity mappings âœ…
+- [x] Initial migration created and applied âœ…
+- [x] Seed data mechanism for development environment âœ…
+- [x] Connection string encryption configured âœ…
 
 **Technical tasks:**
-- [x] `TASK-002-01` - **[Model]** Create DbContext with SQL Server provider ✅ 2026-03-19
-- [x] `TASK-002-02` - **[Config]** Configure connection string with encryption ✅ 2026-03-19
-- [x] `TASK-002-03` - **[Migration]** Create initial migration with all core tables ✅ 2026-03-19
-- [x] `TASK-002-04` - **[Data]** Create seed data service for development ✅ 2026-03-19
-- [x] `TASK-002-05` - **[Test]** Add integration tests with in-memory database ✅ 2026-03-19
-- [x] `TASK-002-06` - **[Doc]** Document database schema and migration strategy ✅ 2026-03-19
+- [x] `TASK-002-01` - **[Model]** Create DbContext with SQL Server provider âœ… 2026-03-19
+- [x] `TASK-002-02` - **[Config]** Configure connection string with encryption âœ… 2026-03-19
+- [x] `TASK-002-03` - **[Migration]** Create initial migration with all core tables âœ… 2026-03-19
+- [x] `TASK-002-04` - **[Data]** Create seed data service for development âœ… 2026-03-19
+- [x] `TASK-002-05` - **[Test]** Add integration tests with in-memory database âœ… 2026-03-19
+- [x] `TASK-002-06` - **[Doc]** Document database schema and migration strategy âœ… 2026-03-19
 
 **Business rules:**
 1. All entity IDs use GUID for distributed generation
@@ -173,10 +173,10 @@
 ---
 
 #### [US-003] - Authentication and authorization implementation
-**Status:** ✅ DONE
+**Status:** âœ… DONE
 **Start date:** 2026-03-19
 **End date:** 2026-03-19
-**Priority:** 🔴 High
+**Priority:** ðŸ”´ High
 **Complexity:** M
 **Epic:** Foundation & Infrastructure
 
@@ -188,20 +188,20 @@
 > Role-based access control: Designer role (template CRUD, preview) vs Operator role (campaign CRUD, monitoring) vs Admin role. ASP.NET Core Identity or Windows Authentication.
 
 **Acceptance criteria:**
-- [x] Authentication mechanism implemented (Windows Auth or ASP.NET Core Identity) ✅
-- [x] Three roles defined: Designer, Operator, Admin ✅
-- [x] Authorization policies applied at controller/page level ✅
-- [x] Role assignment UI for Admin users ✅
-- [x] Audit trail for authentication events ✅
+- [x] Authentication mechanism implemented (Windows Auth or ASP.NET Core Identity) âœ…
+- [x] Three roles defined: Designer, Operator, Admin âœ…
+- [x] Authorization policies applied at controller/page level âœ…
+- [x] Role assignment UI for Admin users âœ…
+- [x] Audit trail for authentication events âœ…
 
 **Technical tasks:**
-- [x] `TASK-003-01` - **[Model]** Create User and Role entities ✅ 2026-03-19
-- [x] `TASK-003-02` - **[Auth]** Implement authentication middleware (Windows or Identity) ✅ 2026-03-19
-- [x] `TASK-003-03` - **[Auth]** Configure role-based authorization policies ✅ 2026-03-19
-- [x] `TASK-003-04` - **[Frontend]** Create user management UI for Admin ✅ 2026-03-19
-- [x] `TASK-003-05` - **[API]** Add role-checking attributes to controllers ✅ 2026-03-19
-- [x] `TASK-003-06` - **[Test]** Unit tests for authorization policies ✅ 2026-03-19
-- [x] `TASK-003-07` - **[Doc]** Document role permissions matrix ✅ 2026-03-19
+- [x] `TASK-003-01` - **[Model]** Create User and Role entities âœ… 2026-03-19
+- [x] `TASK-003-02` - **[Auth]** Implement authentication middleware (Windows or Identity) âœ… 2026-03-19
+- [x] `TASK-003-03` - **[Auth]** Configure role-based authorization policies âœ… 2026-03-19
+- [x] `TASK-003-04` - **[Frontend]** Create user management UI for Admin âœ… 2026-03-19
+- [x] `TASK-003-05` - **[API]** Add role-checking attributes to controllers âœ… 2026-03-19
+- [x] `TASK-003-06` - **[Test]** Unit tests for authorization policies âœ… 2026-03-19
+- [x] `TASK-003-07` - **[Doc]** Document role permissions matrix âœ… 2026-03-19
 
 **Business rules:**
 1. Designer: Full template CRUD + preview, no campaign access
@@ -219,10 +219,10 @@
 ---
 
 #### [US-004] - Structured logging and observability setup
-**Status:** ✅ DONE
+**Status:** âœ… DONE
 **Start date:** 2026-03-19
 **End date:** 2026-03-19
-**Priority:** 🔴 High
+**Priority:** ðŸ”´ High
 **Complexity:** S
 **Epic:** Foundation & Infrastructure
 
@@ -234,19 +234,19 @@
 > Structured logging. SEND_LOG as source of truth for all dispatch activity. Observability as core requirement.
 
 **Acceptance criteria:**
-- [x] Structured logging configured (Serilog or NLog) ✅
-- [x] Log levels appropriately used (Debug, Info, Warning, Error, Critical) ✅
-- [x] Correlation IDs tracked across request lifecycle ✅
-- [x] Performance metrics logged for critical operations ✅
-- [x] Log sink configured (file, database, or monitoring tool) ✅
+- [x] Structured logging configured (Serilog or NLog) âœ…
+- [x] Log levels appropriately used (Debug, Info, Warning, Error, Critical) âœ…
+- [x] Correlation IDs tracked across request lifecycle âœ…
+- [x] Performance metrics logged for critical operations âœ…
+- [x] Log sink configured (file, database, or monitoring tool) âœ…
 
 **Technical tasks:**
-- [x] `TASK-004-01` - **[Config]** Configure Serilog with structured logging ✅ 2026-03-19
-- [x] `TASK-004-02` - **[Middleware]** Add correlation ID middleware ✅ 2026-03-19
-- [x] `TASK-004-03` - **[Logging]** Create logging abstractions for core services ✅ 2026-03-19
-- [x] `TASK-004-04` - **[Config]** Configure log sinks (file + SQL for errors) ✅ 2026-03-19
-- [x] `TASK-004-05` - **[Test]** Verify logging in integration tests ✅ 2026-03-19
-- [x] `TASK-004-06` - **[Doc]** Document logging conventions ✅ 2026-03-19
+- [x] `TASK-004-01` - **[Config]** Configure Serilog with structured logging âœ… 2026-03-19
+- [x] `TASK-004-02` - **[Middleware]** Add correlation ID middleware âœ… 2026-03-19
+- [x] `TASK-004-03` - **[Logging]** Create logging abstractions for core services âœ… 2026-03-19
+- [x] `TASK-004-04` - **[Config]** Configure log sinks (file + SQL for errors) âœ… 2026-03-19
+- [x] `TASK-004-05` - **[Test]** Verify logging in integration tests âœ… 2026-03-19
+- [x] `TASK-004-06` - **[Doc]** Document logging conventions âœ… 2026-03-19
 
 **Business rules:**
 1. All API calls logged with request/response details
@@ -264,10 +264,10 @@
 > Create, manage, and version message templates with dynamic content support
 
 #### [US-005] - Template CRUD operations
-**Status:** ✅ DONE
+**Status:** âœ… DONE
 **Start date:** 2026-03-20 00:00:00
 **End date:** 2026-03-20
-**Priority:** 🔴 High
+**Priority:** ðŸ”´ High
 **Complexity:** M
 **Epic:** Template Management
 
@@ -279,23 +279,23 @@
 > Template CRUD: Create, read, update, delete templates with name, channel (Email/Letter/SMS), HTML body, and placeholder manifest.
 
 **Acceptance criteria:**
-- [x] Templates can be created with name, channel type, HTML body ✅
-- [x] Templates can be edited and updated ✅
-- [x] Templates can be soft-deleted (archived) ✅
-- [x] Template list view with filtering by channel and status ✅
-- [x] Template detail view showing all metadata ✅
+- [x] Templates can be created with name, channel type, HTML body âœ…
+- [x] Templates can be edited and updated âœ…
+- [x] Templates can be soft-deleted (archived) âœ…
+- [x] Template list view with filtering by channel and status âœ…
+- [x] Template detail view showing all metadata âœ…
 
 **Technical tasks:**
-- [x] `TASK-005-01` - **[Model]** Create Template entity with channel enum ✅ 2026-03-20
-- [x] `TASK-005-02` - **[API]** POST /api/templates endpoint with validation ✅ 2026-03-20
-- [x] `TASK-005-03` - **[API]** GET /api/templates with filtering and pagination ✅ 2026-03-20
-- [x] `TASK-005-04` - **[API]** PUT /api/templates/{id} endpoint ✅ 2026-03-20
-- [x] `TASK-005-05` - **[API]** DELETE /api/templates/{id} (soft delete) ✅ 2026-03-20
-- [x] `TASK-005-06` - **[Frontend]** Template list Razor page with grid ✅ 2026-03-20
-- [x] `TASK-005-07` - **[Frontend]** Template create/edit form with validation ✅ 2026-03-20
-- [x] `TASK-005-08` - **[Test]** Unit tests for template service ✅ 2026-03-20
-- [x] `TASK-005-09` - **[Test]** Integration tests for template API ✅ 2026-03-20
-- [x] `TASK-005-10` - **[Doc]** API documentation for template endpoints ✅ 2026-03-20
+- [x] `TASK-005-01` - **[Model]** Create Template entity with channel enum âœ… 2026-03-20
+- [x] `TASK-005-02` - **[API]** POST /api/templates endpoint with validation âœ… 2026-03-20
+- [x] `TASK-005-03` - **[API]** GET /api/templates with filtering and pagination âœ… 2026-03-20
+- [x] `TASK-005-04` - **[API]** PUT /api/templates/{id} endpoint âœ… 2026-03-20
+- [x] `TASK-005-05` - **[API]** DELETE /api/templates/{id} (soft delete) âœ… 2026-03-20
+- [x] `TASK-005-06` - **[Frontend]** Template list Razor page with grid âœ… 2026-03-20
+- [x] `TASK-005-07` - **[Frontend]** Template create/edit form with validation âœ… 2026-03-20
+- [x] `TASK-005-08` - **[Test]** Unit tests for template service âœ… 2026-03-20
+- [x] `TASK-005-09` - **[Test]** Integration tests for template API âœ… 2026-03-20
+- [x] `TASK-005-10` - **[Doc]** API documentation for template endpoints âœ… 2026-03-20
 
 **Business rules:**
 1. Template names must be unique within same channel
@@ -309,8 +309,8 @@
 ---
 
 #### [US-006] - Placeholder manifest declaration
-**Status:** 🟡 TODO
-**Priority:** 🔴 High
+**Status:** ðŸŸ¡ TODO
+**Priority:** ðŸ”´ High
 **Complexity:** M
 **Epic:** Template Management
 
@@ -351,8 +351,8 @@
 ---
 
 #### [US-007] - Sub-template composition
-**Status:** 🟡 TODO
-**Priority:** 🔴 High
+**Status:** ðŸŸ¡ TODO
+**Priority:** ðŸ”´ High
 **Complexity:** M
 **Epic:** Template Management
 
@@ -393,8 +393,8 @@
 ---
 
 #### [US-008] - Template versioning
-**Status:** 🟡 TODO
-**Priority:** 🟠 Medium
+**Status:** ðŸŸ¡ TODO
+**Priority:** ðŸŸ  Medium
 **Complexity:** M
 **Epic:** Template Management
 
@@ -435,17 +435,17 @@
 ---
 
 #### [US-009] - Template lifecycle workflow
-**Status:** 🟡 TODO
-**Priority:** 🟠 Medium
+**Status:** ðŸŸ¡ TODO
+**Priority:** ðŸŸ  Medium
 **Complexity:** S
 **Epic:** Template Management
 
 **As a** IT Administrator (Sophie)
-**I want** template governance with Draft → Published → Archived states
+**I want** template governance with Draft â†’ Published â†’ Archived states
 **So that** incomplete templates cannot be used in production campaigns
 
 **Specification context:**
-> Status management: Draft → Published → Archived. Incomplete templates cannot be used in production.
+> Status management: Draft â†’ Published â†’ Archived. Incomplete templates cannot be used in production.
 
 **Acceptance criteria:**
 - [ ] Templates have status: Draft, Published, Archived
@@ -465,7 +465,7 @@
 
 **Business rules:**
 1. New templates start as Draft
-2. Draft → Published requires complete placeholder manifest
+2. Draft â†’ Published requires complete placeholder manifest
 3. Published templates can be edited (creates new version) or archived
 4. Archived templates cannot transition back to Published
 5. Only Admin can force-archive templates in active campaigns
@@ -476,8 +476,8 @@
 ---
 
 #### [US-010] - Template preview with sample data
-**Status:** 🟡 TODO
-**Priority:** 🔴 High
+**Status:** ðŸŸ¡ TODO
+**Priority:** ðŸ”´ High
 **Complexity:** M
 **Epic:** Template Management
 
@@ -520,10 +520,10 @@
 > Transform templates with dynamic data into channel-specific outputs
 
 #### [US-011] - Scriban template engine integration
-**Status:** ✅ DONE
+**Status:** âœ… DONE
 **Start date:** 2026-03-19
 **End date:** 2026-03-19
-**Priority:** 🔴 High
+**Priority:** ðŸ”´ High
 **Complexity:** M
 **Epic:** Rendering Engine
 
@@ -535,21 +535,21 @@
 > Use Scriban as the underlying engine behind an ITemplateRenderer abstraction. Lightweight, sandboxed, Liquid-like syntax.
 
 **Acceptance criteria:**
-- [x] ITemplateRenderer interface defined in Application layer ✅
-- [x] Scriban implementation in Infrastructure layer ✅
-- [x] Basic scalar substitution working ✅
-- [x] Error handling for malformed templates ✅
-- [x] Performance benchmarks for 1000 renders/sec ✅
+- [x] ITemplateRenderer interface defined in Application layer âœ…
+- [x] Scriban implementation in Infrastructure layer âœ…
+- [x] Basic scalar substitution working âœ…
+- [x] Error handling for malformed templates âœ…
+- [x] Performance benchmarks for 1000 renders/sec âœ…
 
 **Technical tasks:**
-- [x] `TASK-011-01` - **[Interface]** Define ITemplateRenderer in Application layer ✅ 2026-03-19
-- [x] `TASK-011-02` - **[Model]** Create TemplateContext data model ✅ 2026-03-19
-- [x] `TASK-011-03` - **[Service]** Implement ScribanTemplateRenderer ✅ 2026-03-19
-- [x] `TASK-011-04` - **[Service]** Configure Scriban security settings (sandbox) ✅ 2026-03-19
-- [x] `TASK-011-05` - **[Service]** Add error handling and validation ✅ 2026-03-19
-- [x] `TASK-011-06` - **[Test]** Unit tests for renderer ✅ 2026-03-19
-- [x] `TASK-011-07` - **[Test]** Performance benchmark tests ✅ 2026-03-19
-- [x] `TASK-011-08` - **[Doc]** Template syntax reference ✅ 2026-03-19
+- [x] `TASK-011-01` - **[Interface]** Define ITemplateRenderer in Application layer âœ… 2026-03-19
+- [x] `TASK-011-02` - **[Model]** Create TemplateContext data model âœ… 2026-03-19
+- [x] `TASK-011-03` - **[Service]** Implement ScribanTemplateRenderer âœ… 2026-03-19
+- [x] `TASK-011-04` - **[Service]** Configure Scriban security settings (sandbox) âœ… 2026-03-19
+- [x] `TASK-011-05` - **[Service]** Add error handling and validation âœ… 2026-03-19
+- [x] `TASK-011-06` - **[Test]** Unit tests for renderer âœ… 2026-03-19
+- [x] `TASK-011-07` - **[Test]** Performance benchmark tests âœ… 2026-03-19
+- [x] `TASK-011-08` - **[Doc]** Template syntax reference âœ… 2026-03-19
 
 **Business rules:**
 1. All data values HTML-escaped by default to prevent XSS
@@ -563,10 +563,10 @@
 ---
 
 #### [US-012] - Advanced rendering features (tables, lists, conditionals)
-**Status:** ✅ DONE
+**Status:** âœ… DONE
 **Start date:** 2026-03-19
 **End date:** 2026-03-19
-**Priority:** 🔴 High
+**Priority:** ðŸ”´ High
 **Complexity:** M
 **Epic:** Rendering Engine
 
@@ -578,22 +578,22 @@
 > Table rendering: `{{#table}}...{{/table}}` with row iteration. List rendering: `{{#list}}...{{/list}}`. Conditional blocks: `{{#if condition}}...{{/if}}`.
 
 **Acceptance criteria:**
-- [x] Table blocks iterate over array data and generate HTML tables ✅
-- [x] List blocks iterate and generate bulleted/numbered lists ✅
-- [x] Conditional blocks evaluate boolean expressions ✅
-- [x] Nested structures supported (table within conditional) ✅
-- [x] Empty collections handled gracefully ✅
+- [x] Table blocks iterate over array data and generate HTML tables âœ…
+- [x] List blocks iterate and generate bulleted/numbered lists âœ…
+- [x] Conditional blocks evaluate boolean expressions âœ…
+- [x] Nested structures supported (table within conditional) âœ…
+- [x] Empty collections handled gracefully âœ…
 
 **Technical tasks:**
-- [x] `TASK-012-01` - **[Service]** Implement table iteration logic in Scriban ✅ 2026-03-19
-- [x] `TASK-012-02` - **[Service]** Implement list iteration logic ✅ 2026-03-19
-- [x] `TASK-012-03` - **[Service]** Implement conditional block evaluation ✅ 2026-03-19
-- [x] `TASK-012-04` - **[Service]** Add custom Scriban functions (formatDate, formatCurrency) ✅ 2026-03-19
-- [x] `TASK-012-05` - **[Test]** Unit tests for table rendering ✅ 2026-03-19
-- [x] `TASK-012-06` - **[Test]** Unit tests for list rendering ✅ 2026-03-19
-- [x] `TASK-012-07` - **[Test]** Unit tests for conditional logic ✅ 2026-03-19
-- [x] `TASK-012-08` - **[Test]** Integration tests for nested structures ✅ 2026-03-19
-- [x] `TASK-012-09` - **[Doc]** Advanced syntax examples ✅ 2026-03-19
+- [x] `TASK-012-01` - **[Service]** Implement table iteration logic in Scriban âœ… 2026-03-19
+- [x] `TASK-012-02` - **[Service]** Implement list iteration logic âœ… 2026-03-19
+- [x] `TASK-012-03` - **[Service]** Implement conditional block evaluation âœ… 2026-03-19
+- [x] `TASK-012-04` - **[Service]** Add custom Scriban functions (formatDate, formatCurrency) âœ… 2026-03-19
+- [x] `TASK-012-05` - **[Test]** Unit tests for table rendering âœ… 2026-03-19
+- [x] `TASK-012-06` - **[Test]** Unit tests for list rendering âœ… 2026-03-19
+- [x] `TASK-012-07` - **[Test]** Unit tests for conditional logic âœ… 2026-03-19
+- [x] `TASK-012-08` - **[Test]** Integration tests for nested structures âœ… 2026-03-19
+- [x] `TASK-012-09` - **[Doc]** Advanced syntax examples âœ… 2026-03-19
 
 **Business rules:**
 1. Table syntax: `{{#for row in table}} <tr><td>{{row.field}}</td></tr> {{/for}}`
@@ -607,10 +607,10 @@
 ---
 
 #### [US-013] - Channel-specific post-processing
-**Status:** ✅ DONE
+**Status:** âœ… DONE
 **Start date:** 2026-03-20
 **End date:** 2026-03-20
-**Priority:** 🔴 High
+**Priority:** ðŸ”´ High
 **Complexity:** L
 **Epic:** Rendering Engine
 
@@ -619,26 +619,26 @@
 **So that** messages render correctly on each medium
 
 **Specification context:**
-> Email: CSS inlining + HTML sanitization. Letter: HTML→PDF conversion. SMS: plain text extraction + truncation.
+> Email: CSS inlining + HTML sanitization. Letter: HTMLâ†’PDF conversion. SMS: plain text extraction + truncation.
 
 **Acceptance criteria:**
-- [x] Email channel: inline CSS using PreMailer.Net ✅
-- [x] Letter channel: convert HTML to PDF using chosen tool (POC required) ✅
-- [x] SMS channel: strip HTML tags and truncate to 160 characters ✅
-- [x] Multi-page PDF consolidation for letter batches ✅
-- [x] Error handling for conversion failures ✅
+- [x] Email channel: inline CSS using PreMailer.Net âœ…
+- [x] Letter channel: convert HTML to PDF using chosen tool (POC required) âœ…
+- [x] SMS channel: strip HTML tags and truncate to 160 characters âœ…
+- [x] Multi-page PDF consolidation for letter batches âœ…
+- [x] Error handling for conversion failures âœ…
 
 **Technical tasks:**
-- [x] `TASK-013-01` - **[POC]** PDF generation POC (wkhtmltopdf vs DinkToPdf vs Puppeteer) ✅ 2026-03-20
-- [x] `TASK-013-02` - **[Service]** Implement EmailPostProcessor with PreMailer.Net ✅ 2026-03-20
-- [x] `TASK-013-03` - **[Service]** Implement LetterPostProcessor with chosen PDF tool ✅ 2026-03-20
-- [x] `TASK-013-04` - **[Service]** Implement SmsPostProcessor with HTML stripping ✅ 2026-03-20
-- [x] `TASK-013-05` - **[Service]** Implement PDF consolidation with PdfSharp ✅ 2026-03-20
-- [x] `TASK-013-06` - **[Interface]** Define IChannelPostProcessor abstraction ✅ 2026-03-20
-- [x] `TASK-013-07` - **[Test]** Unit tests for each post-processor ✅ 2026-03-20
-- [x] `TASK-013-08` - **[Test]** PDF generation performance tests ✅ 2026-03-20
-- [x] `TASK-013-09` - **[Test]** Email CSS inlining tests (Outlook compatibility) ✅ 2026-03-20
-- [x] `TASK-013-10` - **[Doc]** Channel post-processing documentation ✅ 2026-03-20
+- [x] `TASK-013-01` - **[POC]** PDF generation POC (wkhtmltopdf vs DinkToPdf vs Puppeteer) âœ… 2026-03-20
+- [x] `TASK-013-02` - **[Service]** Implement EmailPostProcessor with PreMailer.Net âœ… 2026-03-20
+- [x] `TASK-013-03` - **[Service]** Implement LetterPostProcessor with chosen PDF tool âœ… 2026-03-20
+- [x] `TASK-013-04` - **[Service]** Implement SmsPostProcessor with HTML stripping âœ… 2026-03-20
+- [x] `TASK-013-05` - **[Service]** Implement PDF consolidation with PdfSharp âœ… 2026-03-20
+- [x] `TASK-013-06` - **[Interface]** Define IChannelPostProcessor abstraction âœ… 2026-03-20
+- [x] `TASK-013-07` - **[Test]** Unit tests for each post-processor âœ… 2026-03-20
+- [x] `TASK-013-08` - **[Test]** PDF generation performance tests âœ… 2026-03-20
+- [x] `TASK-013-09` - **[Test]** Email CSS inlining tests (Outlook compatibility) âœ… 2026-03-20
+- [x] `TASK-013-10` - **[Doc]** Channel post-processing documentation âœ… 2026-03-20
 
 **Business rules:**
 1. Email CSS inlining required for Outlook compatibility
@@ -660,10 +660,10 @@
 > Connect to external data repositories to fetch recipient data
 
 #### [US-014] - Data source declaration and management
-**Status:** ✅ DONE
+**Status:** âœ… DONE
 **Start date:** 2026-03-20
 **End date:** 2026-03-20
-**Priority:** 🔴 High
+**Priority:** ðŸ”´ High
 **Complexity:** M
 **Epic:** Data Source Connector
 
@@ -675,22 +675,22 @@
 > Register data sources with name, connection type, connection string, and schema definition (fields, types, filterability).
 
 **Acceptance criteria:**
-- [x] Data sources can be created with name, type, connection string ✅
-- [x] Schema can be defined with field names and types ✅
-- [x] Connection testing validates connectivity ✅
-- [x] Field metadata includes filterability and data type ✅
-- [x] Data source list view with status indicators ✅
+- [x] Data sources can be created with name, type, connection string âœ…
+- [x] Schema can be defined with field names and types âœ…
+- [x] Connection testing validates connectivity âœ…
+- [x] Field metadata includes filterability and data type âœ…
+- [x] Data source list view with status indicators âœ…
 
 **Technical tasks:**
-- [x] `TASK-014-01` - **[Model]** Create DataSource entity with connection metadata ✅ 2026-03-20
-- [x] `TASK-014-02` - **[Model]** Create FieldDefinition value object for schema ✅ 2026-03-20
-- [x] `TASK-014-03` - **[API]** POST /api/datasources endpoint ✅ 2026-03-20
-- [x] `TASK-014-04` - **[API]** GET /api/datasources with filtering ✅ 2026-03-20
-- [x] `TASK-014-05` - **[Service]** Connection testing service ✅ 2026-03-20
-- [x] `TASK-014-06` - **[Frontend]** Data source management UI ✅ 2026-03-20
-- [x] `TASK-014-07` - **[Frontend]** Connection string encryption in UI ✅ 2026-03-20
-- [x] `TASK-014-08` - **[Test]** Connection validation tests ✅ 2026-03-20
-- [x] `TASK-014-09` - **[Doc]** Data source configuration guide ✅ 2026-03-20
+- [x] `TASK-014-01` - **[Model]** Create DataSource entity with connection metadata âœ… 2026-03-20
+- [x] `TASK-014-02` - **[Model]** Create FieldDefinition value object for schema âœ… 2026-03-20
+- [x] `TASK-014-03` - **[API]** POST /api/datasources endpoint âœ… 2026-03-20
+- [x] `TASK-014-04` - **[API]** GET /api/datasources with filtering âœ… 2026-03-20
+- [x] `TASK-014-05` - **[Service]** Connection testing service âœ… 2026-03-20
+- [x] `TASK-014-06` - **[Frontend]** Data source management UI âœ… 2026-03-20
+- [x] `TASK-014-07` - **[Frontend]** Connection string encryption in UI âœ… 2026-03-20
+- [x] `TASK-014-08` - **[Test]** Connection validation tests âœ… 2026-03-20
+- [x] `TASK-014-09` - **[Doc]** Data source configuration guide âœ… 2026-03-20
 
 **Business rules:**
 1. Data source types: SQL Server, REST API (Phase 1)
@@ -704,8 +704,8 @@
 ---
 
 #### [US-015] - SQL Server data connector implementation
-**Status:** 🟡 TODO
-**Priority:** 🔴 High
+**Status:** ðŸŸ¡ TODO
+**Priority:** ðŸ”´ High
 **Complexity:** M
 **Epic:** Data Source Connector
 
@@ -745,8 +745,8 @@
 ---
 
 #### [US-016] - Filter expression builder (AST)
-**Status:** 🟡 TODO
-**Priority:** 🔴 High
+**Status:** ðŸŸ¡ TODO
+**Priority:** ðŸ”´ High
 **Complexity:** L
 **Epic:** Data Source Connector
 
@@ -788,8 +788,8 @@
 ---
 
 #### [US-017] - REST API data connector (Phase 2)
-**Status:** 🟡 TODO
-**Priority:** 🟠 Medium
+**Status:** ðŸŸ¡ TODO
+**Priority:** ðŸŸ  Medium
 **Complexity:** M
 **Epic:** Data Source Connector
 
@@ -831,10 +831,10 @@
 > Send messages through email, SMS, and letter channels
 
 #### [US-018] - Channel dispatcher abstraction
-**Status:** ✅ DONE
+**Status:** âœ… DONE
 **Start date:** 2026-03-19
 **End date:** 2026-03-19
-**Priority:** 🔴 High
+**Priority:** ðŸ”´ High
 **Complexity:** S
 **Epic:** Dispatch Engine
 
@@ -843,22 +843,22 @@
 **So that** adding new channels doesn't require core changes
 
 **Specification context:**
-> IChannelDispatcher interface with DI-based registry — no hardcoded switch/case. Extensibility for WhatsApp, Push.
+> IChannelDispatcher interface with DI-based registry â€” no hardcoded switch/case. Extensibility for WhatsApp, Push.
 
 **Acceptance criteria:**
-- [x] IChannelDispatcher interface defined ✅
-- [x] Dispatcher registry with DI-based resolution ✅
-- [x] Channel-specific configuration model ✅
-- [x] Dispatch result model with success/failure indication ✅
-- [x] Error handling abstraction for all channels ✅
+- [x] IChannelDispatcher interface defined âœ…
+- [x] Dispatcher registry with DI-based resolution âœ…
+- [x] Channel-specific configuration model âœ…
+- [x] Dispatch result model with success/failure indication âœ…
+- [x] Error handling abstraction for all channels âœ…
 
 **Technical tasks:**
-- [x] `TASK-018-01` - **[Interface]** Define IChannelDispatcher interface ✅ 2026-03-19
-- [x] `TASK-018-02` - **[Model]** Create DispatchRequest and DispatchResult models ✅ 2026-03-19
-- [x] `TASK-018-03` - **[Service]** Create ChannelDispatcherRegistry with DI ✅ 2026-03-19
-- [x] `TASK-018-04` - **[Model]** Channel configuration base class ✅ 2026-03-19
-- [x] `TASK-018-05` - **[Test]** Mock dispatcher for testing ✅ 2026-03-19
-- [x] `TASK-018-06` - **[Doc]** Channel dispatcher extension guide ✅ 2026-03-19
+- [x] `TASK-018-01` - **[Interface]** Define IChannelDispatcher interface âœ… 2026-03-19
+- [x] `TASK-018-02` - **[Model]** Create DispatchRequest and DispatchResult models âœ… 2026-03-19
+- [x] `TASK-018-03` - **[Service]** Create ChannelDispatcherRegistry with DI âœ… 2026-03-19
+- [x] `TASK-018-04` - **[Model]** Channel configuration base class âœ… 2026-03-19
+- [x] `TASK-018-05` - **[Test]** Mock dispatcher for testing âœ… 2026-03-19
+- [x] `TASK-018-06` - **[Doc]** Channel dispatcher extension guide âœ… 2026-03-19
 
 **Business rules:**
 1. Each channel registered in DI container
@@ -872,8 +872,8 @@
 ---
 
 #### [US-019] - Email dispatcher (SMTP)
-**Status:** 🟡 TODO
-**Priority:** 🔴 High
+**Status:** ðŸŸ¡ TODO
+**Priority:** ðŸ”´ High
 **Complexity:** M
 **Epic:** Dispatch Engine
 
@@ -916,8 +916,8 @@
 ---
 
 #### [US-020] - SMS dispatcher
-**Status:** 🟡 TODO
-**Priority:** 🔴 High
+**Status:** ðŸŸ¡ TODO
+**Priority:** ðŸ”´ High
 **Complexity:** M
 **Epic:** Dispatch Engine
 
@@ -959,8 +959,8 @@
 ---
 
 #### [US-021] - PDF letter dispatcher
-**Status:** 🟡 TODO
-**Priority:** 🔴 High
+**Status:** ðŸŸ¡ TODO
+**Priority:** ðŸ”´ High
 **Complexity:** L
 **Epic:** Dispatch Engine
 
@@ -1004,8 +1004,8 @@
 ---
 
 #### [US-022] - Channel throttling and rate limiting
-**Status:** 🟡 TODO
-**Priority:** 🟠 Medium
+**Status:** ðŸŸ¡ TODO
+**Priority:** ðŸŸ  Medium
 **Complexity:** M
 **Epic:** Dispatch Engine
 
@@ -1048,8 +1048,8 @@
 > Create and execute multi-step campaigns with recipient targeting
 
 #### [US-023] - Campaign creation and configuration
-**Status:** 🟡 TODO
-**Priority:** 🔴 High
+**Status:** ðŸŸ¡ TODO
+**Priority:** ðŸ”´ High
 **Complexity:** L
 **Epic:** Campaign Orchestrator
 
@@ -1094,8 +1094,8 @@
 ---
 
 #### [US-024] - Multi-step campaign sequences
-**Status:** 🟡 TODO
-**Priority:** 🔴 High
+**Status:** ðŸŸ¡ TODO
+**Priority:** ðŸ”´ High
 **Complexity:** L
 **Epic:** Campaign Orchestrator
 
@@ -1128,7 +1128,7 @@
 1. Step delay: 0 = immediate, positive integer = days after previous step
 2. Step filters are AND-combined with base campaign filter
 3. Each step can use different template (but same data source)
-4. Example: Step 1 (Email, Day 0) → Step 2 (Email reminder, Day 15) → Step 3 (SMS, Day 20)
+4. Example: Step 1 (Email, Day 0) â†’ Step 2 (Email reminder, Day 15) â†’ Step 3 (SMS, Day 20)
 
 **Dependencies:** US-023
 **Estimation:** 7-8 days
@@ -1136,8 +1136,8 @@
 ---
 
 #### [US-025] - Template snapshot for campaign integrity
-**Status:** 🟡 TODO
-**Priority:** 🔴 High
+**Status:** ðŸŸ¡ TODO
+**Priority:** ðŸ”´ High
 **Complexity:** M
 **Epic:** Campaign Orchestrator
 
@@ -1176,8 +1176,8 @@
 ---
 
 #### [US-026] - Chunk-based batch processing with Hangfire
-**Status:** 🟡 TODO
-**Priority:** 🔴 High
+**Status:** ðŸŸ¡ TODO
+**Priority:** ðŸ”´ High
 **Complexity:** XL
 **Epic:** Campaign Orchestrator
 
@@ -1186,7 +1186,7 @@
 **So that** 100K-recipient campaigns complete reliably in under 60 minutes
 
 **Specification context:**
-> Split recipients into chunks of 500, process via Hangfire workers in parallel, track completion atomically. Hangfire Community lacks batch primitives — use Chunk Coordinator pattern.
+> Split recipients into chunks of 500, process via Hangfire workers in parallel, track completion atomically. Hangfire Community lacks batch primitives â€” use Chunk Coordinator pattern.
 
 **Acceptance criteria:**
 - [ ] Recipients split into configurable chunks (default 500)
@@ -1214,7 +1214,7 @@
 1. Chunk size configurable (default 500)
 2. Worker count configurable (default 8)
 3. Each chunk job auto-retries 3 times on failure
-4. Campaign status: Running → StepInProgress → Completed/PartialFailure
+4. Campaign status: Running â†’ StepInProgress â†’ Completed/PartialFailure
 5. Hangfire dashboard accessible only to Admin role
 
 **Dependencies:** US-023, US-015
@@ -1228,8 +1228,8 @@
 ---
 
 #### [US-027] - Campaign status tracking and monitoring
-**Status:** 🟡 TODO
-**Priority:** 🔴 High
+**Status:** ðŸŸ¡ TODO
+**Priority:** ðŸ”´ High
 **Complexity:** M
 **Epic:** Campaign Orchestrator
 
@@ -1238,7 +1238,7 @@
 **So that** I know what's happening at all times
 
 **Specification context:**
-> Real-time progress: Draft → Scheduled → Running → StepInProgress → Completed / PartialFailure / ManualReview.
+> Real-time progress: Draft â†’ Scheduled â†’ Running â†’ StepInProgress â†’ Completed / PartialFailure / ManualReview.
 
 **Acceptance criteria:**
 - [ ] Campaign status enum with all lifecycle states
@@ -1259,7 +1259,7 @@
 - [ ] `TASK-027-09` - **[Doc]** Campaign status lifecycle guide
 
 **Business rules:**
-1. Status flow: Draft → Scheduled → Running → StepInProgress → Completed
+1. Status flow: Draft â†’ Scheduled â†’ Running â†’ StepInProgress â†’ Completed
 2. PartialFailure if >2% sends failed
 3. ManualReview if >10% sends failed (requires Admin intervention)
 4. Progress updated after each chunk completion
@@ -1270,8 +1270,8 @@
 ---
 
 #### [US-028] - Static and dynamic attachment management
-**Status:** 🟡 TODO
-**Priority:** 🟠 Medium
+**Status:** ðŸŸ¡ TODO
+**Priority:** ðŸŸ  Medium
 **Complexity:** M
 **Epic:** Campaign Orchestrator
 
@@ -1317,8 +1317,8 @@
 ---
 
 #### [US-029] - CC and BCC management
-**Status:** 🟡 TODO
-**Priority:** 🟠 Medium
+**Status:** ðŸŸ¡ TODO
+**Priority:** ðŸŸ  Medium
 **Complexity:** S
 **Epic:** Campaign Orchestrator
 
@@ -1361,10 +1361,10 @@
 > REST API for transactional message sending
 
 #### [US-030] - Single send API endpoint
-**Status:** ✅ DONE
+**Status:** âœ… DONE
 **Start date:** 2026-03-19
 **End date:** 2026-03-19
-**Priority:** 🔴 High
+**Priority:** ðŸ”´ High
 **Complexity:** M
 **Epic:** Generic Send API
 
@@ -1376,21 +1376,21 @@
 > POST /api/send with templateId, channel, data dictionary, recipient. API-first design for integration consumers.
 
 **Acceptance criteria:**
-- [x] POST /api/send endpoint accepts template, channel, data, recipient ✅
-- [x] Template resolved with provided data ✅
-- [x] Message dispatched immediately (synchronous) ✅
-- [x] Response includes send status and tracking ID ✅
-- [x] Error responses with clear validation messages ✅
+- [x] POST /api/send endpoint accepts template, channel, data, recipient âœ…
+- [x] Template resolved with provided data âœ…
+- [x] Message dispatched immediately (synchronous) âœ…
+- [x] Response includes send status and tracking ID âœ…
+- [x] Error responses with clear validation messages âœ…
 
 **Technical tasks:**
-- [x] `TASK-030-01` - **[Model]** Create SendRequest DTO ✅ 2026-03-19
-- [x] `TASK-030-02` - **[API]** POST /api/send endpoint ✅ 2026-03-19
-- [x] `TASK-030-03` - **[Service]** Single send orchestration service ✅ 2026-03-19
-- [x] `TASK-030-04` - **[Service]** Request validation service ✅ 2026-03-19
-- [x] `TASK-030-05` - **[API]** Response model with tracking ID ✅ 2026-03-19
-- [x] `TASK-030-06` - **[Test]** API integration tests ✅ 2026-03-19
-- [x] `TASK-030-07` - **[Test]** Validation tests (missing data, invalid template) ✅ 2026-03-19
-- [x] `TASK-030-08` - **[Doc]** API endpoint documentation ✅ 2026-03-19
+- [x] `TASK-030-01` - **[Model]** Create SendRequest DTO âœ… 2026-03-19
+- [x] `TASK-030-02` - **[API]** POST /api/send endpoint âœ… 2026-03-19
+- [x] `TASK-030-03` - **[Service]** Single send orchestration service âœ… 2026-03-19
+- [x] `TASK-030-04` - **[Service]** Request validation service âœ… 2026-03-19
+- [x] `TASK-030-05` - **[API]** Response model with tracking ID âœ… 2026-03-19
+- [x] `TASK-030-06` - **[Test]** API integration tests âœ… 2026-03-19
+- [x] `TASK-030-07` - **[Test]** Validation tests (missing data, invalid template) âœ… 2026-03-19
+- [x] `TASK-030-08` - **[Doc]** API endpoint documentation âœ… 2026-03-19
 
 **Business rules:**
 1. Template must be Published
@@ -1405,8 +1405,8 @@
 ---
 
 #### [US-031] - API authentication and authorization
-**Status:** 🟡 TODO
-**Priority:** 🔴 High
+**Status:** ðŸŸ¡ TODO
+**Priority:** ðŸ”´ High
 **Complexity:** M
 **Epic:** Generic Send API
 
@@ -1447,8 +1447,8 @@
 ---
 
 #### [US-032] - OpenAPI/Swagger documentation
-**Status:** 🟡 TODO
-**Priority:** 🟠 Medium
+**Status:** ðŸŸ¡ TODO
+**Priority:** ðŸŸ  Medium
 **Complexity:** S
 **Epic:** Generic Send API
 
@@ -1486,8 +1486,8 @@
 ---
 
 #### [US-033] - API rate limiting per consumer
-**Status:** 🟡 TODO
-**Priority:** 🟠 Medium
+**Status:** ðŸŸ¡ TODO
+**Priority:** ðŸŸ  Medium
 **Complexity:** S
 **Epic:** Generic Send API
 
@@ -1529,10 +1529,10 @@
 > Log all send operations and provide retry mechanisms
 
 #### [US-034] - Send logging and audit trail
-**Status:** ✅ DONE
+**Status:** âœ… DONE
 **Start date:** 2026-03-19
 **End date:** 2026-03-19
-**Priority:** 🔴 High
+**Priority:** ðŸ”´ High
 **Complexity:** M
 **Epic:** Tracking & Audit
 
@@ -1544,21 +1544,21 @@
 > Every send attempt logged with status (Pending/Sent/Failed/Retrying), timestamp, error detail, retry count. SEND_LOG as source of truth.
 
 **Acceptance criteria:**
-- [x] Every send logged to SEND_LOG table ✅
-- [x] Send status: Pending, Sent, Failed, Retrying ✅
-- [x] Timestamp, error message, retry count captured ✅
-- [x] Correlation to campaign and recipient ✅
-- [x] Query interface for send log lookup ✅
+- [x] Every send logged to SEND_LOG table âœ…
+- [x] Send status: Pending, Sent, Failed, Retrying âœ…
+- [x] Timestamp, error message, retry count captured âœ…
+- [x] Correlation to campaign and recipient âœ…
+- [x] Query interface for send log lookup âœ…
 
 **Technical tasks:**
-- [x] `TASK-034-01` - **[Model]** Create SendLog entity ✅ 2026-03-19
-- [x] `TASK-034-02` - **[Service]** Send logging service ✅ 2026-03-19
-- [x] `TASK-034-03` - **[Service]** Log on every send attempt (before and after) ✅ 2026-03-19
-- [x] `TASK-034-04` - **[API]** GET /api/sendlogs with filtering ✅ 2026-03-19
-- [x] `TASK-034-05` - **[Frontend]** Send log viewer UI ✅ 2026-03-19
-- [x] `TASK-034-06` - **[Frontend]** Filter by campaign, recipient, status, date ✅ 2026-03-19
-- [x] `TASK-034-07` - **[Test]** Logging completeness tests ✅ 2026-03-19
-- [x] `TASK-034-08` - **[Doc]** Send log schema documentation ✅ 2026-03-19
+- [x] `TASK-034-01` - **[Model]** Create SendLog entity âœ… 2026-03-19
+- [x] `TASK-034-02` - **[Service]** Send logging service âœ… 2026-03-19
+- [x] `TASK-034-03` - **[Service]** Log on every send attempt (before and after) âœ… 2026-03-19
+- [x] `TASK-034-04` - **[API]** GET /api/sendlogs with filtering âœ… 2026-03-19
+- [x] `TASK-034-05` - **[Frontend]** Send log viewer UI âœ… 2026-03-19
+- [x] `TASK-034-06` - **[Frontend]** Filter by campaign, recipient, status, date âœ… 2026-03-19
+- [x] `TASK-034-07` - **[Test]** Logging completeness tests âœ… 2026-03-19
+- [x] `TASK-034-08` - **[Doc]** Send log schema documentation âœ… 2026-03-19
 
 **Business rules:**
 1. All sends logged before dispatch attempt
@@ -1572,8 +1572,8 @@
 ---
 
 #### [US-035] - Retry mechanism with exponential backoff
-**Status:** 🟡 TODO
-**Priority:** 🔴 High
+**Status:** ðŸŸ¡ TODO
+**Priority:** ðŸ”´ High
 **Complexity:** M
 **Epic:** Tracking & Audit
 
@@ -1617,8 +1617,8 @@
 > Monitoring and analytics for campaigns
 
 #### [US-036] - Campaign progress dashboard
-**Status:** 🟡 TODO
-**Priority:** 🟠 Medium
+**Status:** ðŸŸ¡ TODO
+**Priority:** ðŸŸ  Medium
 **Complexity:** M
 **Epic:** Reporting & Dashboards
 
@@ -1660,9 +1660,9 @@
 > Ongoing technical improvements, refactoring, infrastructure work, and maintenance tasks that keep the codebase healthy and the team productive.
 
 #### [US-037] - Fix build warnings: Scriban vulnerabilities and compiler warnings
-**Status:** 🔵 IN PROGRESS
+**Status:** ðŸ”µ IN PROGRESS
 **Start date:** 2026-03-20
-**Priority:** 🔴 High
+**Priority:** ðŸ”´ High
 **Complexity:** S
 **Epic:** Epic 10
 **Type:** [Bug]
@@ -1693,72 +1693,72 @@
 
 ---
 
-## 📋 Suggested Roadmap
+## ðŸ“‹ Suggested Roadmap
 
-### Phase 1 — MVP (Core Engine) — 12-16 weeks
+### Phase 1 â€” MVP (Core Engine) â€” 12-16 weeks
 
-**Sprint 1 — Foundation (Weeks 1-3)**
+**Sprint 1 â€” Foundation (Weeks 1-3)**
 - US-001: Project scaffold and architecture
 - US-002: Database and EF Core setup
 - US-003: Authentication and authorization
 - US-004: Structured logging
 - US-014: Data source declaration
 
-**Sprint 2 — Template Engine (Weeks 4-6)**
+**Sprint 2 â€” Template Engine (Weeks 4-6)**
 - US-005: Template CRUD
 - US-006: Placeholder manifest
 - US-007: Sub-template composition
 - US-011: Scriban integration
 - US-012: Advanced rendering (tables, lists, conditionals)
 
-**Sprint 3 — Data & Dispatch (Weeks 7-9)**
+**Sprint 3 â€” Data & Dispatch (Weeks 7-9)**
 - US-015: SQL Server connector
 - US-016: Filter expression builder
 - US-013: Channel post-processing (POC PDF tool first!)
 - US-018: Channel dispatcher abstraction
 - US-019: Email dispatcher
 
-**Sprint 4 — Campaign Core (Weeks 10-12)**
+**Sprint 4 â€” Campaign Core (Weeks 10-12)**
 - US-020: SMS dispatcher
 - US-021: PDF letter dispatcher
 - US-023: Campaign creation
 - US-025: Template snapshots
 - US-034: Send logging
 
-**Sprint 5 — Batch Processing (Weeks 13-14)**
+**Sprint 5 â€” Batch Processing (Weeks 13-14)**
 - US-026: Chunk-based batch processing (critical path)
 - US-027: Campaign status tracking
 - US-035: Retry mechanism
 
-**Sprint 6 — API & Polish (Weeks 15-16)**
+**Sprint 6 â€” API & Polish (Weeks 15-16)**
 - US-024: Multi-step sequences
 - US-030: Single send API
 - US-031: API authentication
 - US-010: Template preview
 - Integration testing and performance validation
 
-### Phase 2 — Operational Excellence (8-10 weeks after Phase 1)
+### Phase 2 â€” Operational Excellence (8-10 weeks after Phase 1)
 
-**Sprint 7 — Enhanced Features (Weeks 17-19)**
+**Sprint 7 â€” Enhanced Features (Weeks 17-19)**
 - US-008: Template versioning
 - US-009: Template lifecycle workflow
 - US-028: Attachment management
 - US-029: CC management
 - US-022: Channel throttling
 
-**Sprint 8 — Developer Experience (Weeks 20-21)**
+**Sprint 8 â€” Developer Experience (Weeks 20-21)**
 - US-032: OpenAPI documentation
 - US-033: API rate limiting
 - US-036: Campaign progress dashboard
 - US-017: REST API connector (if needed)
 
-**Sprint 9 — Stabilization & Training (Weeks 22-24)**
+**Sprint 9 â€” Stabilization & Training (Weeks 22-24)**
 - Performance optimization
 - User training and documentation
 - Production deployment
 - Monitoring and alerting setup
 
-### Phase 3 — Advanced Features (10-12 weeks after Phase 2)
+### Phase 3 â€” Advanced Features (10-12 weeks after Phase 2)
 
 **Future Epics (Out of Scope v1):**
 - Visual template editor (WYSIWYG or MJML)
@@ -1771,7 +1771,7 @@
 
 ---
 
-## ⚠️ Risks & Constraints
+## âš ï¸ Risks & Constraints
 
 ### Identified Risks
 
@@ -1814,8 +1814,8 @@
 
 1. **Windows Server + IIS hosting** (infrastructure standard)
 2. **SQL Server database** (team expertise)
-3. **Hangfire Community** (no Pro license — requires Chunk Coordinator pattern)
-4. **File share for attachments** (UNC path or NAS — Q7 pending)
+3. **Hangfire Community** (no Pro license â€” requires Chunk Coordinator pattern)
+4. **File share for attachments** (UNC path or NAS â€” Q7 pending)
 5. **Performance target:** 100K recipients in <60 minutes (8 workers)
 6. **API response time:** <500ms p95 for single sends
 
@@ -1833,7 +1833,7 @@
 
 ---
 
-## 📚 References
+## ðŸ“š References
 
 - **Source specification:** _docs/prd.md
 - **Analysis date:** 2026-03-19
@@ -1842,14 +1842,14 @@
 
 ---
 
-## 🚀 Next Steps
+## ðŸš€ Next Steps
 
 1. **Review priorities:** Open [.userstories/BACKLOG.md](.userstories/BACKLOG.md) and adjust story priorities
 2. **Resolve Open Questions:** Focus on Q1 (PDF tool) and Q4 (Auth) before Sprint 1
 3. **Validate estimations:** Review complexity ratings with team
 4. **Start Sprint 1:** Run `/do-userstory US-001` to begin implementation
 
-## 💡 Useful Commands
+## ðŸ’¡ Useful Commands
 
 - `/list-userstories` - View all user stories with status
 - `/do-userstory US-XXX` - Implement a specific user story
@@ -1861,7 +1861,8 @@
 ---
 
 **Legend:**
-- 🔴 High Priority (MVP — Phase 1)
-- 🟠 Medium Priority (Phase 2)
-- 🟢 Low Priority (Phase 3 / Future)
-- 🟡 TODO | 🔵 In Progress | 🟢 Done | 🔴 Blocked
+- ðŸ”´ High Priority (MVP â€” Phase 1)
+- ðŸŸ  Medium Priority (Phase 2)
+- ðŸŸ¢ Low Priority (Phase 3 / Future)
+- ðŸŸ¡ TODO | ðŸ”µ In Progress | ðŸŸ¢ Done | ðŸ”´ Blocked
+
