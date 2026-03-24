@@ -49,3 +49,6 @@ desktop.ini
 .env
 .env.*
 secrets.json
+
+## User stories exports
+.userstories/exports/*.html
