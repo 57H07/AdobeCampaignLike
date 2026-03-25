@@ -441,7 +441,8 @@
 ---
 
 #### [US-009] - Template lifecycle workflow
-**Status:** ðŸŸ¡ TODO
+**Status:** 🔵 IN PROGRESS
+**Start date:** 2026-03-25
 **Priority:** ðŸŸ  Medium
 **Complexity:** S
 **Epic:** Template Management
@@ -1135,7 +1136,7 @@
 - [ ] Delay calculated from campaign start or previous step completion
 
 **Technical tasks:**
-- [ ] `TASK-024-01` - **[Model]** Add StepOrder, DelayDays, StepFilter to CampaignStep
+- [x] `TASK-024-01` - **[Model]** Add StepOrder, DelayDays, StepFilter to CampaignStep ✅ 2026-03-25
 - [ ] `TASK-024-02` - **[Service]** Step validation service (order, delays)
 - [ ] `TASK-024-03` - **[Service]** Step scheduling service (calculate execution dates)
 - [ ] `TASK-024-04` - **[Frontend]** Multi-step builder UI component
