@@ -23,6 +23,9 @@
         <a asp-page="Edit" asp-route-id="@Model.DataSource.Id" class="btn btn-primary">
             <i class="bi bi-pencil"></i> Edit
         </a>
+        <a asp-page="FilterBuilder" asp-route-id="@Model.DataSource.Id" class="btn btn-outline-success">
+            <i class="bi bi-funnel"></i> Filter Builder
+        </a>
         <form method="post" asp-page-handler="TestConnection" asp-route-id="@Model.DataSource.Id">
             @Html.AntiForgeryToken()
             <button type="submit" class="btn btn-outline-info">

@@ -1,0 +1,617 @@
+@page "{id:guid}"
+@model CampaignEngine.Web.Pages.Admin.DataSources.FilterBuilderModel
+@{
+    ViewData["Title"] = $"Filter Builder — {Model.DataSource?.Name}";
+}
+
+@if (Model.DataSource is null)
+{
+    <div class="alert alert-danger">Data source not found.</div>
+    <a asp-page="Index" class="btn btn-secondary">Back to List</a>
+    return;
+}
+
+<div class="d-flex align-items-center mb-3">
+    <a asp-page="Details" asp-route-id="@Model.DataSource.Id" class="btn btn-outline-secondary me-3">
+        <i class="bi bi-arrow-left"></i> Back
+    </a>
+    <div>
+        <h1 class="mb-0">Filter Builder</h1>
+        <p class="text-muted mb-0">@Model.DataSource.Name — Build filters to segment recipients</p>
+    </div>
+</div>
+
+@if (!Model.DataSource.Fields.Any(f => f.IsFilterable))
+{
+    <div class="alert alert-warning">
+        <i class="bi bi-exclamation-triangle"></i>
+        This data source has no filterable fields. <a asp-page="EditSchema" asp-route-id="@Model.DataSource.Id">Edit the schema</a> to mark fields as filterable.
+    </div>
+}
+
+<div class="row">
+    <!-- Filter builder panel -->
+    <div class="col-lg-7">
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="mb-0"><i class="bi bi-funnel"></i> Filter Conditions</h6>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-sm btn-outline-primary" id="addFilterBtn">
+                        <i class="bi bi-plus"></i> Add Condition
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="addGroupBtn">
+                        <i class="bi bi-collection"></i> Add Group
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div id="filterContainer">
+                    <!-- Filter conditions rendered here by JS -->
+                </div>
+                <div class="mt-3 d-flex gap-2">
+                    <button type="button" class="btn btn-primary" id="previewBtn">
+                        <i class="bi bi-play-circle"></i> Preview Results
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" id="clearBtn">
+                        <i class="bi bi-x-circle"></i> Clear All
+                    </button>
+                    <button type="button" class="btn btn-outline-success" id="copyAstBtn">
+                        <i class="bi bi-clipboard"></i> Copy AST JSON
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- AST JSON display (collapsed) -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <a class="text-decoration-none text-body d-flex justify-content-between" data-bs-toggle="collapse" href="#astJsonPanel" role="button">
+                    <span><i class="bi bi-code-square"></i> Filter AST (JSON)</span>
+                    <i class="bi bi-chevron-down"></i>
+                </a>
+            </div>
+            <div class="collapse" id="astJsonPanel">
+                <div class="card-body p-0">
+                    <pre id="astJson" class="mb-0 p-3 bg-light rounded-bottom small" style="max-height:200px; overflow-y:auto;">[]</pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Preview results panel -->
+    <div class="col-lg-5">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="mb-0"><i class="bi bi-table"></i> Preview</h6>
+                <span id="rowCountBadge" class="badge bg-secondary" style="display:none;"></span>
+            </div>
+            <div class="card-body" id="previewPanel">
+                <div class="text-center text-muted py-4">
+                    <i class="bi bi-funnel fs-2"></i>
+                    <p class="mt-2">Build your filter and click <strong>Preview Results</strong> to see matching rows.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+// -----------------------------------------------------------------------
+// Data source schema fields (filterable only)
+// -----------------------------------------------------------------------
+const schemaFields = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+    Model.DataSource.Fields
+        .Where(f => f.IsFilterable)
+        .Select(f => new { fieldName = f.FieldName, dataType = f.DataType })
+        .ToList()
+));
+
+const dataSourceId = '@Model.DataSource.Id';
+
+// Supported operators per field type category
+const operatorsByType = {
+    text:    ['=', '!=', 'LIKE', 'IN'],
+    number:  ['=', '!=', '>', '<', '>=', '<=', 'IN'],
+    date:    ['=', '!=', '>', '<', '>=', '<='],
+    boolean: ['=', '!='],
+    default: ['=', '!=', '>', '<', '>=', '<=', 'LIKE', 'IN']
+};
+
+const operatorLabels = {
+    '=': 'equals',
+    '!=': 'not equals',
+    '>': 'greater than',
+    '<': 'less than',
+    '>=': 'greater than or equal',
+    '<=': 'less than or equal',
+    'LIKE': 'contains (LIKE)',
+    'IN': 'in list (IN)'
+};
+
+const operatorValues = {
+    '=': 1, '!=': 2, '>': 3, '<': 4, '>=': 5, '<=': 6, 'LIKE': 7, 'IN': 8
+};
+
+// Relative date keywords for date fields
+const relativeDateOptions = [
+    { value: 'today', label: 'Today' },
+    { value: 'yesterday', label: 'Yesterday' },
+    { value: 'last7days', label: 'Last 7 days' },
+    { value: 'last30days', label: 'Last 30 days' },
+    { value: 'last90days', label: 'Last 90 days' },
+    { value: 'last365days', label: 'Last 365 days' },
+    { value: 'thisweek', label: 'This week' },
+    { value: 'thismonth', label: 'This month' },
+    { value: 'thisyear', label: 'This year' }
+];
+
+// -----------------------------------------------------------------------
+// State: array of filter condition/group objects
+// -----------------------------------------------------------------------
+let filterConditions = [];
+let conditionCounter = 0;
+
+function getFieldType(fieldName) {
+    const field = schemaFields.find(f => f.fieldName === fieldName);
+    if (!field) return 'default';
+    const t = field.dataType.toLowerCase();
+    if (t.includes('date') || t.includes('time')) return 'date';
+    if (t === 'int' || t === 'bigint' || t === 'decimal' || t === 'float' || t === 'numeric') return 'number';
+    if (t === 'bit') return 'boolean';
+    return 'text';
+}
+
+function getOperatorsForField(fieldName) {
+    const type = getFieldType(fieldName);
+    return operatorsByType[type] || operatorsByType.default;
+}
+
+// -----------------------------------------------------------------------
+// Render filter container
+// -----------------------------------------------------------------------
+function renderFilters() {
+    const container = document.getElementById('filterContainer');
+    if (filterConditions.length === 0) {
+        container.innerHTML = '<p class="text-muted small">No conditions yet. Click <strong>Add Condition</strong> to start.</p>';
+        updateAstJson();
+        return;
+    }
+    container.innerHTML = '';
+    filterConditions.forEach((cond, idx) => {
+        container.appendChild(renderConditionNode(cond, idx, null));
+    });
+    updateAstJson();
+}
+
+function renderConditionNode(cond, idx, parentLogical) {
+    if (cond.type === 'leaf') {
+        return renderLeafRow(cond, idx, parentLogical);
+    } else {
+        return renderGroupRow(cond, idx);
+    }
+}
+
+function renderLeafRow(cond, idx, parentLogical) {
+    const row = document.createElement('div');
+    row.className = 'border rounded p-2 mb-2 bg-white';
+    row.dataset.idx = idx;
+
+    const fieldOptions = schemaFields.map(f =>
+        `<option value="${f.fieldName}" ${cond.fieldName === f.fieldName ? 'selected' : ''}>${f.fieldName}</option>`
+    ).join('');
+
+    const currentOps = getOperatorsForField(cond.fieldName);
+    const opOptions = currentOps.map(op =>
+        `<option value="${op}" ${cond.operator === op ? 'selected' : ''}>${operatorLabels[op] || op}</option>`
+    ).join('');
+
+    const fieldType = getFieldType(cond.fieldName);
+    const isDateField = fieldType === 'date';
+    const isInOp = cond.operator === 'IN';
+
+    let valueHtml = '';
+    if (isInOp) {
+        valueHtml = `<input type="text" class="form-control form-control-sm" placeholder="val1, val2, val3..." value="${escapeHtml(Array.isArray(cond.value) ? cond.value.join(', ') : (cond.value || ''))}" data-role="value" />`;
+    } else if (isDateField) {
+        const relOpts = relativeDateOptions.map(r =>
+            `<option value="${r.value}" ${cond.value === r.value ? 'selected' : ''}>${r.label}</option>`
+        ).join('');
+        valueHtml = `<select class="form-select form-select-sm" data-role="value-date-select">
+            <option value="">-- select or type date --</option>
+            ${relOpts}
+        </select>
+        <input type="text" class="form-control form-control-sm mt-1" placeholder="or enter date (yyyy-MM-dd)" value="${escapeHtml(!relativeDateOptions.find(r => r.value === cond.value) ? (cond.value || '') : '')}" data-role="value-date-input" />`;
+    } else {
+        valueHtml = `<input type="text" class="form-control form-control-sm" placeholder="value..." value="${escapeHtml(cond.value || '')}" data-role="value" />`;
+    }
+
+    row.innerHTML = `
+        <div class="row g-1 align-items-start">
+            <div class="col-auto text-muted small" style="min-width:40px; padding-top:6px;">
+                ${idx === 0 ? '<span class="badge bg-light text-dark border">WHERE</span>' : '<span class="badge bg-info text-dark">AND</span>'}
+            </div>
+            <div class="col-md-3">
+                <select class="form-select form-select-sm" data-role="field">
+                    ${fieldOptions}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select class="form-select form-select-sm" data-role="operator">
+                    ${opOptions}
+                </select>
+            </div>
+            <div class="col-md-3">
+                ${valueHtml}
+            </div>
+            <div class="col-auto">
+                <button type="button" class="btn btn-sm btn-outline-danger" data-action="remove">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </div>
+        </div>
+    `;
+
+    // Events
+    row.querySelector('[data-role="field"]').addEventListener('change', function() {
+        cond.fieldName = this.value;
+        cond.operator = getOperatorsForField(this.value)[0];
+        cond.value = '';
+        renderFilters();
+    });
+    row.querySelector('[data-role="operator"]').addEventListener('change', function() {
+        cond.operator = this.value;
+        cond.value = '';
+        renderFilters();
+    });
+
+    const valueEl = row.querySelector('[data-role="value"]');
+    if (valueEl) {
+        valueEl.addEventListener('input', function() {
+            if (cond.operator === 'IN') {
+                cond.value = this.value.split(',').map(v => v.trim()).filter(v => v !== '');
+            } else {
+                cond.value = this.value;
+            }
+            updateAstJson();
+        });
+    }
+
+    const dateSelect = row.querySelector('[data-role="value-date-select"]');
+    const dateInput = row.querySelector('[data-role="value-date-input"]');
+    if (dateSelect) {
+        dateSelect.addEventListener('change', function() {
+            cond.value = this.value || dateInput.value;
+            if (dateInput) dateInput.value = '';
+            updateAstJson();
+        });
+    }
+    if (dateInput) {
+        dateInput.addEventListener('input', function() {
+            cond.value = this.value;
+            if (dateSelect) dateSelect.value = '';
+            updateAstJson();
+        });
+    }
+
+    row.querySelector('[data-action="remove"]').addEventListener('click', function() {
+        filterConditions.splice(idx, 1);
+        renderFilters();
+    });
+
+    return row;
+}
+
+function renderGroupRow(cond, idx) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'border border-info rounded p-2 mb-2 bg-light';
+    wrapper.dataset.idx = idx;
+
+    const logicalOptions = ['AND', 'OR'].map(op =>
+        `<option value="${op}" ${cond.logicalOperator === op ? 'selected' : ''}>${op}</option>`
+    ).join('');
+
+    const header = document.createElement('div');
+    header.className = 'd-flex align-items-center gap-2 mb-2';
+    header.innerHTML = `
+        <span class="badge bg-info text-dark">GROUP</span>
+        <select class="form-select form-select-sm w-auto" data-role="logical">${logicalOptions}</select>
+        <button type="button" class="btn btn-xs btn-outline-primary btn-sm ms-1" data-action="add-child">
+            <i class="bi bi-plus"></i> Add
+        </button>
+        <button type="button" class="btn btn-xs btn-outline-danger btn-sm ms-auto" data-action="remove-group">
+            <i class="bi bi-trash"></i>
+        </button>
+    `;
+    wrapper.appendChild(header);
+
+    const childContainer = document.createElement('div');
+    childContainer.className = 'ps-3';
+    if (cond.children && cond.children.length > 0) {
+        cond.children.forEach((child, ci) => {
+            childContainer.appendChild(renderGroupChild(child, ci, cond));
+        });
+    } else {
+        childContainer.innerHTML = '<p class="text-muted small">No conditions in group.</p>';
+    }
+    wrapper.appendChild(childContainer);
+
+    // Events
+    header.querySelector('[data-role="logical"]').addEventListener('change', function() {
+        cond.logicalOperator = this.value;
+        updateAstJson();
+    });
+    header.querySelector('[data-action="add-child"]').addEventListener('click', function() {
+        if (!cond.children) cond.children = [];
+        const firstField = schemaFields[0]?.fieldName || '';
+        cond.children.push({
+            id: ++conditionCounter,
+            type: 'leaf',
+            fieldName: firstField,
+            operator: firstField ? getOperatorsForField(firstField)[0] : '=',
+            value: ''
+        });
+        renderFilters();
+    });
+    header.querySelector('[data-action="remove-group"]').addEventListener('click', function() {
+        filterConditions.splice(idx, 1);
+        renderFilters();
+    });
+
+    return wrapper;
+}
+
+function renderGroupChild(child, ci, parentGroup) {
+    const row = document.createElement('div');
+    row.className = 'border rounded p-2 mb-1 bg-white';
+
+    const fieldOptions = schemaFields.map(f =>
+        `<option value="${f.fieldName}" ${child.fieldName === f.fieldName ? 'selected' : ''}>${f.fieldName}</option>`
+    ).join('');
+
+    const currentOps = getOperatorsForField(child.fieldName);
+    const opOptions = currentOps.map(op =>
+        `<option value="${op}" ${child.operator === op ? 'selected' : ''}>${operatorLabels[op] || op}</option>`
+    ).join('');
+
+    const isInOp = child.operator === 'IN';
+    const valueHtml = isInOp
+        ? `<input type="text" class="form-control form-control-sm" placeholder="val1, val2..." value="${escapeHtml(Array.isArray(child.value) ? child.value.join(', ') : (child.value || ''))}" data-role="child-value" />`
+        : `<input type="text" class="form-control form-control-sm" placeholder="value..." value="${escapeHtml(child.value || '')}" data-role="child-value" />`;
+
+    row.innerHTML = `
+        <div class="row g-1 align-items-center">
+            <div class="col-auto text-muted small">
+                ${ci === 0 ? '<span class="badge bg-light text-dark border small">' + parentGroup.logicalOperator + '</span>' : '<span class="badge bg-secondary small">' + parentGroup.logicalOperator + '</span>'}
+            </div>
+            <div class="col-md-3"><select class="form-select form-select-sm" data-role="child-field">${fieldOptions}</select></div>
+            <div class="col-md-3"><select class="form-select form-select-sm" data-role="child-op">${opOptions}</select></div>
+            <div class="col-md-3">${valueHtml}</div>
+            <div class="col-auto">
+                <button type="button" class="btn btn-sm btn-outline-danger" data-action="remove-child"><i class="bi bi-trash"></i></button>
+            </div>
+        </div>
+    `;
+
+    row.querySelector('[data-role="child-field"]').addEventListener('change', function() {
+        child.fieldName = this.value;
+        child.operator = getOperatorsForField(this.value)[0];
+        child.value = '';
+        renderFilters();
+    });
+    row.querySelector('[data-role="child-op"]').addEventListener('change', function() {
+        child.operator = this.value;
+        updateAstJson();
+    });
+    const cv = row.querySelector('[data-role="child-value"]');
+    if (cv) {
+        cv.addEventListener('input', function() {
+            child.value = child.operator === 'IN'
+                ? this.value.split(',').map(v => v.trim()).filter(v => v !== '')
+                : this.value;
+            updateAstJson();
+        });
+    }
+    row.querySelector('[data-action="remove-child"]').addEventListener('click', function() {
+        parentGroup.children.splice(ci, 1);
+        renderFilters();
+    });
+
+    return row;
+}
+
+// -----------------------------------------------------------------------
+// AST serialization
+// -----------------------------------------------------------------------
+function buildAst() {
+    return filterConditions.map(cond => buildAstNode(cond));
+}
+
+function buildAstNode(cond) {
+    if (cond.type === 'leaf') {
+        return {
+            type: 'leaf',
+            fieldName: cond.fieldName,
+            operator: operatorValues[cond.operator] || 1,
+            value: cond.value === '' ? null : cond.value
+        };
+    } else {
+        return {
+            type: 'composite',
+            logicalOperator: cond.logicalOperator === 'OR' ? 2 : 1,
+            children: (cond.children || []).map(buildAstNode)
+        };
+    }
+}
+
+function updateAstJson() {
+    const ast = buildAst();
+    document.getElementById('astJson').textContent = JSON.stringify(ast, null, 2);
+}
+
+// -----------------------------------------------------------------------
+// Add condition / group
+// -----------------------------------------------------------------------
+document.getElementById('addFilterBtn').addEventListener('click', function() {
+    if (schemaFields.length === 0) {
+        alert('This data source has no filterable fields. Please define the schema first.');
+        return;
+    }
+    const firstField = schemaFields[0].fieldName;
+    filterConditions.push({
+        id: ++conditionCounter,
+        type: 'leaf',
+        fieldName: firstField,
+        operator: getOperatorsForField(firstField)[0],
+        value: ''
+    });
+    renderFilters();
+});
+
+document.getElementById('addGroupBtn').addEventListener('click', function() {
+    if (schemaFields.length === 0) {
+        alert('This data source has no filterable fields. Please define the schema first.');
+        return;
+    }
+    const firstField = schemaFields[0].fieldName;
+    filterConditions.push({
+        id: ++conditionCounter,
+        type: 'composite',
+        logicalOperator: 'OR',
+        children: [
+            {
+                id: ++conditionCounter,
+                type: 'leaf',
+                fieldName: firstField,
+                operator: getOperatorsForField(firstField)[0],
+                value: ''
+            }
+        ]
+    });
+    renderFilters();
+});
+
+document.getElementById('clearBtn').addEventListener('click', function() {
+    filterConditions = [];
+    renderFilters();
+    clearPreview();
+});
+
+document.getElementById('copyAstBtn').addEventListener('click', function() {
+    const ast = buildAst();
+    navigator.clipboard.writeText(JSON.stringify(ast, null, 2))
+        .then(() => {
+            this.innerHTML = '<i class="bi bi-check2"></i> Copied!';
+            setTimeout(() => { this.innerHTML = '<i class="bi bi-clipboard"></i> Copy AST JSON'; }, 2000);
+        });
+});
+
+// -----------------------------------------------------------------------
+// Preview
+// -----------------------------------------------------------------------
+document.getElementById('previewBtn').addEventListener('click', async function() {
+    const ast = buildAst();
+    const btn = this;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Loading...';
+
+    try {
+        const response = await fetch(`/api/datasources/${dataSourceId}/preview`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ filters: ast.length > 0 ? ast : null, maxRows: 100 })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            let errMsg = data.title || data || 'Preview failed.';
+            if (data.errors && data.errors.filters) {
+                errMsg = data.errors.filters.join('<br>');
+            }
+            showPreviewError(errMsg);
+            return;
+        }
+
+        renderPreviewResult(data);
+    } catch (err) {
+        showPreviewError('Network error: ' + err.message);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-play-circle"></i> Preview Results';
+    }
+});
+
+function renderPreviewResult(data) {
+    const panel = document.getElementById('previewPanel');
+    const badge = document.getElementById('rowCountBadge');
+
+    badge.style.display = '';
+    badge.textContent = `${data.rowCount} / ${data.totalCount ?? '?'} rows`;
+    badge.className = data.rowCount === 0 ? 'badge bg-warning text-dark' : 'badge bg-success';
+
+    if (data.rowCount === 0) {
+        panel.innerHTML = `
+            <div class="text-center text-muted py-4">
+                <i class="bi bi-inbox fs-2"></i>
+                <p class="mt-2">No rows matched the filter.</p>
+                ${data.appliedWhereClause ? `<p class="small text-muted">WHERE: <code>${escapeHtml(data.appliedWhereClause)}</code></p>` : ''}
+            </div>`;
+        return;
+    }
+
+    const rows = data.rows;
+    const columns = Object.keys(rows[0]);
+
+    let html = '<div class="table-responsive" style="max-height:400px;">';
+    html += '<table class="table table-sm table-striped table-hover mb-0 small">';
+    html += '<thead class="table-dark sticky-top"><tr>';
+    columns.forEach(col => { html += `<th>${escapeHtml(col)}</th>`; });
+    html += '</tr></thead><tbody>';
+    rows.forEach(row => {
+        html += '<tr>';
+        columns.forEach(col => {
+            const val = row[col];
+            html += `<td>${val === null || val === undefined ? '<span class="text-muted">NULL</span>' : escapeHtml(String(val))}</td>`;
+        });
+        html += '</tr>';
+    });
+    html += '</tbody></table></div>';
+
+    if (data.appliedWhereClause) {
+        html += `<div class="mt-2 small text-muted"><strong>WHERE</strong> <code>${escapeHtml(data.appliedWhereClause)}</code></div>`;
+    }
+
+    panel.innerHTML = html;
+}
+
+function showPreviewError(message) {
+    const panel = document.getElementById('previewPanel');
+    panel.innerHTML = `<div class="alert alert-danger mb-0"><i class="bi bi-exclamation-triangle"></i> ${message}</div>`;
+    document.getElementById('rowCountBadge').style.display = 'none';
+}
+
+function clearPreview() {
+    document.getElementById('previewPanel').innerHTML = `
+        <div class="text-center text-muted py-4">
+            <i class="bi bi-funnel fs-2"></i>
+            <p class="mt-2">Build your filter and click <strong>Preview Results</strong> to see matching rows.</p>
+        </div>`;
+    const badge = document.getElementById('rowCountBadge');
+    badge.style.display = 'none';
+}
+
+function escapeHtml(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+// Initial render
+renderFilters();
+</script>
+}
