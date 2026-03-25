@@ -503,9 +503,9 @@
 - [ ] Preview shows channel-specific output (HTML for email, PDF for letter)
 
 **Technical tasks:**
-- [ ] `TASK-010-01` - **[API]** POST /api/templates/{id}/preview endpoint
-- [ ] `TASK-010-02` - **[Service]** Sample data fetcher from data source
-- [ ] `TASK-010-03` - **[Service]** Template resolution with sample data
+- [x] `TASK-010-01` - **[API]** POST /api/templates/{id}/preview endpoint âœ… 2026-03-25
+- [x] `TASK-010-02` - **[Service]** Sample data fetcher from data source âœ… 2026-03-25
+- [x] `TASK-010-03` - **[Service]** Template resolution with sample data âœ… 2026-03-25
 - [ ] `TASK-010-04` - **[Frontend]** Preview modal with data source selector
 - [ ] `TASK-010-05` - **[Frontend]** Rendered preview display (HTML/PDF viewer)
 - [ ] `TASK-010-06` - **[Test]** Preview rendering tests
@@ -776,7 +776,7 @@
 
 **Technical tasks:**
 - [x] `TASK-016-01` - **[Model]** Create FilterExpression AST classes ✅ 2026-03-25
-- [ ] `TASK-016-02` - **[Service]** Filter AST to SQL translator
+- [x] `TASK-016-02` - **[Service]** Filter AST to SQL translator ✅ 2026-03-25
 - [ ] `TASK-016-03` - **[Service]** Expression validation service
 - [ ] `TASK-016-04` - **[API]** POST /api/datasources/{id}/preview endpoint (apply filters)
 - [ ] `TASK-016-05` - **[Frontend]** Filter builder UI component

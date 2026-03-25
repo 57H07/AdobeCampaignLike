@@ -126,6 +126,9 @@ public static class ServiceCollectionExtensions
         // Sub-template resolver service — resolves {{> name}} references recursively with circular detection.
         services.AddScoped<ISubTemplateResolverService, SubTemplateResolverService>();
 
+        // Template preview service — renders a template with sample data for designer workflow (US-010).
+        services.AddScoped<ITemplatePreviewService, TemplatePreviewService>();
+
         // Logging dispatch orchestrator — wraps dispatchers with before/after SEND_LOG recording.
         services.AddScoped<ILoggingDispatchOrchestrator, LoggingDispatchOrchestrator>();
 

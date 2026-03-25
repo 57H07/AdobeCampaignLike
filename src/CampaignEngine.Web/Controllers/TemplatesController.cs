@@ -24,19 +24,22 @@ public class TemplatesController : ControllerBase
     private readonly IPlaceholderParserService _parserService;
     private readonly ISubTemplateResolverService _subTemplateResolver;
     private readonly ICurrentUserService _currentUserService;
+    private readonly ITemplatePreviewService _previewService;
 
     public TemplatesController(
         ITemplateService templateService,
         IPlaceholderManifestService manifestService,
         IPlaceholderParserService parserService,
         ISubTemplateResolverService subTemplateResolver,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        ITemplatePreviewService previewService)
     {
         _templateService = templateService;
         _manifestService = manifestService;
         _parserService = parserService;
         _subTemplateResolver = subTemplateResolver;
         _currentUserService = currentUserService;
+        _previewService = previewService;
     }
 
     // ----------------------------------------------------------------
@@ -628,6 +631,61 @@ public class TemplatesController : ControllerBase
                 IsValid = false,
                 Message = ex.Message
             });
+        }
+    }
+
+    // ================================================================
+    // Preview Endpoint (US-010)
+    // ================================================================
+
+    // ----------------------------------------------------------------
+    // POST /api/templates/{id}/preview
+    // ----------------------------------------------------------------
+
+    /// <summary>
+    /// Renders a template with sample data fetched from the specified data source.
+    /// Read-only: no sends occur, no records are written.
+    /// </summary>
+    /// <remarks>
+    /// Business rules:
+    /// - Up to 5 sample rows are fetched from the data source.
+    /// - The first sample row (RowIndex = 0) is used for rendering by default.
+    /// - Channel post-processing is applied: CSS inlining for Email, PDF generation for Letter, text stripping for SMS.
+    /// - Missing placeholder keys (present in the template but absent from the sample row) are returned in the result.
+    /// - Only Designer and Admin roles can invoke the preview (BR-4).
+    /// </remarks>
+    /// <param name="id">Template GUID.</param>
+    /// <param name="request">Preview parameters: data source ID, sample row count, row index.</param>
+    [HttpPost("{id:guid}/preview")]
+    [Authorize(Policy = AuthorizationPolicies.RequireDesignerOrAdmin)]
+    [ProducesResponseType(typeof(TemplatePreviewResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult<TemplatePreviewResult>> PreviewTemplate(
+        Guid id,
+        [FromBody] TemplatePreviewRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        if (request.DataSourceId == Guid.Empty)
+            return BadRequest(new { error = "DataSourceId is required." });
+
+        if (request.SampleRowCount < 1 || request.SampleRowCount > 5)
+            return BadRequest(new { error = "SampleRowCount must be between 1 and 5." });
+
+        try
+        {
+            var result = await _previewService.PreviewAsync(id, request, cancellationToken);
+            return Ok(result);
+        }
+        catch (NotFoundException)
+        {
+            return NotFound();
+        }
+        catch (ValidationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
         }
     }
 
