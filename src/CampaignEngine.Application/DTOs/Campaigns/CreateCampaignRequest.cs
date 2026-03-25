@@ -41,9 +41,11 @@ public class CreateCampaignRequest
     public DateTime? ScheduledAt { get; set; }
 
     /// <summary>
-    /// Ordered list of campaign steps (at least one step required).
+    /// Ordered list of campaign steps (at least one, maximum 10 steps).
+    /// Business rule: a campaign may have at most 10 steps.
     /// </summary>
     [Required]
     [MinLength(1, ErrorMessage = "At least one step is required.")]
+    [MaxLength(10, ErrorMessage = "A campaign may have at most 10 steps.")]
     public List<CreateCampaignStepRequest> Steps { get; set; } = new();
 }

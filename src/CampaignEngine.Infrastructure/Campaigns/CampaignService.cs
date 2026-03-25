@@ -51,12 +51,27 @@ public sealed class CampaignService : ICampaignService
             });
 
         // ----------------------------------------------------------------
-        // Validate: at least one step
+        // Validate: at least one step and at most 10 steps
         // ----------------------------------------------------------------
         if (request.Steps == null || request.Steps.Count == 0)
             throw new ValidationException(new Dictionary<string, string[]>
             {
                 ["steps"] = ["At least one campaign step is required."]
+            });
+
+        if (request.Steps.Count > 10)
+            throw new ValidationException(new Dictionary<string, string[]>
+            {
+                ["steps"] = [$"A campaign may have at most 10 steps. Provided: {request.Steps.Count}."]
+            });
+
+        // Validate: step orders are unique and contiguous (1-based)
+        var stepOrders = request.Steps.Select(s => s.StepOrder).OrderBy(o => o).ToList();
+        var duplicateOrders = stepOrders.GroupBy(o => o).Where(g => g.Count() > 1).Select(g => g.Key).ToList();
+        if (duplicateOrders.Count > 0)
+            throw new ValidationException(new Dictionary<string, string[]>
+            {
+                ["steps"] = [$"Step orders must be unique. Duplicate order(s): {string.Join(", ", duplicateOrders)}."]
             });
 
         // ----------------------------------------------------------------

@@ -11,9 +11,10 @@ public class CreateCampaignStepRequest
     /// <summary>
     /// Step position (1-based). Steps are ordered by this value.
     /// Must be unique within the campaign.
+    /// Business rule: maximum 10 steps per campaign (StepOrder 1–10).
     /// </summary>
     [Required]
-    [Range(1, 100)]
+    [Range(1, 10)]
     public int StepOrder { get; set; }
 
     /// <summary>
