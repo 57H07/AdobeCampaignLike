@@ -508,7 +508,7 @@
 - [x] `TASK-010-03` - **[Service]** Template resolution with sample data âœ… 2026-03-25
 - [x] `TASK-010-04` - **[Frontend]** Preview modal with data source selector âœ… 2026-03-25
 - [x] `TASK-010-05` - **[Frontend]** Rendered preview display (HTML/PDF viewer) âœ… 2026-03-25
-- [ ] `TASK-010-06` - **[Test]** Preview rendering tests
+- [x] `TASK-010-06` - **[Test]** Preview rendering tests âœ… 2026-03-25
 - [ ] `TASK-010-07` - **[Doc]** Preview workflow guide
 
 **Business rules:**
@@ -779,8 +779,8 @@
 - [x] `TASK-016-02` - **[Service]** Filter AST to SQL translator ✅ 2026-03-25
 - [x] `TASK-016-03` - **[Service]** Expression validation service ✅ 2026-03-25
 - [x] `TASK-016-04` - **[API]** POST /api/datasources/{id}/preview endpoint (apply filters) ✅ 2026-03-25
-- [ ] `TASK-016-05` - **[Frontend]** Filter builder UI component
-- [ ] `TASK-016-06` - **[Frontend]** Filter preview with row count
+- [x] `TASK-016-05` - **[Frontend]** Filter builder UI component ✅ 2026-03-25
+- [x] `TASK-016-06` - **[Frontend]** Filter preview with row count ✅ 2026-03-25
 - [ ] `TASK-016-07` - **[Test]** AST to SQL translation tests
 - [ ] `TASK-016-08` - **[Test]** SQL injection prevention in filter values
 - [ ] `TASK-016-09` - **[Test]** Complex filter logic tests (AND/OR)
