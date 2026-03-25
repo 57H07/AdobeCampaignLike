@@ -190,6 +190,15 @@ public static class ServiceCollectionExtensions
             sp.GetRequiredService<SqlServerConnector>());
 
         // ----------------------------------------------------------------
+        // Filter expression services (US-016)
+        // FilterAstTranslator: translates AST to parameterized SQL WHERE clause.
+        // FilterExpressionValidator: validates AST before translation (early 400 errors).
+        // Both are stateless — registered as Scoped to be safe.
+        // ----------------------------------------------------------------
+        services.AddScoped<IFilterAstTranslator, FilterAstTranslator>();
+        services.AddScoped<IFilterExpressionValidator, FilterExpressionValidator>();
+
+        // ----------------------------------------------------------------
         // ASP.NET Core Identity: user and role management
         // Uses ApplicationUser / ApplicationRole backed by SQL Server via EF Core.
         // Cookie lifetime and password policy configurable per environment.
