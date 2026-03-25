@@ -482,7 +482,8 @@
 ---
 
 #### [US-010] - Template preview with sample data
-**Status:** ðŸ�µ IN PROGRESS
+**Status:** â DONE
+**End date:** 2026-03-25 10:00
 **Start date:** 2026-03-25 09:00
 **Priority:** ðŸ”´ High
 **Complexity:** M
@@ -496,11 +497,11 @@
 > Resolve a template with sample data from a real data source (read-only). Preview capability essential for designer workflow.
 
 **Acceptance criteria:**
-- [ ] Preview button available in template editor
-- [ ] User can select data source for preview
-- [ ] System fetches N sample rows from selected data source
-- [ ] Template rendered with first sample row data
-- [ ] Preview shows channel-specific output (HTML for email, PDF for letter)
+- [x] Preview button available in template editor âœ…
+- [x] User can select data source for preview âœ…
+- [x] System fetches N sample rows from selected data source âœ…
+- [x] Template rendered with first sample row data âœ…
+- [x] Preview shows channel-specific output (HTML for email, PDF for letter) âœ…
 
 **Technical tasks:**
 - [x] `TASK-010-01` - **[API]** POST /api/templates/{id}/preview endpoint âœ… 2026-03-25
@@ -781,9 +782,9 @@
 - [x] `TASK-016-04` - **[API]** POST /api/datasources/{id}/preview endpoint (apply filters) ✅ 2026-03-25
 - [x] `TASK-016-05` - **[Frontend]** Filter builder UI component ✅ 2026-03-25
 - [x] `TASK-016-06` - **[Frontend]** Filter preview with row count ✅ 2026-03-25
-- [ ] `TASK-016-07` - **[Test]** AST to SQL translation tests
-- [ ] `TASK-016-08` - **[Test]** SQL injection prevention in filter values
-- [ ] `TASK-016-09` - **[Test]** Complex filter logic tests (AND/OR)
+- [x] `TASK-016-07` - **[Test]** AST to SQL translation tests ✅ 2026-03-25
+- [x] `TASK-016-08` - **[Test]** SQL injection prevention in filter values ✅ 2026-03-25
+- [x] `TASK-016-09` - **[Test]** Complex filter logic tests (AND/OR) ✅ 2026-03-25
 - [ ] `TASK-016-10` - **[Doc]** Filter expression syntax guide
 
 **Business rules:**
