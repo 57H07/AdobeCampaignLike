@@ -1,0 +1,187 @@
+@page
+@model CampaignEngine.Web.Pages.Campaigns.CampaignIndexModel
+@{
+    ViewData["Title"] = "Campaigns";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h1 class="mb-1">Campaigns</h1>
+        <p class="text-muted mb-0">Create and manage targeted message campaigns.</p>
+    </div>
+    @if (User.IsInRole("Operator") || User.IsInRole("Admin"))
+    {
+        <a asp-page="Create" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> New Campaign
+        </a>
+    }
+</div>
+
+@if (!string.IsNullOrEmpty(Model.StatusMessage))
+{
+    <div class="alert @(Model.IsSuccess ? "alert-success" : "alert-danger") alert-dismissible fade show" role="alert">
+        @Model.StatusMessage
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@* ------------------------------------------------------------------ *@
+@* Filter Panel                                                         *@
+@* ------------------------------------------------------------------ *@
+<div class="card mb-4">
+    <div class="card-header">
+        <h6 class="mb-0">Filters</h6>
+    </div>
+    <div class="card-body">
+        <form method="get" asp-page="Index">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Status</label>
+                    <select class="form-select" name="status">
+                        <option value="">All Statuses</option>
+                        <option value="1" selected="@(Model.Filter.Status == "1")">Draft</option>
+                        <option value="2" selected="@(Model.Filter.Status == "2")">Scheduled</option>
+                        <option value="3" selected="@(Model.Filter.Status == "3")">Running</option>
+                        <option value="6" selected="@(Model.Filter.Status == "6")">Completed</option>
+                        <option value="7" selected="@(Model.Filter.Status == "7")">Partial Failure</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Name contains</label>
+                    <input type="text" class="form-control" name="nameContains" value="@Model.Filter.NameContains" placeholder="Search by name..." />
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-search"></i> Search
+                    </button>
+                    <a asp-page="Index" class="btn btn-outline-secondary ms-2">Clear</a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@* ------------------------------------------------------------------ *@
+@* Results Grid                                                         *@
+@* ------------------------------------------------------------------ *@
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span>Campaigns: <strong>@Model.Total</strong></span>
+        <small class="text-muted">Page @Model.Page of @Model.TotalPages</small>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-sm table-striped table-hover mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Name</th>
+                        <th>Status</th>
+                        <th>Data Source</th>
+                        <th>Steps</th>
+                        <th>Scheduled</th>
+                        <th>Created</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var c in Model.Items)
+                    {
+                        var statusBadge = c.Status switch
+                        {
+                            "Draft"         => "bg-secondary",
+                            "Scheduled"     => "bg-primary",
+                            "Running"       => "bg-warning text-dark",
+                            "StepInProgress"=> "bg-warning text-dark",
+                            "WaitingNext"   => "bg-info text-dark",
+                            "Completed"     => "bg-success",
+                            "PartialFailure"=> "bg-danger",
+                            "ManualReview"  => "bg-danger",
+                            _               => "bg-secondary"
+                        };
+                        <tr>
+                            <td>
+                                <a asp-page="Detail" asp-route-id="@c.Id" class="fw-semibold text-decoration-none">@c.Name</a>
+                                @if (!string.IsNullOrEmpty(c.CreatedBy))
+                                {
+                                    <br/><small class="text-muted">by @c.CreatedBy</small>
+                                }
+                            </td>
+                            <td><span class="badge @statusBadge">@c.Status</span></td>
+                            <td>
+                                @if (!string.IsNullOrEmpty(c.DataSourceName))
+                                {
+                                    <small>@c.DataSourceName</small>
+                                }
+                                else
+                                {
+                                    <small class="text-muted">—</small>
+                                }
+                            </td>
+                            <td class="text-center">@c.Steps.Count</td>
+                            <td class="text-nowrap">
+                                @if (c.ScheduledAt.HasValue)
+                                {
+                                    <small>@c.ScheduledAt.Value.ToString("yyyy-MM-dd HH:mm")</small>
+                                }
+                                else
+                                {
+                                    <small class="text-muted">Immediate</small>
+                                }
+                            </td>
+                            <td class="text-nowrap">
+                                <small>@c.CreatedAt.ToString("yyyy-MM-dd HH:mm")</small>
+                            </td>
+                            <td class="text-nowrap">
+                                <a asp-page="Detail" asp-route-id="@c.Id" class="btn btn-sm btn-outline-secondary">View</a>
+                            </td>
+                        </tr>
+                    }
+                    @if (!Model.Items.Any())
+                    {
+                        <tr>
+                            <td colspan="7" class="text-center text-muted py-4">
+                                No campaigns match the current filters.
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    @* Pagination *@
+    @if (Model.TotalPages > 1)
+    {
+        <div class="card-footer d-flex justify-content-between align-items-center">
+            <small class="text-muted">
+                Showing @((Model.Page - 1) * Model.PageSize + 1)–@(Math.Min(Model.Page * Model.PageSize, Model.Total)) of @Model.Total
+            </small>
+            <nav>
+                <ul class="pagination pagination-sm mb-0">
+                    @if (Model.Page > 1)
+                    {
+                        <li class="page-item">
+                            <a class="page-link"
+                               asp-page="Index"
+                               asp-route-page="@(Model.Page - 1)"
+                               asp-route-status="@Model.Filter.Status"
+                               asp-route-nameContains="@Model.Filter.NameContains">Previous</a>
+                        </li>
+                    }
+                    @if (Model.Page < Model.TotalPages)
+                    {
+                        <li class="page-item">
+                            <a class="page-link"
+                               asp-page="Index"
+                               asp-route-page="@(Model.Page + 1)"
+                               asp-route-status="@Model.Filter.Status"
+                               asp-route-nameContains="@Model.Filter.NameContains">Next</a>
+                        </li>
+                    }
+                </ul>
+            </nav>
+        </div>
+    }
+</div>

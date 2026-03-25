@@ -1,0 +1,908 @@
+@page
+@model CampaignEngine.Web.Pages.Campaigns.CreateCampaignModel
+@{
+    ViewData["Title"] = "New Campaign";
+}
+
+<div class="d-flex align-items-center mb-3">
+    <a asp-page="Index" class="btn btn-outline-secondary me-3">
+        <i class="bi bi-arrow-left"></i> Back
+    </a>
+    <div>
+        <h1 class="mb-0">New Campaign</h1>
+        <p class="text-muted mb-0">Configure a targeted campaign in 5 steps.</p>
+    </div>
+</div>
+
+@* ------------------------------------------------------------------ *@
+@* Wizard Step Indicator                                                *@
+@* ------------------------------------------------------------------ *@
+<div class="mb-4">
+    <div class="d-flex gap-2 align-items-center">
+        @for (int s = 1; s <= 5; s++)
+        {
+            string stepName = s switch {
+                1 => "Name",
+                2 => "Template",
+                3 => "Data &amp; Filter",
+                4 => "Free Fields",
+                5 => "Schedule",
+                _ => ""
+            };
+            <div class="d-flex align-items-center gap-2">
+                <span class="wizard-step-indicator badge rounded-pill" data-step="@s"
+                      style="width:30px;height:30px;line-height:22px;font-size:0.85rem;
+                             background:@(s == 1 ? "#0d6efd" : "#dee2e6");
+                             color:@(s == 1 ? "#fff" : "#495057")">@s</span>
+                <span class="d-none d-md-inline small wizard-step-label" data-step="@s"
+                      style="font-weight:@(s == 1 ? "600" : "normal")">@Html.Raw(stepName)</span>
+            </div>
+            @if (s < 5)
+            {
+                <div class="flex-grow-1" style="height:2px;background:#dee2e6;max-width:60px;"></div>
+            }
+        }
+    </div>
+</div>
+
+@* ------------------------------------------------------------------ *@
+@* Global error display                                                 *@
+@* ------------------------------------------------------------------ *@
+<div id="globalError" class="alert alert-danger d-none mb-3" role="alert"></div>
+
+@* ================================================================== *@
+@* STEP 1 — Campaign Name                                               *@
+@* ================================================================== *@
+<div class="wizard-step" data-step="1">
+    <div class="card">
+        <div class="card-header"><h6 class="mb-0">Step 1 — Campaign Name</h6></div>
+        <div class="card-body">
+            <div class="mb-3" style="max-width:500px">
+                <label class="form-label fw-semibold" for="campaignName">Campaign Name <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" id="campaignName" maxlength="300"
+                       placeholder="e.g. Spring 2026 Email Offer" />
+                <div class="form-text">Must be unique. Max 300 characters.</div>
+                <div id="nameError" class="invalid-feedback"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* ================================================================== *@
+@* STEP 2 — Template Selector                                           *@
+@* ================================================================== *@
+<div class="wizard-step d-none" data-step="2">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h6 class="mb-0">Step 2 — Template &amp; Steps</h6>
+            <button type="button" class="btn btn-sm btn-outline-primary" id="addStepBtn">
+                <i class="bi bi-plus"></i> Add Step
+            </button>
+        </div>
+        <div class="card-body">
+            <p class="text-muted small mb-3">
+                Add one or more steps. Each step selects a <strong>Published</strong> template for a specific channel.
+                Multi-step campaigns send sequential messages with optional delays between steps.
+            </p>
+
+            @* Filter published templates by channel *@
+            <div class="row g-2 mb-3">
+                <div class="col-auto">
+                    <label class="form-label">Filter by channel:</label>
+                </div>
+                <div class="col-auto">
+                    <select class="form-select form-select-sm" id="templateChannelFilter">
+                        <option value="">All Channels</option>
+                        <option value="1">Email</option>
+                        <option value="2">Letter</option>
+                        <option value="3">SMS</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="stepsContainer">
+                <!-- Steps added dynamically -->
+            </div>
+            <div id="noStepsMessage" class="text-muted small py-2">
+                No steps yet. Click <strong>Add Step</strong> to add at least one step.
+            </div>
+        </div>
+    </div>
+</div>
+
+@* ================================================================== *@
+@* STEP 3 — Data Source &amp; Filter                                        *@
+@* ================================================================== *@
+<div class="wizard-step d-none" data-step="3">
+    <div class="card mb-3">
+        <div class="card-header"><h6 class="mb-0">Step 3 — Data Source &amp; Filter</h6></div>
+        <div class="card-body">
+            <p class="text-muted small mb-3">
+                Select the data source that provides the recipient list.
+                Optionally add filter conditions to target a specific segment.
+            </p>
+
+            <div class="mb-3" style="max-width:500px">
+                <label class="form-label fw-semibold" for="dataSourceSelect">Data Source</label>
+                <select class="form-select" id="dataSourceSelect">
+                    <option value="">— No data source (manual targeting) —</option>
+                    @foreach (var ds in Model.DataSources)
+                    {
+                        <option value="@ds.Id" data-name="@ds.Name">@ds.Name (@ds.TypeName)</option>
+                    }
+                </select>
+                <div class="form-text">Only active data sources are shown.</div>
+            </div>
+
+            @* Filter builder (shown when DS is selected and has filterable fields) *@
+            <div id="filterBuilderPanel" class="d-none">
+                <hr/>
+                <h6><i class="bi bi-funnel"></i> Filter Conditions</h6>
+                <p class="text-muted small">
+                    Build filter conditions to segment recipients. Leave empty to target all records.
+                </p>
+                <div class="d-flex gap-2 mb-2">
+                    <button type="button" class="btn btn-sm btn-outline-primary" id="addFilterCondBtn">
+                        <i class="bi bi-plus"></i> Add Condition
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="clearFilterBtn">
+                        <i class="bi bi-x-circle"></i> Clear
+                    </button>
+                </div>
+                <div id="filterConditionsContainer"></div>
+
+                @* Recipient count estimation *@
+                <div class="mt-3">
+                    <button type="button" class="btn btn-sm btn-outline-success" id="estimateBtn">
+                        <i class="bi bi-people"></i> Estimate Recipients
+                    </button>
+                    <span id="estimateResult" class="ms-2 small"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* ================================================================== *@
+@* STEP 4 — Free Field Values                                           *@
+@* ================================================================== *@
+<div class="wizard-step d-none" data-step="4">
+    <div class="card">
+        <div class="card-header"><h6 class="mb-0">Step 4 — Free Field Values</h6></div>
+        <div class="card-body">
+            <p class="text-muted small mb-3">
+                Provide values for operator-supplied (<em>free field</em>) placeholders declared in the selected templates.
+                These values do not come from the data source — they are the same for all recipients.
+            </p>
+
+            <div id="freeFieldsContainer">
+                <!-- Free fields rendered by JS from template manifests -->
+            </div>
+            <div id="noFreeFieldsMessage" class="text-muted small py-2">
+                <i class="bi bi-check-circle text-success"></i>
+                No free field placeholders found in the selected templates.
+            </div>
+        </div>
+    </div>
+</div>
+
+@* ================================================================== *@
+@* STEP 5 — Schedule                                                    *@
+@* ================================================================== *@
+<div class="wizard-step d-none" data-step="5">
+    <div class="card">
+        <div class="card-header"><h6 class="mb-0">Step 5 — Schedule</h6></div>
+        <div class="card-body">
+            <div class="mb-3">
+                <div class="form-check mb-2">
+                    <input class="form-check-input" type="radio" name="scheduleType" id="scheduleImmediate" value="immediate" checked />
+                    <label class="form-check-label" for="scheduleImmediate">
+                        <strong>Immediate</strong> — Campaign will be triggered manually after creation.
+                    </label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="scheduleType" id="scheduleFuture" value="future" />
+                    <label class="form-check-label" for="scheduleFuture">
+                        <strong>Scheduled</strong> — Start at a specific date and time.
+                    </label>
+                </div>
+            </div>
+
+            <div id="scheduledAtPanel" class="d-none mb-3" style="max-width:380px">
+                <label class="form-label fw-semibold" for="scheduledAtInput">Scheduled Date &amp; Time (UTC) <span class="text-danger">*</span></label>
+                <input type="datetime-local" class="form-control" id="scheduledAtInput" />
+                <div id="scheduleError" class="text-danger small mt-1 d-none">
+                    Scheduled date must be at least 5 minutes in the future.
+                </div>
+                <div class="form-text">Must be at least 5 minutes from now. All times are UTC.</div>
+            </div>
+
+            @* Summary before submit *@
+            <hr/>
+            <h6>Campaign Summary</h6>
+            <div id="campaignSummary" class="small"></div>
+        </div>
+    </div>
+</div>
+
+@* ================================================================== *@
+@* Navigation Buttons                                                   *@
+@* ================================================================== *@
+<div class="d-flex justify-content-between mt-4">
+    <button type="button" class="btn btn-outline-secondary" id="prevBtn" disabled>
+        <i class="bi bi-arrow-left"></i> Previous
+    </button>
+    <div class="d-flex gap-2">
+        <button type="button" class="btn btn-primary" id="nextBtn">
+            Next <i class="bi bi-arrow-right"></i>
+        </button>
+        <button type="button" class="btn btn-success d-none" id="submitBtn">
+            <i class="bi bi-check-circle"></i> Create Campaign
+        </button>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+// ============================================================
+// Campaign Wizard State
+// ============================================================
+
+const publishedTemplates = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+    Model.PublishedTemplates.Select(t => new {
+        id = t.Id.ToString(),
+        name = t.Name,
+        channel = t.Channel
+    }).ToList(),
+    new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase }
+));
+
+const dataSourceSchemas = {};  // { dsId: [{fieldName, dataType, isFilterable}] }
+
+let currentStep = 1;
+const totalSteps = 5;
+
+let state = {
+    name: '',
+    steps: [],              // [{stepOrder, channel, templateId, templateName, delayDays, stepFilter}]
+    dataSourceId: null,
+    filterConditions: [],   // [{type:'leaf', fieldName, operator, value}]
+    freeFieldValues: {},    // {key: value}
+    scheduledAt: null       // ISO string or null
+};
+
+let stepCounter = 0;
+let filterCounter = 0;
+let freeFieldKeys = [];    // accumulated from all step template manifests
+
+// ============================================================
+// Step navigation
+// ============================================================
+
+function showStep(n) {
+    document.querySelectorAll('.wizard-step').forEach(el => el.classList.add('d-none'));
+    document.querySelector(`.wizard-step[data-step="${n}"]`).classList.remove('d-none');
+
+    // Update step indicators
+    document.querySelectorAll('.wizard-step-indicator').forEach(el => {
+        const s = parseInt(el.dataset.step);
+        el.style.background = s === n ? '#0d6efd' : (s < n ? '#198754' : '#dee2e6');
+        el.style.color = s === n || s < n ? '#fff' : '#495057';
+    });
+    document.querySelectorAll('.wizard-step-label').forEach(el => {
+        el.style.fontWeight = parseInt(el.dataset.step) === n ? '600' : 'normal';
+    });
+
+    document.getElementById('prevBtn').disabled = n === 1;
+    const nextBtn = document.getElementById('nextBtn');
+    const submitBtn = document.getElementById('submitBtn');
+    if (n === totalSteps) {
+        nextBtn.classList.add('d-none');
+        submitBtn.classList.remove('d-none');
+        renderCampaignSummary();
+    } else {
+        nextBtn.classList.remove('d-none');
+        submitBtn.classList.add('d-none');
+    }
+
+    currentStep = n;
+
+    if (n === 4) loadFreeFields();
+}
+
+document.getElementById('prevBtn').addEventListener('click', () => {
+    if (currentStep > 1) showStep(currentStep - 1);
+});
+
+document.getElementById('nextBtn').addEventListener('click', () => {
+    if (validateCurrentStep()) showStep(currentStep + 1);
+});
+
+// ============================================================
+// Validation per step
+// ============================================================
+
+function validateCurrentStep() {
+    hideGlobalError();
+    if (currentStep === 1) return validateStep1();
+    if (currentStep === 2) return validateStep2();
+    if (currentStep === 5) return validateStep5();
+    return true;
+}
+
+function validateStep1() {
+    const name = document.getElementById('campaignName').value.trim();
+    const nameError = document.getElementById('nameError');
+    const input = document.getElementById('campaignName');
+    if (!name) {
+        input.classList.add('is-invalid');
+        nameError.textContent = 'Campaign name is required.';
+        nameError.style.display = 'block';
+        return false;
+    }
+    if (name.length > 300) {
+        input.classList.add('is-invalid');
+        nameError.textContent = 'Name must not exceed 300 characters.';
+        nameError.style.display = 'block';
+        return false;
+    }
+    input.classList.remove('is-invalid');
+    nameError.style.display = 'none';
+    state.name = name;
+    return true;
+}
+
+function validateStep2() {
+    if (state.steps.length === 0) {
+        showGlobalError('At least one step is required.');
+        return false;
+    }
+    return true;
+}
+
+function validateStep5() {
+    const type = document.querySelector('input[name="scheduleType"]:checked').value;
+    if (type === 'future') {
+        const val = document.getElementById('scheduledAtInput').value;
+        if (!val) {
+            document.getElementById('scheduleError').classList.remove('d-none');
+            return false;
+        }
+        const scheduled = new Date(val + 'Z');  // treat as UTC
+        const minTime = new Date(Date.now() + 5 * 60 * 1000);
+        if (scheduled < minTime) {
+            document.getElementById('scheduleError').classList.remove('d-none');
+            return false;
+        }
+        document.getElementById('scheduleError').classList.add('d-none');
+        state.scheduledAt = scheduled.toISOString();
+    } else {
+        state.scheduledAt = null;
+    }
+    return true;
+}
+
+// ============================================================
+// Step 2 — Template Selector
+// ============================================================
+
+function getFilteredTemplates() {
+    const channelFilter = document.getElementById('templateChannelFilter').value;
+    if (!channelFilter) return publishedTemplates;
+    const channelMap = { '1': 'Email', '2': 'Letter', '3': 'Sms' };
+    return publishedTemplates.filter(t => t.channel === channelMap[channelFilter]);
+}
+
+document.getElementById('templateChannelFilter').addEventListener('change', renderSteps);
+document.getElementById('addStepBtn').addEventListener('click', () => {
+    const filtered = getFilteredTemplates();
+    const first = filtered[0];
+    stepCounter++;
+    state.steps.push({
+        stepOrder: state.steps.length + 1,
+        channel: first ? first.channel : 'Email',
+        templateId: first ? first.id : '',
+        templateName: first ? first.name : '',
+        delayDays: 0,
+        stepFilter: null
+    });
+    renderSteps();
+});
+
+function renderSteps() {
+    const container = document.getElementById('stepsContainer');
+    const noMsg = document.getElementById('noStepsMessage');
+    container.innerHTML = '';
+
+    if (state.steps.length === 0) {
+        noMsg.classList.remove('d-none');
+        return;
+    }
+    noMsg.classList.add('d-none');
+
+    const filtered = getFilteredTemplates();
+    const templateOptions = filtered.map(t =>
+        `<option value="${escapeHtml(t.id)}">${escapeHtml(t.name)} (${escapeHtml(t.channel)})</option>`
+    ).join('');
+
+    state.steps.forEach((step, idx) => {
+        const row = document.createElement('div');
+        row.className = 'border rounded p-3 mb-2 bg-white';
+
+        const channelBadge = {Email:'bg-primary', Letter:'bg-warning text-dark', Sms:'bg-success'}[step.channel] || 'bg-secondary';
+
+        row.innerHTML = `
+            <div class="d-flex align-items-center gap-3 flex-wrap">
+                <span class="badge bg-secondary" style="min-width:28px">Step ${step.stepOrder}</span>
+                <div>
+                    <label class="form-label mb-0 small">Template</label>
+                    <select class="form-select form-select-sm" data-role="template" style="min-width:220px">
+                        <option value="">— select a Published template —</option>
+                        ${state.steps[idx].templateId
+                          ? `<option value="${escapeHtml(step.templateId)}" selected>${escapeHtml(step.templateName)} (${escapeHtml(step.channel)})</option>`
+                          : ''}
+                        ${templateOptions}
+                    </select>
+                </div>
+                <div>
+                    <label class="form-label mb-0 small">Delay (days from prev.)</label>
+                    <input type="number" class="form-control form-control-sm" data-role="delay"
+                           value="${step.delayDays}" min="0" max="3650" style="width:100px" />
+                </div>
+                <div class="ms-auto">
+                    <button type="button" class="btn btn-sm btn-outline-danger" data-action="remove-step">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+
+        // ensure currently selected template is in list
+        const tplSelect = row.querySelector('[data-role="template"]');
+        if (step.templateId && !Array.from(tplSelect.options).find(o => o.value === step.templateId)) {
+            const opt = new Option(`${step.templateName} (${step.channel})`, step.templateId, true, true);
+            tplSelect.appendChild(opt);
+        }
+        // set current value
+        tplSelect.value = step.templateId || '';
+
+        tplSelect.addEventListener('change', function() {
+            const tpl = publishedTemplates.find(t => t.id === this.value);
+            state.steps[idx].templateId = this.value;
+            state.steps[idx].templateName = tpl ? tpl.name : '';
+            state.steps[idx].channel = tpl ? tpl.channel : '';
+        });
+
+        row.querySelector('[data-role="delay"]').addEventListener('input', function() {
+            state.steps[idx].delayDays = parseInt(this.value) || 0;
+        });
+
+        row.querySelector('[data-action="remove-step"]').addEventListener('click', function() {
+            state.steps.splice(idx, 1);
+            // Renumber
+            state.steps.forEach((s, i) => s.stepOrder = i + 1);
+            renderSteps();
+        });
+
+        container.appendChild(row);
+    });
+}
+
+// ============================================================
+// Step 3 — Data Source &amp; Filter
+// ============================================================
+
+document.getElementById('dataSourceSelect').addEventListener('change', async function() {
+    const dsId = this.value;
+    state.dataSourceId = dsId || null;
+    state.filterConditions = [];
+
+    const panel = document.getElementById('filterBuilderPanel');
+    if (!dsId) {
+        panel.classList.add('d-none');
+        return;
+    }
+
+    panel.classList.remove('d-none');
+
+    // Load schema if not cached
+    if (!dataSourceSchemas[dsId]) {
+        try {
+            const resp = await fetch(`/api/datasources/${dsId}`);
+            if (resp.ok) {
+                const ds = await resp.json();
+                dataSourceSchemas[dsId] = ds.fields || [];
+            }
+        } catch(e) { console.error('Failed to load DS schema', e); }
+    }
+
+    renderFilterConditions();
+    updateEstimate();
+});
+
+document.getElementById('addFilterCondBtn').addEventListener('click', () => {
+    const dsId = state.dataSourceId;
+    const schema = dataSourceSchemas[dsId] || [];
+    const first = schema.find(f => f.isFilterable);
+    if (!first) {
+        showGlobalError('This data source has no filterable fields.');
+        return;
+    }
+    filterCounter++;
+    state.filterConditions.push({
+        id: filterCounter,
+        type: 'leaf',
+        fieldName: first.fieldName,
+        operator: '=',
+        value: ''
+    });
+    renderFilterConditions();
+});
+
+document.getElementById('clearFilterBtn').addEventListener('click', () => {
+    state.filterConditions = [];
+    renderFilterConditions();
+    document.getElementById('estimateResult').textContent = '';
+});
+
+document.getElementById('estimateBtn').addEventListener('click', updateEstimate);
+
+async function updateEstimate() {
+    const dsId = state.dataSourceId;
+    if (!dsId) return;
+
+    const estimateEl = document.getElementById('estimateResult');
+    estimateEl.textContent = 'Estimating...';
+
+    try {
+        const filterJson = buildFilterAst();
+        const body = {
+            dataSourceId: dsId,
+            filterExpression: filterJson && filterJson.length > 0 ? JSON.stringify(filterJson) : null
+        };
+        const resp = await fetch('/api/campaigns/estimate-recipients', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+            body: JSON.stringify(body)
+        });
+        if (resp.ok) {
+            const result = await resp.json();
+            if (result.isSuccess) {
+                estimateEl.innerHTML = `<span class="text-success fw-semibold"><i class="bi bi-people"></i> ~${result.estimatedCount.toLocaleString()} recipients</span>`;
+            } else {
+                estimateEl.innerHTML = `<span class="text-danger">${escapeHtml(result.errorMessage)}</span>`;
+            }
+        } else {
+            estimateEl.textContent = 'Could not estimate recipients.';
+        }
+    } catch(e) {
+        estimateEl.textContent = 'Error during estimation.';
+    }
+}
+
+function getFieldType(dsId, fieldName) {
+    const schema = dataSourceSchemas[dsId] || [];
+    const f = schema.find(f => f.fieldName === fieldName);
+    if (!f) return 'text';
+    const t = (f.dataType || '').toLowerCase();
+    if (t.includes('date') || t.includes('time')) return 'date';
+    if (['int','bigint','decimal','float','numeric'].includes(t)) return 'number';
+    if (t === 'bit') return 'boolean';
+    return 'text';
+}
+
+function getOperatorsForType(type) {
+    const map = {
+        text:    ['=', '!=', 'LIKE', 'IN'],
+        number:  ['=', '!=', '>', '<', '>=', '<=', 'IN'],
+        date:    ['=', '!=', '>', '<', '>=', '<='],
+        boolean: ['=', '!='],
+        default: ['=', '!=', '>', '<', '>=', '<=', 'LIKE', 'IN']
+    };
+    return map[type] || map.default;
+}
+
+const operatorLabels = { '=':'equals','!=':'not equals','>':'greater than','<':'less than','>=':'>=','<=':'<=','LIKE':'contains','IN':'in list' };
+
+function renderFilterConditions() {
+    const container = document.getElementById('filterConditionsContainer');
+    container.innerHTML = '';
+
+    const dsId = state.dataSourceId;
+    const schema = (dataSourceSchemas[dsId] || []).filter(f => f.isFilterable);
+
+    if (state.filterConditions.length === 0) {
+        container.innerHTML = '<p class="text-muted small">No conditions. Click <strong>Add Condition</strong> to filter recipients.</p>';
+        return;
+    }
+
+    state.filterConditions.forEach((cond, idx) => {
+        const row = document.createElement('div');
+        row.className = 'border rounded p-2 mb-2 bg-white';
+
+        const fieldType = getFieldType(dsId, cond.fieldName);
+        const ops = getOperatorsForType(fieldType);
+
+        const fieldOpts = schema.map(f =>
+            `<option value="${f.fieldName}" ${cond.fieldName === f.fieldName ? 'selected' : ''}>${f.fieldName}</option>`
+        ).join('');
+        const opOpts = ops.map(op =>
+            `<option value="${op}" ${cond.operator === op ? 'selected' : ''}>${operatorLabels[op] || op}</option>`
+        ).join('');
+
+        row.innerHTML = `
+            <div class="row g-1 align-items-center">
+                <div class="col-auto">
+                    <span class="badge ${idx === 0 ? 'bg-light text-dark border' : 'bg-info text-dark'}">${idx === 0 ? 'WHERE' : 'AND'}</span>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select form-select-sm" data-role="field">${fieldOpts}</select>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select form-select-sm" data-role="operator">${opOpts}</select>
+                </div>
+                <div class="col-md-3">
+                    <input type="text" class="form-control form-control-sm" data-role="value"
+                           placeholder="value..." value="${escapeHtml(Array.isArray(cond.value) ? cond.value.join(', ') : (cond.value || ''))}" />
+                </div>
+                <div class="col-auto">
+                    <button type="button" class="btn btn-sm btn-outline-danger" data-action="remove">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+
+        row.querySelector('[data-role="field"]').addEventListener('change', function() {
+            cond.fieldName = this.value;
+            cond.operator = getOperatorsForType(getFieldType(dsId, this.value))[0];
+            cond.value = '';
+            renderFilterConditions();
+        });
+        row.querySelector('[data-role="operator"]').addEventListener('change', function() {
+            cond.operator = this.value;
+            cond.value = '';
+            renderFilterConditions();
+        });
+        row.querySelector('[data-role="value"]').addEventListener('input', function() {
+            cond.value = cond.operator === 'IN'
+                ? this.value.split(',').map(v => v.trim()).filter(v => v !== '')
+                : this.value;
+        });
+        row.querySelector('[data-action="remove"]').addEventListener('click', function() {
+            state.filterConditions.splice(idx, 1);
+            renderFilterConditions();
+        });
+
+        container.appendChild(row);
+    });
+}
+
+function buildFilterAst() {
+    return state.filterConditions
+        .filter(c => c.fieldName && c.operator)
+        .map(c => {
+            const opValueMap = { '=':1, '!=':2, '>':3, '<':4, '>=':5, '<=':6, 'LIKE':7, 'IN':8 };
+            return {
+                type: 'leaf',
+                fieldName: c.fieldName,
+                operator: opValueMap[c.operator] || 1,
+                value: c.value
+            };
+        });
+}
+
+// ============================================================
+// Step 4 — Free Fields
+// ============================================================
+
+async function loadFreeFields() {
+    freeFieldKeys = [];
+    const container = document.getElementById('freeFieldsContainer');
+    const noMsg = document.getElementById('noFreeFieldsMessage');
+    container.innerHTML = '<div class="text-muted small">Loading...</div>';
+
+    const templateIds = [...new Set(state.steps.map(s => s.templateId).filter(Boolean))];
+    if (templateIds.length === 0) {
+        container.innerHTML = '';
+        noMsg.classList.remove('d-none');
+        return;
+    }
+
+    // Load manifests for all templates
+    const manifestMap = {};
+    for (const tplId of templateIds) {
+        try {
+            const resp = await fetch(`/api/templates/${tplId}/placeholders`);
+            if (resp.ok) {
+                const placeholders = await resp.json();
+                manifestMap[tplId] = placeholders;
+            }
+        } catch(e) { console.error('Failed to load placeholders for', tplId, e); }
+    }
+
+    // Collect unique freeField keys
+    const freeFields = [];
+    const seen = new Set();
+    for (const tplId of templateIds) {
+        const entries = manifestMap[tplId] || [];
+        for (const entry of entries) {
+            if ((entry.type === 'FreeField' || entry.isFromDataSource === false) && !seen.has(entry.key)) {
+                seen.add(entry.key);
+                freeFields.push({ key: entry.key, label: entry.key, description: entry.description || null });
+            }
+        }
+    }
+
+    freeFieldKeys = freeFields.map(f => f.key);
+    container.innerHTML = '';
+
+    if (freeFields.length === 0) {
+        noMsg.classList.remove('d-none');
+        return;
+    }
+    noMsg.classList.add('d-none');
+
+    freeFields.forEach(ff => {
+        const group = document.createElement('div');
+        group.className = 'mb-3';
+        group.style = 'max-width:500px';
+        const existing = state.freeFieldValues[ff.key] || '';
+        group.innerHTML = `
+            <label class="form-label fw-semibold">${escapeHtml(ff.label)} <span class="text-danger">*</span></label>
+            ${ff.description ? `<div class="form-text mb-1">${escapeHtml(ff.description)}</div>` : ''}
+            <input type="text" class="form-control" id="ff_${escapeHtml(ff.key)}"
+                   data-key="${escapeHtml(ff.key)}" value="${escapeHtml(existing)}" />
+        `;
+        group.querySelector('input').addEventListener('input', function() {
+            state.freeFieldValues[ff.key] = this.value;
+        });
+        container.appendChild(group);
+    });
+}
+
+// ============================================================
+// Step 5 — Schedule picker
+// ============================================================
+
+document.querySelectorAll('input[name="scheduleType"]').forEach(radio => {
+    radio.addEventListener('change', function() {
+        const panel = document.getElementById('scheduledAtPanel');
+        if (this.value === 'future') {
+            panel.classList.remove('d-none');
+            // Default to now + 10 minutes
+            const dt = new Date(Date.now() + 10 * 60 * 1000);
+            const local = new Date(dt.getTime() - dt.getTimezoneOffset() * 60000)
+                .toISOString().slice(0, 16);
+            document.getElementById('scheduledAtInput').value = local;
+        } else {
+            panel.classList.add('d-none');
+            state.scheduledAt = null;
+        }
+    });
+});
+
+document.getElementById('scheduledAtInput').addEventListener('change', function() {
+    document.getElementById('scheduleError').classList.add('d-none');
+});
+
+function renderCampaignSummary() {
+    const el = document.getElementById('campaignSummary');
+    const stepsHtml = state.steps.map(s =>
+        `<li>Step ${s.stepOrder}: <strong>${escapeHtml(s.templateName || s.templateId)}</strong> (${escapeHtml(s.channel)})${s.delayDays > 0 ? ` — delay ${s.delayDays}d` : ''}</li>`
+    ).join('');
+
+    const freeFieldCount = Object.keys(state.freeFieldValues).length;
+    const filterCount = state.filterConditions.length;
+    const dsName = document.getElementById('dataSourceSelect').selectedOptions[0]?.text || '—';
+
+    el.innerHTML = `
+        <dl class="row mb-0">
+            <dt class="col-sm-4">Campaign Name</dt><dd class="col-sm-8">${escapeHtml(state.name)}</dd>
+            <dt class="col-sm-4">Data Source</dt><dd class="col-sm-8">${escapeHtml(dsName)}</dd>
+            <dt class="col-sm-4">Filter Conditions</dt><dd class="col-sm-8">${filterCount} condition(s)</dd>
+            <dt class="col-sm-4">Free Fields</dt><dd class="col-sm-8">${freeFieldCount} value(s) provided</dd>
+            <dt class="col-sm-4">Schedule</dt><dd class="col-sm-8">${state.scheduledAt ? state.scheduledAt : 'Immediate (manual trigger)'}</dd>
+        </dl>
+        <ul class="mt-2">${stepsHtml}</ul>
+    `;
+}
+
+// ============================================================
+// Submit
+// ============================================================
+
+document.getElementById('submitBtn').addEventListener('click', async () => {
+    if (!validateCurrentStep()) return;
+    hideGlobalError();
+
+    // Validate free fields: all freeField keys must have a value
+    for (const key of freeFieldKeys) {
+        if (!state.freeFieldValues[key] || state.freeFieldValues[key].trim() === '') {
+            showGlobalError(`Free field "${key}" is required. Go back to Step 4 to provide a value.`);
+            return;
+        }
+    }
+
+    const filterAst = buildFilterAst();
+    const payload = {
+        name: state.name,
+        dataSourceId: state.dataSourceId || null,
+        filterExpression: filterAst.length > 0 ? JSON.stringify(filterAst) : null,
+        freeFieldValues: Object.keys(state.freeFieldValues).length > 0
+            ? JSON.stringify(state.freeFieldValues)
+            : null,
+        scheduledAt: state.scheduledAt || null,
+        steps: state.steps.map(s => ({
+            stepOrder: s.stepOrder,
+            channel: channelNameToEnum(s.channel),
+            templateId: s.templateId,
+            delayDays: s.delayDays,
+            stepFilter: s.stepFilter || null
+        }))
+    };
+
+    const submitBtn = document.getElementById('submitBtn');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Creating...';
+
+    try {
+        const resp = await fetch('/api/campaigns', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+            body: JSON.stringify(payload)
+        });
+
+        if (resp.status === 201) {
+            const campaign = await resp.json();
+            window.location.href = `/Campaigns/Detail/${campaign.id}?message=${encodeURIComponent('Campaign "' + campaign.name + '" created successfully.')}&success=true`;
+        } else {
+            const err = await resp.json();
+            const errors = err.errors
+                ? Object.values(err.errors).flat().join('\n')
+                : (err.error || err.title || 'Failed to create campaign.');
+            showGlobalError(errors);
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="bi bi-check-circle"></i> Create Campaign';
+        }
+    } catch(e) {
+        showGlobalError('Network error. Please try again.');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="bi bi-check-circle"></i> Create Campaign';
+    }
+});
+
+function channelNameToEnum(name) {
+    return { 'Email': 1, 'Letter': 2, 'Sms': 3 }[name] || 1;
+}
+
+// ============================================================
+// Utilities
+// ============================================================
+
+function showGlobalError(msg) {
+    const el = document.getElementById('globalError');
+    el.textContent = msg;
+    el.classList.remove('d-none');
+    el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function hideGlobalError() {
+    document.getElementById('globalError').classList.add('d-none');
+}
+
+function escapeHtml(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+// Initialize
+showStep(1);
+renderSteps();
+</script>
+}
