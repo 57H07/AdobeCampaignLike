@@ -1088,10 +1088,10 @@
 - [ ] Campaign preview: estimated recipient count before execution
 
 **Technical tasks:**
-- [ ] `TASK-023-01` - **[Model]** Create Campaign entity with relationships
-- [ ] `TASK-023-02` - **[Model]** Create CampaignStep entity for multi-step support
-- [ ] `TASK-023-03` - **[API]** POST /api/campaigns endpoint
-- [ ] `TASK-023-04` - **[API]** GET /api/campaigns with filtering and pagination
+- [x] `TASK-023-01` - **[Model]** Create Campaign entity with relationships ✅ 2026-03-25
+- [x] `TASK-023-02` - **[Model]** Create CampaignStep entity for multi-step support ✅ 2026-03-25
+- [x] `TASK-023-03` - **[API]** POST /api/campaigns endpoint ✅ 2026-03-25
+- [x] `TASK-023-04` - **[API]** GET /api/campaigns with filtering and pagination ✅ 2026-03-25
 - [ ] `TASK-023-05` - **[Frontend]** Campaign creation wizard (5 steps)
 - [ ] `TASK-023-06` - **[Frontend]** Template selector component
 - [ ] `TASK-023-07` - **[Frontend]** Data source and filter selector

@@ -1,5 +1,6 @@
 using CampaignEngine.Application.Interfaces;
 using CampaignEngine.Infrastructure.ApiKeys;
+using CampaignEngine.Infrastructure.Campaigns;
 using CampaignEngine.Infrastructure.Configuration;
 using CampaignEngine.Infrastructure.DataSources;
 using Microsoft.Extensions.Options;
@@ -198,6 +199,14 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IFilterAstTranslator, FilterAstTranslator>();
         services.AddScoped<IFilterExpressionValidator, FilterExpressionValidator>();
         services.AddScoped<IDataSourcePreviewService, DataSourcePreviewService>();
+
+        // ----------------------------------------------------------------
+        // Campaign management (US-023)
+        // CampaignService: CRUD, validation, draft creation.
+        // RecipientCountService: pre-execution recipient count estimation.
+        // ----------------------------------------------------------------
+        services.AddScoped<ICampaignService, CampaignService>();
+        services.AddScoped<IRecipientCountService, RecipientCountService>();
 
         // ----------------------------------------------------------------
         // ASP.NET Core Identity: user and role management
