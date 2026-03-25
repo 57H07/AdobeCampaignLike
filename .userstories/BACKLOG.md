@@ -506,8 +506,8 @@
 - [x] `TASK-010-01` - **[API]** POST /api/templates/{id}/preview endpoint âœ… 2026-03-25
 - [x] `TASK-010-02` - **[Service]** Sample data fetcher from data source âœ… 2026-03-25
 - [x] `TASK-010-03` - **[Service]** Template resolution with sample data âœ… 2026-03-25
-- [ ] `TASK-010-04` - **[Frontend]** Preview modal with data source selector
-- [ ] `TASK-010-05` - **[Frontend]** Rendered preview display (HTML/PDF viewer)
+- [x] `TASK-010-04` - **[Frontend]** Preview modal with data source selector âœ… 2026-03-25
+- [x] `TASK-010-05` - **[Frontend]** Rendered preview display (HTML/PDF viewer) âœ… 2026-03-25
 - [ ] `TASK-010-06` - **[Test]** Preview rendering tests
 - [ ] `TASK-010-07` - **[Doc]** Preview workflow guide
 
