@@ -1115,8 +1115,9 @@
 ---
 
 #### [US-024] - Multi-step campaign sequences
-**Status:** ðµ IN PROGRESS
+**Status:** ✅ DONE
 **Start date:** 2026-03-25
+**End date:** 2026-03-25
 **Priority:** ðŸ”´ High
 **Complexity:** L
 **Epic:** Campaign Orchestrator
@@ -1129,22 +1130,22 @@
 > Define ordered steps with channel, delay (J+N days), and step-specific target filters (e.g., non-respondents only).
 
 **Acceptance criteria:**
-- [ ] Campaign can have multiple steps (max 10)
-- [ ] Each step has: channel, template, delay (days), optional filter
-- [ ] Step order enforced and displayed visually
-- [ ] Step-specific filters refine base campaign audience
-- [ ] Delay calculated from campaign start or previous step completion
+- [x] Campaign can have multiple steps (max 10) ✅
+- [x] Each step has: channel, template, delay (days), optional filter ✅
+- [x] Step order enforced and displayed visually ✅
+- [x] Step-specific filters refine base campaign audience ✅
+- [x] Delay calculated from campaign start or previous step completion ✅
 
 **Technical tasks:**
 - [x] `TASK-024-01` - **[Model]** Add StepOrder, DelayDays, StepFilter to CampaignStep ✅ 2026-03-25
 - [x] `TASK-024-02` - **[Service]** Step validation service (order, delays) ✅ 2026-03-25
 - [x] `TASK-024-03` - **[Service]** Step scheduling service (calculate execution dates) ✅ 2026-03-25
-- [ ] `TASK-024-04` - **[Frontend]** Multi-step builder UI component
-- [ ] `TASK-024-05` - **[Frontend]** Step timeline visualization
-- [ ] `TASK-024-06` - **[Frontend]** Step-specific filter builder
-- [ ] `TASK-024-07` - **[Test]** Multi-step scheduling logic tests
-- [ ] `TASK-024-08` - **[Test]** Step filter application tests
-- [ ] `TASK-024-09` - **[Doc]** Multi-step campaign guide
+- [x] `TASK-024-04` - **[Frontend]** Multi-step builder UI component ✅ 2026-03-25
+- [x] `TASK-024-05` - **[Frontend]** Step timeline visualization ✅ 2026-03-25
+- [x] `TASK-024-06` - **[Frontend]** Step-specific filter builder ✅ 2026-03-25
+- [x] `TASK-024-07` - **[Test]** Multi-step scheduling logic tests ✅ 2026-03-25
+- [x] `TASK-024-08` - **[Test]** Step filter application tests ✅ 2026-03-25
+- [x] `TASK-024-09` - **[Doc]** Multi-step campaign guide ✅ 2026-03-25
 
 **Business rules:**
 1. Step delay: 0 = immediate, positive integer = days after previous step
