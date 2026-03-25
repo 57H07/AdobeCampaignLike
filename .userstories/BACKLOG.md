@@ -482,7 +482,8 @@
 ---
 
 #### [US-010] - Template preview with sample data
-**Status:** ðŸŸ¡ TODO
+**Status:** ðŸ�µ IN PROGRESS
+**Start date:** 2026-03-25 09:00
 **Priority:** ðŸ”´ High
 **Complexity:** M
 **Epic:** Template Management
