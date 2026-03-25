@@ -509,7 +509,7 @@
 - [x] `TASK-010-04` - **[Frontend]** Preview modal with data source selector âœ… 2026-03-25
 - [x] `TASK-010-05` - **[Frontend]** Rendered preview display (HTML/PDF viewer) âœ… 2026-03-25
 - [x] `TASK-010-06` - **[Test]** Preview rendering tests âœ… 2026-03-25
-- [ ] `TASK-010-07` - **[Doc]** Preview workflow guide
+- [x] `TASK-010-07` - **[Doc]** Preview workflow guide âœ… 2026-03-25
 
 **Business rules:**
 1. Preview is read-only (no actual sends)
