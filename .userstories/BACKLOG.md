@@ -1137,8 +1137,8 @@
 
 **Technical tasks:**
 - [x] `TASK-024-01` - **[Model]** Add StepOrder, DelayDays, StepFilter to CampaignStep ✅ 2026-03-25
-- [ ] `TASK-024-02` - **[Service]** Step validation service (order, delays)
-- [ ] `TASK-024-03` - **[Service]** Step scheduling service (calculate execution dates)
+- [x] `TASK-024-02` - **[Service]** Step validation service (order, delays) ✅ 2026-03-25
+- [x] `TASK-024-03` - **[Service]** Step scheduling service (calculate execution dates) ✅ 2026-03-25
 - [ ] `TASK-024-04` - **[Frontend]** Multi-step builder UI component
 - [ ] `TASK-024-05` - **[Frontend]** Step timeline visualization
 - [ ] `TASK-024-06` - **[Frontend]** Step-specific filter builder

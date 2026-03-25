@@ -93,6 +93,62 @@
                 </div>
             </div>
         }
+
+        <!-- Template Snapshots (US-025) -->
+        @if (Model.Snapshots.Any())
+        {
+            <div class="card mb-4">
+                <div class="card-header">
+                    <a class="text-decoration-none text-body d-flex justify-content-between"
+                       data-bs-toggle="collapse" href="#snapshotPanel" role="button">
+                        <span><i class="bi bi-camera"></i> Template Snapshots (@Model.Snapshots.Count)</span>
+                        <i class="bi bi-chevron-down"></i>
+                    </a>
+                </div>
+                <div class="collapse show" id="snapshotPanel">
+                    <div class="card-body p-0">
+                        <table class="table table-sm mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Template Name</th>
+                                    <th>Channel</th>
+                                    <th>Version</th>
+                                    <th>Frozen At</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var snap in Model.Snapshots)
+                                {
+                                    var snapChannelBadge = snap.Channel switch
+                                    {
+                                        "Email"  => "bg-primary",
+                                        "Letter" => "bg-warning text-dark",
+                                        "Sms"    => "bg-success",
+                                        _        => "bg-secondary"
+                                    };
+                                    <tr>
+                                        <td>
+                                            <small class="fw-semibold">@snap.Name</small>
+                                            <br/>
+                                            <small class="text-muted font-monospace" title="Snapshot ID">@snap.Id</small>
+                                        </td>
+                                        <td><span class="badge @snapChannelBadge">@snap.Channel</span></td>
+                                        <td><span class="badge bg-light text-dark border">v@snap.TemplateVersion</span></td>
+                                        <td><small>@snap.CreatedAt.ToString("yyyy-MM-dd HH:mm")</small></td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                        <div class="p-2 border-top">
+                            <small class="text-muted">
+                                <i class="bi bi-lock-fill text-success"></i>
+                                Snapshots are immutable — template edits after scheduling do not affect this campaign.
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
     </div>
 
     <!-- Campaign steps -->
@@ -111,6 +167,7 @@
                                 <th>Channel</th>
                                 <th>Template</th>
                                 <th>Delay</th>
+                                <th>Snapshot</th>
                                 <th>Executed</th>
                             </tr>
                         </thead>
@@ -136,6 +193,18 @@
                                         else
                                         {
                                             <small>+@step.DelayDays day(s)</small>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (step.TemplateSnapshotId.HasValue)
+                                        {
+                                            <span class="badge bg-success" title="Snapshot ID: @step.TemplateSnapshotId">
+                                                <i class="bi bi-lock-fill"></i> Frozen
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-light text-muted border">Not scheduled</span>
                                         }
                                     </td>
                                     <td>
