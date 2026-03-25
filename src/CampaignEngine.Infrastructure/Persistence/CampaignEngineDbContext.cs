@@ -32,6 +32,7 @@ public class CampaignEngineDbContext : IdentityDbContext<ApplicationUser, Applic
     public DbSet<Campaign> Campaigns => Set<Campaign>();
     public DbSet<CampaignStep> CampaignSteps => Set<CampaignStep>();
     public DbSet<CampaignAttachment> CampaignAttachments => Set<CampaignAttachment>();
+    public DbSet<CampaignChunk> CampaignChunks => Set<CampaignChunk>();
 
     // Tracking and audit
     public DbSet<SendLog> SendLogs => Set<SendLog>();

@@ -1,6 +1,8 @@
 using CampaignEngine.Application.DependencyInjection;
 using CampaignEngine.Infrastructure.DependencyInjection;
 using CampaignEngine.Web.Middleware;
+using Hangfire;
+using Microsoft.AspNetCore.Authorization;
 using Serilog;
 using Serilog.Events;
 
@@ -130,6 +132,21 @@ try
 
     app.MapRazorPages();
     app.MapControllers();
+
+    // ----------------------------------------------------------------
+    // Hangfire dashboard (US-026): accessible to Admin role only.
+    // Dashboard path configured via "Hangfire:DashboardPath" (default: /hangfire).
+    // In Development, allows all authenticated users for convenience.
+    // ----------------------------------------------------------------
+    var hangfirePath = app.Configuration.GetValue("Hangfire:DashboardPath", "/hangfire")!;
+    app.UseHangfireDashboard(hangfirePath, new DashboardOptions
+    {
+        Authorization =
+        [
+            new HangfireAdminAuthorizationFilter()
+        ],
+        DashboardTitle = "CampaignEngine — Batch Jobs"
+    });
 
     app.Run();
 }

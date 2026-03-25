@@ -1,0 +1,254 @@
+using CampaignEngine.Application.DTOs.Dispatch;
+using CampaignEngine.Application.Interfaces;
+using CampaignEngine.Domain.Enums;
+using CampaignEngine.Infrastructure.Persistence;
+using Hangfire;
+using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
+
+namespace CampaignEngine.Infrastructure.Batch;
+
+/// <summary>
+/// Hangfire background job that processes a single campaign chunk.
+///
+/// Responsibilities:
+///   1. Loads the CampaignChunk including recipient data.
+///   2. Resolves the template snapshot for the step.
+///   3. Renders the template for each recipient.
+///   4. Dispatches via the registered channel dispatcher with logging.
+///   5. Reports completion metrics to IChunkCoordinatorService.
+///
+/// Hangfire retry policy: configured at registration time via
+/// DisableAutomaticRetry attribute — manual retry is managed by
+/// the ChunkCoordinatorService.RecordChunkFailureAsync to allow
+/// tracking retry attempts in the database.
+/// </summary>
+[DisableConcurrentExecution(timeoutInSeconds: 3600)]
+[AutomaticRetry(Attempts = 0)] // Manual retry via ChunkCoordinatorService
+public sealed class ProcessChunkJob : IProcessChunkJob
+{
+    private readonly CampaignEngineDbContext _dbContext;
+    private readonly ITemplateRenderer _templateRenderer;
+    private readonly ILoggingDispatchOrchestrator _dispatchOrchestrator;
+    private readonly IChunkCoordinatorService _coordinator;
+    private readonly IAppLogger<ProcessChunkJob> _logger;
+
+    public ProcessChunkJob(
+        CampaignEngineDbContext dbContext,
+        ITemplateRenderer templateRenderer,
+        ILoggingDispatchOrchestrator dispatchOrchestrator,
+        IChunkCoordinatorService coordinator,
+        IAppLogger<ProcessChunkJob> logger)
+    {
+        _dbContext = dbContext;
+        _templateRenderer = templateRenderer;
+        _dispatchOrchestrator = dispatchOrchestrator;
+        _coordinator = coordinator;
+        _logger = logger;
+    }
+
+    /// <inheritdoc />
+    public async Task ExecuteAsync(Guid chunkId, CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("ProcessChunkJob: starting chunk {ChunkId}", chunkId);
+
+        // ----------------------------------------------------------------
+        // 1. Load chunk and step with snapshot
+        // ----------------------------------------------------------------
+        var chunk = await _dbContext.CampaignChunks
+            .Include(c => c.CampaignStep)
+                .ThenInclude(s => s!.TemplateSnapshot)
+            .Include(c => c.Campaign)
+            .FirstOrDefaultAsync(c => c.Id == chunkId, cancellationToken);
+
+        if (chunk is null)
+        {
+            _logger.LogError(new InvalidOperationException($"Chunk {chunkId} not found"),
+                "ProcessChunkJob: chunk {ChunkId} not found — skipping", chunkId);
+            return;
+        }
+
+        if (chunk.Status == ChunkStatus.Completed || chunk.Status == ChunkStatus.Failed)
+        {
+            _logger.LogWarning(
+                "ProcessChunkJob: chunk {ChunkId} already in terminal status {Status} — skipping",
+                chunkId, chunk.Status);
+            return;
+        }
+
+        // Mark as processing
+        chunk.Status = ChunkStatus.Processing;
+        chunk.StartedAt ??= DateTime.UtcNow;
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        var step = chunk.CampaignStep;
+        if (step is null)
+        {
+            await _coordinator.RecordChunkFailureAsync(chunkId, "CampaignStep not found on chunk", cancellationToken);
+            return;
+        }
+
+        var snapshot = step.TemplateSnapshot;
+        if (snapshot is null)
+        {
+            await _coordinator.RecordChunkFailureAsync(chunkId, "TemplateSnapshot not set on CampaignStep", cancellationToken);
+            return;
+        }
+
+        // ----------------------------------------------------------------
+        // 2. Deserialize recipient data
+        // ----------------------------------------------------------------
+        List<Dictionary<string, object?>> recipients;
+        try
+        {
+            recipients = JsonSerializer.Deserialize<List<Dictionary<string, object?>>>(
+                chunk.RecipientDataJson) ?? [];
+        }
+        catch (JsonException ex)
+        {
+            await _coordinator.RecordChunkFailureAsync(
+                chunkId,
+                $"Failed to deserialize recipient data: {ex.Message}",
+                cancellationToken);
+            return;
+        }
+
+        // ----------------------------------------------------------------
+        // 3. Process each recipient
+        // ----------------------------------------------------------------
+        var successCount = 0;
+        var failureCount = 0;
+        var correlationId = $"chunk-{chunkId:N}";
+
+        foreach (var recipient in recipients)
+        {
+            try
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                // Render template for this recipient
+                var recipientData = recipient.ToDictionary(
+                    kvp => kvp.Key,
+                    kvp => kvp.Value);
+
+                var renderedContent = await _templateRenderer.RenderAsync(
+                    snapshot.ResolvedHtmlBody,
+                    recipientData,
+                    cancellationToken);
+
+                // Build dispatch request
+                var (recipientEmail, recipientPhone) = ResolveRecipientAddress(recipient, step.Channel);
+                if (string.IsNullOrWhiteSpace(recipientEmail) && string.IsNullOrWhiteSpace(recipientPhone))
+                {
+                    _logger.LogWarning(
+                        "ProcessChunkJob: Chunk {ChunkId} — recipient has no address for channel {Channel}, skipping",
+                        chunkId, (object)step.Channel.ToString());
+                    failureCount++;
+                    continue;
+                }
+
+                var dispatchRequest = new DispatchRequest
+                {
+                    Channel = step.Channel,
+                    Content = renderedContent,
+                    Recipient = new RecipientInfo
+                    {
+                        Email = recipientEmail,
+                        PhoneNumber = recipientPhone
+                    },
+                    CampaignId = chunk.CampaignId,
+                    CampaignStepId = chunk.CampaignStepId
+                };
+
+                // Apply CC/BCC from campaign if Email channel
+                if (step.Channel == ChannelType.Email && chunk.Campaign is not null)
+                {
+                    if (!string.IsNullOrWhiteSpace(chunk.Campaign.StaticCcAddresses))
+                    {
+                        dispatchRequest.CcAddresses = chunk.Campaign.StaticCcAddresses
+                            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                            .ToList();
+                    }
+                    if (!string.IsNullOrWhiteSpace(chunk.Campaign.StaticBccAddresses))
+                    {
+                        dispatchRequest.BccAddresses = chunk.Campaign.StaticBccAddresses
+                            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                            .ToList();
+                    }
+                }
+
+                var (_, result) = await _dispatchOrchestrator.SendWithLoggingAsync(
+                    dispatchRequest,
+                    correlationId: correlationId,
+                    cancellationToken: cancellationToken);
+
+                if (result.Success)
+                    successCount++;
+                else
+                    failureCount++;
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "ProcessChunkJob: Chunk {ChunkId} — failed to dispatch recipient: {Error}",
+                    chunkId, ex.Message);
+                failureCount++;
+            }
+        }
+
+        // ----------------------------------------------------------------
+        // 4. Report completion to coordinator
+        // ----------------------------------------------------------------
+        _logger.LogInformation(
+            "ProcessChunkJob: Chunk {ChunkId} finished. Success={Success}, Failed={Failed}",
+            chunkId, successCount, failureCount);
+
+        await _coordinator.RecordChunkCompletionAsync(
+            chunkId,
+            successCount,
+            failureCount,
+            cancellationToken);
+    }
+
+    // ----------------------------------------------------------------
+    // Private helpers
+    // ----------------------------------------------------------------
+
+    /// <summary>
+    /// Returns (email, phone) tuple from recipient data based on channel type.
+    /// Attempts common field name conventions from the data source.
+    /// </summary>
+    private static (string? Email, string? Phone) ResolveRecipientAddress(
+        Dictionary<string, object?> recipient,
+        ChannelType channel)
+    {
+        if (channel == ChannelType.Email)
+        {
+            var emailCandidates = new[] { "email", "Email", "EMAIL", "email_address", "EmailAddress", "recipient_email" };
+            foreach (var key in emailCandidates)
+            {
+                if (recipient.TryGetValue(key, out var value) && value is not null)
+                    return (value.ToString(), null);
+            }
+            return (null, null);
+        }
+
+        if (channel == ChannelType.Sms)
+        {
+            var phoneCandidates = new[] { "phone", "Phone", "mobile", "Mobile", "PhoneNumber", "phone_number" };
+            foreach (var key in phoneCandidates)
+            {
+                if (recipient.TryGetValue(key, out var value) && value is not null)
+                    return (null, value.ToString());
+            }
+            return (null, null);
+        }
+
+        return (null, null);
+    }
+}

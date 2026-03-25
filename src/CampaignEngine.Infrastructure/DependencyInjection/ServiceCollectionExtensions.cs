@@ -1,5 +1,6 @@
 using CampaignEngine.Application.Interfaces;
 using CampaignEngine.Infrastructure.ApiKeys;
+using CampaignEngine.Infrastructure.Batch;
 using CampaignEngine.Infrastructure.Campaigns;
 using CampaignEngine.Infrastructure.Configuration;
 using CampaignEngine.Infrastructure.DataSources;
@@ -15,6 +16,8 @@ using CampaignEngine.Infrastructure.Rendering.PostProcessors;
 using CampaignEngine.Infrastructure.Templates;
 using DinkToPdf;
 using DinkToPdf.Contracts;
+using Hangfire;
+using Hangfire.SqlServer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -213,6 +216,48 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ICampaignStepValidationService, CampaignStepValidationService>();
         services.AddSingleton<ICampaignStepSchedulingService, CampaignStepSchedulingService>();
         services.AddScoped<ITemplateSnapshotService, TemplateSnapshotService>();
+
+        // ----------------------------------------------------------------
+        // Batch processing (US-026): Chunk Coordinator pattern
+        // RecipientChunkingService: splits recipients into fixed-size chunks.
+        // ChunkCoordinatorService: enqueues Hangfire jobs and tracks completion atomically.
+        // CampaignCompletionService: transitions campaign to final status after all chunks done.
+        // ProcessChunkJob: Hangfire background job for each chunk.
+        // ----------------------------------------------------------------
+        services.AddScoped<IRecipientChunkingService, RecipientChunkingService>();
+        services.AddScoped<ICampaignCompletionService, CampaignCompletionService>();
+        services.AddScoped<IChunkCoordinatorService, ChunkCoordinatorService>();
+        services.AddScoped<IProcessChunkJob, ProcessChunkJob>();
+
+        // ----------------------------------------------------------------
+        // Hangfire: SQL Server storage + worker configuration (US-026)
+        // WorkerCount configurable via "Hangfire:WorkerCount" (default: 8).
+        // Dashboard restricted to Admin role — configured in Program.cs.
+        // ----------------------------------------------------------------
+        services.Configure<HangfireOptions>(
+            configuration.GetSection(HangfireOptions.SectionName));
+
+        var hangfireConnectionString = configuration.GetConnectionString("DefaultConnection");
+        services.AddHangfire(config => config
+            .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+            .UseSimpleAssemblyNameTypeSerializer()
+            .UseRecommendedSerializerSettings()
+            .UseSqlServerStorage(hangfireConnectionString, new SqlServerStorageOptions
+            {
+                CommandBatchMaxTimeout = TimeSpan.FromMinutes(5),
+                SlidingInvisibilityTimeout = TimeSpan.FromMinutes(5),
+                QueuePollInterval = TimeSpan.Zero,
+                UseRecommendedIsolationLevel = true,
+                DisableGlobalLocks = true
+            }));
+
+        var workerCount = configuration.GetValue("Hangfire:WorkerCount", 8);
+        services.AddHangfireServer(options =>
+        {
+            options.WorkerCount = workerCount;
+            options.ServerName = $"CampaignEngine-{Environment.MachineName}";
+            options.Queues = ["default"];
+        });
 
         // ----------------------------------------------------------------
         // ASP.NET Core Identity: user and role management

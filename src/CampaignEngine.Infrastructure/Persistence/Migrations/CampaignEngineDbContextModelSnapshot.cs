@@ -83,6 +83,77 @@ namespace CampaignEngine.Infrastructure.Persistence.Migrations
                     b.ToTable("ApiKeys", (string)null);
                 });
 
+            modelBuilder.Entity("CampaignEngine.Domain.Entities.CampaignChunk", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("CampaignId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("CampaignStepId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("ChunkIndex")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ErrorMessage")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<int>("FailureCount")
+                        .HasColumnType("int");
+
+                    b.Property<string>("HangfireJobId")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("ProcessedCount")
+                        .HasColumnType("int");
+
+                    b.Property<string>("RecipientDataJson")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("RecipientCount")
+                        .HasColumnType("int");
+
+                    b.Property<int>("RetryAttempts")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("StartedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SuccessCount")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TotalChunks")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CampaignId", "CampaignStepId")
+                        .HasDatabaseName("IX_CampaignChunks_CampaignId_StepId");
+
+                    b.HasIndex("CampaignStepId", "Status")
+                        .HasDatabaseName("IX_CampaignChunks_StepId_Status");
+
+                    b.ToTable("CampaignChunks", (string)null);
+                });
+
             modelBuilder.Entity("CampaignEngine.Domain.Entities.Campaign", b =>
                 {
                     b.Property<Guid>("Id")
@@ -613,6 +684,25 @@ namespace CampaignEngine.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("DataSource");
+                });
+
+            modelBuilder.Entity("CampaignEngine.Domain.Entities.CampaignChunk", b =>
+                {
+                    b.HasOne("CampaignEngine.Domain.Entities.Campaign", "Campaign")
+                        .WithMany()
+                        .HasForeignKey("CampaignId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("CampaignEngine.Domain.Entities.CampaignStep", "CampaignStep")
+                        .WithMany()
+                        .HasForeignKey("CampaignStepId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Campaign");
+
+                    b.Navigation("CampaignStep");
                 });
 
             modelBuilder.Entity("CampaignEngine.Domain.Entities.CampaignAttachment", b =>

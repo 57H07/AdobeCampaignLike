@@ -394,7 +394,13 @@ function getFilteredTemplates() {
 }
 
 document.getElementById('templateChannelFilter').addEventListener('change', renderSteps);
+const MAX_STEPS = 10;
+
 document.getElementById('addStepBtn').addEventListener('click', () => {
+    if (state.steps.length >= MAX_STEPS) {
+        showGlobalError(`A campaign may have at most ${MAX_STEPS} steps.`);
+        return;
+    }
     const filtered = getFilteredTemplates();
     const first = filtered[0];
     stepCounter++;
@@ -404,10 +410,23 @@ document.getElementById('addStepBtn').addEventListener('click', () => {
         templateId: first ? first.id : '',
         templateName: first ? first.name : '',
         delayDays: 0,
-        stepFilter: null
+        stepFilter: null,
+        stepFilterConditions: []   // per-step filter conditions
     });
     renderSteps();
+    updateAddStepBtn();
 });
+
+function updateAddStepBtn() {
+    const btn = document.getElementById('addStepBtn');
+    if (state.steps.length >= MAX_STEPS) {
+        btn.disabled = true;
+        btn.title = `Maximum ${MAX_STEPS} steps reached.`;
+    } else {
+        btn.disabled = false;
+        btn.title = '';
+    }
+}
 
 function renderSteps() {
     const container = document.getElementById('stepsContainer');
@@ -416,24 +435,52 @@ function renderSteps() {
 
     if (state.steps.length === 0) {
         noMsg.classList.remove('d-none');
+        updateAddStepBtn();
         return;
     }
     noMsg.classList.add('d-none');
+    updateAddStepBtn();
 
     const filtered = getFilteredTemplates();
     const templateOptions = filtered.map(t =>
         `<option value="${escapeHtml(t.id)}">${escapeHtml(t.name)} (${escapeHtml(t.channel)})</option>`
     ).join('');
 
+    // Show step count limit indicator
+    const countEl = document.createElement('div');
+    countEl.className = 'text-muted small mb-2';
+    countEl.textContent = `${state.steps.length} / ${MAX_STEPS} steps`;
+    container.appendChild(countEl);
+
     state.steps.forEach((step, idx) => {
+        const isLast = idx === state.steps.length - 1;
+
+        // Timeline connector (vertical line between steps)
+        if (idx > 0) {
+            const connector = document.createElement('div');
+            connector.className = 'd-flex align-items-center ms-2 mb-0';
+            connector.style.cssText = 'height:24px; padding-left:12px; border-left:2px dashed #6c757d;';
+            if (step.delayDays > 0) {
+                connector.innerHTML = `<span class="badge bg-light text-muted border ms-2" style="font-size:0.7rem;">+${step.delayDays} day${step.delayDays !== 1 ? 's' : ''}</span>`;
+            }
+            container.appendChild(connector);
+        }
+
         const row = document.createElement('div');
-        row.className = 'border rounded p-3 mb-2 bg-white';
+        row.className = 'border rounded p-3 mb-0 bg-white';
 
         const channelBadge = {Email:'bg-primary', Letter:'bg-warning text-dark', Sms:'bg-success'}[step.channel] || 'bg-secondary';
+        const hasStepFilter = step.stepFilterConditions && step.stepFilterConditions.length > 0;
+        const filterBtnClass = hasStepFilter ? 'btn-outline-info' : 'btn-outline-secondary';
+        const filterBtnText = hasStepFilter ? `Filter (${step.stepFilterConditions.length})` : 'Add Filter';
+        const filterId = `stepFilter_${idx}`;
 
         row.innerHTML = `
             <div class="d-flex align-items-center gap-3 flex-wrap">
-                <span class="badge bg-secondary" style="min-width:28px">Step ${step.stepOrder}</span>
+                <div class="d-flex align-items-center justify-content-center rounded-circle bg-secondary text-white"
+                     style="min-width:28px;min-height:28px;font-size:0.85rem;font-weight:600;">
+                    ${step.stepOrder}
+                </div>
                 <div>
                     <label class="form-label mb-0 small">Template</label>
                     <select class="form-select form-select-sm" data-role="template" style="min-width:220px">
@@ -447,13 +494,35 @@ function renderSteps() {
                 <div>
                     <label class="form-label mb-0 small">Delay (days from prev.)</label>
                     <input type="number" class="form-control form-control-sm" data-role="delay"
-                           value="${step.delayDays}" min="0" max="3650" style="width:100px" />
+                           value="${step.delayDays}" min="0" max="3650" style="width:100px"
+                           ${idx === 0 ? 'placeholder="from start"' : 'placeholder="from prev. step"'} />
+                </div>
+                <div>
+                    <label class="form-label mb-0 small d-block">Step Filter</label>
+                    <button type="button" class="btn btn-sm ${filterBtnClass}" data-action="toggle-filter">
+                        <i class="bi bi-funnel"></i> ${escapeHtml(filterBtnText)}
+                    </button>
                 </div>
                 <div class="ms-auto">
                     <button type="button" class="btn btn-sm btn-outline-danger" data-action="remove-step">
                         <i class="bi bi-trash"></i>
                     </button>
                 </div>
+            </div>
+            <div id="${filterId}" class="mt-2 pt-2 border-top ${hasStepFilter ? '' : 'd-none'}">
+                <p class="text-muted small mb-1">
+                    <i class="bi bi-funnel"></i> Step-specific filter (AND-combined with campaign base filter).
+                    Only applied to this step's audience.
+                </p>
+                <div class="d-flex gap-2 mb-2">
+                    <button type="button" class="btn btn-xs btn-outline-primary" style="font-size:0.75rem;padding:2px 8px" data-action="add-step-filter-cond">
+                        <i class="bi bi-plus"></i> Add Condition
+                    </button>
+                    <button type="button" class="btn btn-xs btn-outline-secondary" style="font-size:0.75rem;padding:2px 8px" data-action="clear-step-filter">
+                        <i class="bi bi-x-circle"></i> Clear
+                    </button>
+                </div>
+                <div data-role="step-filter-conditions"></div>
             </div>
         `;
 
@@ -463,7 +532,6 @@ function renderSteps() {
             const opt = new Option(`${step.templateName} (${step.channel})`, step.templateId, true, true);
             tplSelect.appendChild(opt);
         }
-        // set current value
         tplSelect.value = step.templateId || '';
 
         tplSelect.addEventListener('change', function() {
@@ -475,17 +543,166 @@ function renderSteps() {
 
         row.querySelector('[data-role="delay"]').addEventListener('input', function() {
             state.steps[idx].delayDays = parseInt(this.value) || 0;
+            renderSteps();
         });
 
         row.querySelector('[data-action="remove-step"]').addEventListener('click', function() {
             state.steps.splice(idx, 1);
-            // Renumber
             state.steps.forEach((s, i) => s.stepOrder = i + 1);
             renderSteps();
         });
 
+        // Toggle step filter panel
+        row.querySelector('[data-action="toggle-filter"]').addEventListener('click', function() {
+            const panel = document.getElementById(filterId);
+            panel.classList.toggle('d-none');
+        });
+
+        // Add step filter condition
+        row.querySelector('[data-action="add-step-filter-cond"]').addEventListener('click', function() {
+            const dsId = state.dataSourceId;
+            if (!dsId || !dataSourceSchemas[dsId]) {
+                showGlobalError('Select a Data Source first (Step 3) to use step filters.');
+                return;
+            }
+            const schema = dataSourceSchemas[dsId] || [];
+            const first = schema.find(f => f.isFilterable);
+            if (!first) {
+                showGlobalError('This data source has no filterable fields.');
+                return;
+            }
+            if (!state.steps[idx].stepFilterConditions) state.steps[idx].stepFilterConditions = [];
+            state.steps[idx].stepFilterConditions.push({
+                type: 'leaf',
+                fieldName: first.fieldName,
+                operator: '=',
+                value: ''
+            });
+            renderStepFilterConditions(row, idx, filterId);
+        });
+
+        // Clear step filter
+        row.querySelector('[data-action="clear-step-filter"]').addEventListener('click', function() {
+            state.steps[idx].stepFilterConditions = [];
+            renderStepFilterConditions(row, idx, filterId);
+            updateStepFilterBtn(row, idx);
+        });
+
+        // Render existing step filter conditions
+        if (step.stepFilterConditions && step.stepFilterConditions.length > 0) {
+            renderStepFilterConditions(row, idx, filterId);
+        }
+
         container.appendChild(row);
     });
+}
+
+function updateStepFilterBtn(row, idx) {
+    const step = state.steps[idx];
+    const count = step.stepFilterConditions ? step.stepFilterConditions.length : 0;
+    const btn = row.querySelector('[data-action="toggle-filter"]');
+    if (btn) {
+        btn.className = `btn btn-sm ${count > 0 ? 'btn-outline-info' : 'btn-outline-secondary'}`;
+        btn.innerHTML = `<i class="bi bi-funnel"></i> ${count > 0 ? `Filter (${count})` : 'Add Filter'}`;
+    }
+}
+
+function renderStepFilterConditions(row, stepIdx, filterId) {
+    const step = state.steps[stepIdx];
+    const conds = step.stepFilterConditions || [];
+    const dsId = state.dataSourceId;
+    const schema = (dataSourceSchemas[dsId] || []).filter(f => f.isFilterable);
+    const condContainer = row.querySelector('[data-role="step-filter-conditions"]');
+    condContainer.innerHTML = '';
+
+    if (conds.length === 0) {
+        condContainer.innerHTML = '<p class="text-muted small">No conditions. Click <strong>Add Condition</strong> to filter this step.</p>';
+        updateStepFilterBtn(row, stepIdx);
+        return;
+    }
+
+    conds.forEach((cond, condIdx) => {
+        const condRow = document.createElement('div');
+        condRow.className = 'border rounded p-2 mb-1 bg-light';
+
+        const fieldType = getFieldType(dsId, cond.fieldName);
+        const ops = getOperatorsForType(fieldType);
+        const fieldOpts = schema.map(f =>
+            `<option value="${f.fieldName}" ${cond.fieldName === f.fieldName ? 'selected' : ''}>${f.fieldName}</option>`
+        ).join('');
+        const opOpts = ops.map(op =>
+            `<option value="${op}" ${cond.operator === op ? 'selected' : ''}>${operatorLabels[op] || op}</option>`
+        ).join('');
+
+        condRow.innerHTML = `
+            <div class="row g-1 align-items-center">
+                <div class="col-auto">
+                    <span class="badge ${condIdx === 0 ? 'bg-light text-dark border' : 'bg-info text-dark'}" style="font-size:0.7rem;">${condIdx === 0 ? 'WHERE' : 'AND'}</span>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select form-select-sm" data-role="sf-field">${fieldOpts}</select>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select form-select-sm" data-role="sf-operator">${opOpts}</select>
+                </div>
+                <div class="col-md-3">
+                    <input type="text" class="form-control form-control-sm" data-role="sf-value"
+                           placeholder="value..." value="${escapeHtml(Array.isArray(cond.value) ? cond.value.join(', ') : (cond.value || ''))}" />
+                </div>
+                <div class="col-auto">
+                    <button type="button" class="btn btn-sm btn-outline-danger" data-action="remove-sf-cond">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+
+        condRow.querySelector('[data-role="sf-field"]').addEventListener('change', function() {
+            cond.fieldName = this.value;
+            cond.operator = getOperatorsForType(getFieldType(dsId, this.value))[0];
+            cond.value = '';
+            renderStepFilterConditions(row, stepIdx, filterId);
+        });
+        condRow.querySelector('[data-role="sf-operator"]').addEventListener('change', function() {
+            cond.operator = this.value;
+            cond.value = '';
+            renderStepFilterConditions(row, stepIdx, filterId);
+        });
+        condRow.querySelector('[data-role="sf-value"]').addEventListener('input', function() {
+            cond.value = cond.operator === 'IN'
+                ? this.value.split(',').map(v => v.trim()).filter(v => v !== '')
+                : this.value;
+        });
+        condRow.querySelector('[data-action="remove-sf-cond"]').addEventListener('click', function() {
+            state.steps[stepIdx].stepFilterConditions.splice(condIdx, 1);
+            renderStepFilterConditions(row, stepIdx, filterId);
+            updateStepFilterBtn(row, stepIdx);
+        });
+
+        condContainer.appendChild(condRow);
+    });
+
+    // Update the filter button badge
+    updateStepFilterBtn(row, stepIdx);
+
+    // Build and store the stepFilter JSON on the state
+    buildStepFilterAst(stepIdx);
+}
+
+function buildStepFilterAst(stepIdx) {
+    const step = state.steps[stepIdx];
+    const conds = step.stepFilterConditions || [];
+    const opValueMap = { '=':1, '!=':2, '>':3, '<':4, '>=':5, '<=':6, 'LIKE':7, 'IN':8 };
+    const ast = conds
+        .filter(c => c.fieldName && c.operator)
+        .map(c => ({
+            type: 'leaf',
+            fieldName: c.fieldName,
+            operator: opValueMap[c.operator] || 1,
+            value: c.value
+        }));
+    step.stepFilter = ast.length > 0 ? JSON.stringify(ast) : null;
+    return ast;
 }
 
 // ============================================================
