@@ -1066,7 +1066,8 @@
 > Create and execute multi-step campaigns with recipient targeting
 
 #### [US-023] - Campaign creation and configuration
-**Status:** ðŸŸ¡ TODO
+**Status:** 🔵 IN PROGRESS
+**Start date:** 2026-03-25
 **Priority:** ðŸ”´ High
 **Complexity:** L
 **Epic:** Campaign Orchestrator
