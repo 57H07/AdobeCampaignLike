@@ -775,7 +775,7 @@
 - [ ] AST translated to parameterized SQL WHERE clause
 
 **Technical tasks:**
-- [ ] `TASK-016-01` - **[Model]** Create FilterExpression AST classes
+- [x] `TASK-016-01` - **[Model]** Create FilterExpression AST classes ✅ 2026-03-25
 - [ ] `TASK-016-02` - **[Service]** Filter AST to SQL translator
 - [ ] `TASK-016-03` - **[Service]** Expression validation service
 - [ ] `TASK-016-04` - **[API]** POST /api/datasources/{id}/preview endpoint (apply filters)
