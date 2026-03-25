@@ -785,7 +785,7 @@
 - [x] `TASK-016-07` - **[Test]** AST to SQL translation tests ✅ 2026-03-25
 - [x] `TASK-016-08` - **[Test]** SQL injection prevention in filter values ✅ 2026-03-25
 - [x] `TASK-016-09` - **[Test]** Complex filter logic tests (AND/OR) ✅ 2026-03-25
-- [ ] `TASK-016-10` - **[Doc]** Filter expression syntax guide
+- [x] `TASK-016-10` - **[Doc]** Filter expression syntax guide ✅ 2026-03-25
 
 **Business rules:**
 1. All filter values parameterized (prevent SQL injection)
