@@ -1184,7 +1184,7 @@
 - [x] `TASK-025-04` - **[API]** GET /api/campaigns/{id}/snapshot endpoint ✅ 2026-03-25
 - [x] `TASK-025-05` - **[Frontend]** Snapshot view in campaign details ✅ 2026-03-25
 - [x] `TASK-025-06` - **[Test]** Snapshot creation and isolation tests ✅ 2026-03-25
-- [ ] `TASK-025-07` - **[Doc]** Template snapshot documentation
+- [x] `TASK-025-07` - **[Doc]** Template snapshot documentation ✅ 2026-03-25
 
 **Business rules:**
 1. Snapshot created when campaign status changes to Scheduled
