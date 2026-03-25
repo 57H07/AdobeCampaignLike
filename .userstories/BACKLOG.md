@@ -1114,7 +1114,8 @@
 ---
 
 #### [US-024] - Multi-step campaign sequences
-**Status:** ðŸŸ¡ TODO
+**Status:** ðµ IN PROGRESS
+**Start date:** 2026-03-25
 **Priority:** ðŸ”´ High
 **Complexity:** L
 **Epic:** Campaign Orchestrator
