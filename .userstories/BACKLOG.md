@@ -778,7 +778,7 @@
 - [x] `TASK-016-01` - **[Model]** Create FilterExpression AST classes ✅ 2026-03-25
 - [x] `TASK-016-02` - **[Service]** Filter AST to SQL translator ✅ 2026-03-25
 - [x] `TASK-016-03` - **[Service]** Expression validation service ✅ 2026-03-25
-- [ ] `TASK-016-04` - **[API]** POST /api/datasources/{id}/preview endpoint (apply filters)
+- [x] `TASK-016-04` - **[API]** POST /api/datasources/{id}/preview endpoint (apply filters) ✅ 2026-03-25
 - [ ] `TASK-016-05` - **[Frontend]** Filter builder UI component
 - [ ] `TASK-016-06` - **[Frontend]** Filter preview with row count
 - [ ] `TASK-016-07` - **[Test]** AST to SQL translation tests

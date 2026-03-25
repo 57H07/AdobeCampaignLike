@@ -47,6 +47,14 @@ else
         <div class="d-flex gap-2 flex-wrap">
             @if (User.IsInRole("Designer") || User.IsInRole("Admin"))
             {
+                @* Preview button — available to Designer and Admin for any template status *@
+                <button type="button" class="btn btn-outline-secondary"
+                        id="btnOpenPreview"
+                        data-bs-toggle="modal" data-bs-target="#previewModal"
+                        title="Preview this template with sample data from a data source">
+                    <i class="bi bi-eye"></i> Preview
+                </button>
+
                 @* Publish button — only shown for Draft templates *@
                 @if (Model.Template.Status == "Draft")
                 {
@@ -226,4 +234,336 @@ else
             </div>
         </div>
     </div>
+
+    @* ================================================================ *@
+    @* Preview Modal (US-010) *@
+    @* ================================================================ *@
+    @if (User.IsInRole("Designer") || User.IsInRole("Admin"))
+    {
+        <div class="modal fade" id="previewModal" tabindex="-1" aria-labelledby="previewModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-xl modal-dialog-scrollable">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="previewModalLabel">
+                            <i class="bi bi-eye me-2"></i>Preview: @Model.Template.Name
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+
+                        @* Data source selector form *@
+                        <div class="card mb-3" id="previewSetupCard">
+                            <div class="card-header">
+                                <h6 class="mb-0"><i class="bi bi-database me-1"></i>Preview Configuration</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-3 align-items-end">
+                                    <div class="col-md-6">
+                                        <label for="previewDataSourceId" class="form-label fw-semibold">Data Source</label>
+                                        <select class="form-select" id="previewDataSourceId">
+                                            <option value="">-- Select a data source --</option>
+                                            @foreach (var ds in Model.AvailableDataSources)
+                                            {
+                                                <option value="@ds.Id">@ds.Name (@ds.TypeName)</option>
+                                            }
+                                        </select>
+                                        <div class="form-text">Select the data source to fetch sample rows from (read-only).</div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="previewRowCount" class="form-label fw-semibold">Sample Rows</label>
+                                        <select class="form-select" id="previewRowCount">
+                                            <option value="1">1 row</option>
+                                            <option value="3">3 rows</option>
+                                            <option value="5" selected>5 rows (max)</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="previewRowIndex" class="form-label fw-semibold">Row to Render</label>
+                                        <select class="form-select" id="previewRowIndex">
+                                            <option value="0" selected>Row 1 (first)</option>
+                                            <option value="1">Row 2</option>
+                                            <option value="2">Row 3</option>
+                                            <option value="3">Row 4</option>
+                                            <option value="4">Row 5</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="mt-3">
+                                    <button type="button" class="btn btn-primary" id="btnRunPreview">
+                                        <i class="bi bi-play-fill me-1"></i>Run Preview
+                                    </button>
+                                    <span id="previewSpinner" class="ms-2 d-none">
+                                        <span class="spinner-border spinner-border-sm text-primary" role="status"></span>
+                                        <span class="ms-1 text-muted">Fetching sample data and rendering...</span>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        @* Preview result area *@
+                        <div id="previewResult" class="d-none">
+
+                            @* Diagnostics bar *@
+                            <div id="previewDiagnostics" class="mb-3"></div>
+
+                            @* Sample data rows table *@
+                            <div class="card mb-3" id="previewSampleDataCard">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <h6 class="mb-0"><i class="bi bi-table me-1"></i>Sample Data</h6>
+                                    <small class="text-muted" id="previewSampleDataInfo"></small>
+                                </div>
+                                <div class="card-body p-0">
+                                    <div class="table-responsive" style="max-height:200px; overflow:auto;">
+                                        <table class="table table-sm table-hover mb-0" id="previewSampleDataTable">
+                                            <thead class="table-light sticky-top"></thead>
+                                            <tbody></tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+
+                            @* Rendered output *@
+                            <div class="card">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <h6 class="mb-0">
+                                        <i class="bi bi-window me-1"></i>Rendered Output
+                                        <span class="badge bg-secondary ms-1" id="previewContentTypeBadge"></span>
+                                    </h6>
+                                    <small class="text-muted" id="previewChannelInfo"></small>
+                                </div>
+                                <div class="card-body p-0">
+                                    @* HTML/SMS output: iframe for safe HTML rendering *@
+                                    <div id="previewHtmlContainer" class="d-none">
+                                        <iframe id="previewHtmlFrame"
+                                                style="width:100%; min-height:400px; border:none;"
+                                                sandbox="allow-same-origin"
+                                                title="Template preview"></iframe>
+                                    </div>
+                                    @* PDF output: download link or embedded viewer *@
+                                    <div id="previewPdfContainer" class="d-none p-3 text-center">
+                                        <i class="bi bi-file-earmark-pdf fs-1 text-danger"></i>
+                                        <p class="mt-2 mb-1">Letter channel — PDF output generated.</p>
+                                        <a href="#" id="previewPdfDownload" class="btn btn-outline-danger btn-sm" download="preview.pdf">
+                                            <i class="bi bi-download me-1"></i>Download PDF Preview
+                                        </a>
+                                    </div>
+                                    @* Plain text output *@
+                                    <div id="previewTextContainer" class="d-none p-3">
+                                        <pre id="previewTextContent" style="white-space:pre-wrap; font-size:0.9em; background:#f8f9fa; padding:1rem; border-radius:4px;"></pre>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        @* Error display *@
+                        <div id="previewError" class="alert alert-danger d-none" role="alert">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                            <span id="previewErrorMessage"></span>
+                        </div>
+
+                    </div>
+                    <div class="modal-footer">
+                        <small class="text-muted me-auto">
+                            <i class="bi bi-info-circle me-1"></i>Preview is read-only — no messages are sent.
+                        </small>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @* ================================================================ *@
+        @* Preview JavaScript *@
+        @* ================================================================ *@
+        <script>
+        (function () {
+            'use strict';
+
+            const templateId = '@Model.Template.Id';
+            const antiForgeryToken = document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? '';
+
+            const btnRunPreview     = document.getElementById('btnRunPreview');
+            const previewSpinner    = document.getElementById('previewSpinner');
+            const previewResult     = document.getElementById('previewResult');
+            const previewError      = document.getElementById('previewError');
+            const previewDiagnostics = document.getElementById('previewDiagnostics');
+
+            // Sample data table
+            const sampleDataInfo   = document.getElementById('previewSampleDataInfo');
+            const sampleTable      = document.getElementById('previewSampleDataTable');
+
+            // Output containers
+            const htmlContainer    = document.getElementById('previewHtmlContainer');
+            const htmlFrame        = document.getElementById('previewHtmlFrame');
+            const pdfContainer     = document.getElementById('previewPdfContainer');
+            const pdfDownload      = document.getElementById('previewPdfDownload');
+            const textContainer    = document.getElementById('previewTextContainer');
+            const textContent      = document.getElementById('previewTextContent');
+            const contentTypeBadge = document.getElementById('previewContentTypeBadge');
+            const channelInfo      = document.getElementById('previewChannelInfo');
+
+            function setLoading(loading) {
+                btnRunPreview.disabled = loading;
+                previewSpinner.classList.toggle('d-none', !loading);
+            }
+
+            function showError(message) {
+                previewResult.classList.add('d-none');
+                previewError.classList.remove('d-none');
+                document.getElementById('previewErrorMessage').textContent = message;
+            }
+
+            function hideError() {
+                previewError.classList.add('d-none');
+            }
+
+            function renderDiagnostics(result) {
+                let html = '';
+
+                if (result.missingPlaceholders && result.missingPlaceholders.length > 0) {
+                    const keys = result.missingPlaceholders.map(k =>
+                        `<code class="me-1">${escapeHtml(k)}</code>`).join(' ');
+                    html += `<div class="alert alert-warning mb-2" role="alert">
+                        <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                        <strong>Missing placeholder values (${result.missingPlaceholders.length}):</strong>
+                        These keys were in the template but had no value in the sample data row — rendered as blank: ${keys}
+                    </div>`;
+                }
+
+                html += `<div class="alert alert-info mb-2 py-2" role="alert">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Rendered with row <strong>${result.rowUsed + 1}</strong> of
+                    <strong>${result.totalSampleRows}</strong> sample rows.
+                    Channel: <strong>${escapeHtml(result.channel)}</strong>.
+                </div>`;
+
+                previewDiagnostics.innerHTML = html;
+            }
+
+            function renderSampleDataTable(rows) {
+                if (!rows || rows.length === 0) {
+                    sampleDataInfo.textContent = 'No rows';
+                    sampleTable.querySelector('thead').innerHTML = '';
+                    sampleTable.querySelector('tbody').innerHTML =
+                        '<tr><td class="text-muted">No sample rows returned.</td></tr>';
+                    return;
+                }
+
+                sampleDataInfo.textContent = rows.length + ' row(s) fetched';
+
+                const keys = Object.keys(rows[0]);
+                const thead = sampleTable.querySelector('thead');
+                thead.innerHTML = '<tr>' + keys.map(k =>
+                    `<th>${escapeHtml(k)}</th>`).join('') + '</tr>';
+
+                const tbody = sampleTable.querySelector('tbody');
+                tbody.innerHTML = rows.map(row =>
+                    '<tr>' + keys.map(k => {
+                        const v = row[k];
+                        return `<td><small>${escapeHtml(v !== null && v !== undefined ? String(v) : '—')}</small></td>`;
+                    }).join('') + '</tr>'
+                ).join('');
+            }
+
+            function renderOutput(result) {
+                contentTypeBadge.textContent = result.contentType;
+                channelInfo.textContent = result.channel + ' channel';
+
+                // Hide all containers first
+                htmlContainer.classList.add('d-none');
+                pdfContainer.classList.add('d-none');
+                textContainer.classList.add('d-none');
+
+                if (result.contentType === 'application/pdf' && result.base64Content) {
+                    // PDF: provide download link as data URI
+                    const dataUri = 'data:application/pdf;base64,' + result.base64Content;
+                    pdfDownload.href = dataUri;
+                    pdfContainer.classList.remove('d-none');
+                } else if (result.contentType === 'text/plain') {
+                    // SMS / plain text
+                    textContent.textContent = result.textContent ?? '';
+                    textContainer.classList.remove('d-none');
+                } else {
+                    // HTML (Email channel or fallback) — render in sandboxed iframe
+                    const blob = new Blob([result.textContent ?? ''], { type: 'text/html' });
+                    const url = URL.createObjectURL(blob);
+                    htmlFrame.onload = function () { URL.revokeObjectURL(url); };
+                    htmlFrame.src = url;
+                    htmlContainer.classList.remove('d-none');
+                }
+            }
+
+            function escapeHtml(str) {
+                const d = document.createElement('div');
+                d.textContent = str;
+                return d.innerHTML;
+            }
+
+            btnRunPreview.addEventListener('click', async function () {
+                const dataSourceId = document.getElementById('previewDataSourceId').value;
+                const sampleRowCount = parseInt(document.getElementById('previewRowCount').value, 10);
+                const rowIndex = parseInt(document.getElementById('previewRowIndex').value, 10);
+
+                if (!dataSourceId) {
+                    showError('Please select a data source before running the preview.');
+                    return;
+                }
+
+                hideError();
+                previewResult.classList.add('d-none');
+                setLoading(true);
+
+                try {
+                    const response = await fetch(`/api/templates/${templateId}/preview`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'RequestVerificationToken': antiForgeryToken
+                        },
+                        body: JSON.stringify({
+                            dataSourceId: dataSourceId,
+                            sampleRowCount: sampleRowCount,
+                            rowIndex: rowIndex
+                        })
+                    });
+
+                    if (!response.ok) {
+                        let errorMessage = `HTTP ${response.status}`;
+                        try {
+                            const errorBody = await response.json();
+                            errorMessage = errorBody.error ?? errorBody.title ?? errorMessage;
+                        } catch (_) { /* ignore parse errors */ }
+                        showError(errorMessage);
+                        return;
+                    }
+
+                    const result = await response.json();
+
+                    if (!result.isSuccess) {
+                        showError(result.errorMessage ?? 'Preview failed for an unknown reason.');
+                        return;
+                    }
+
+                    renderDiagnostics(result);
+                    renderSampleDataTable(result.sampleRows);
+                    renderOutput(result);
+
+                    previewResult.classList.remove('d-none');
+
+                } catch (err) {
+                    showError('An unexpected error occurred: ' + err.message);
+                } finally {
+                    setLoading(false);
+                }
+            });
+
+            // Reset preview state when modal is closed
+            document.getElementById('previewModal').addEventListener('hidden.bs.modal', function () {
+                previewResult.classList.add('d-none');
+                hideError();
+                previewDiagnostics.innerHTML = '';
+            });
+        }());
+        </script>
+    }
 }

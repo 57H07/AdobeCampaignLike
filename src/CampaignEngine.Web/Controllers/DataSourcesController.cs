@@ -4,6 +4,7 @@ using CampaignEngine.Application.Interfaces;
 using CampaignEngine.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using CampaignEngine.Domain.Exceptions;
 
 namespace CampaignEngine.Web.Controllers;
 
@@ -18,10 +19,14 @@ namespace CampaignEngine.Web.Controllers;
 public class DataSourcesController : ControllerBase
 {
     private readonly IDataSourceService _dataSourceService;
+    private readonly IDataSourcePreviewService _previewService;
 
-    public DataSourcesController(IDataSourceService dataSourceService)
+    public DataSourcesController(
+        IDataSourceService dataSourceService,
+        IDataSourcePreviewService previewService)
     {
         _dataSourceService = dataSourceService;
+        _previewService = previewService;
     }
 
     // ----------------------------------------------------------------
@@ -236,5 +241,64 @@ public class DataSourcesController : ControllerBase
     {
         var dto = await _dataSourceService.SetActiveAsync(id, isActive, cancellationToken);
         return Ok(dto);
+    }
+
+    // ----------------------------------------------------------------
+    // POST /api/datasources/{id}/preview
+    // ----------------------------------------------------------------
+
+    /// <summary>
+    /// Executes a filtered preview query against the data source.
+    /// Applies the provided filter expression AST and returns up to 100 rows.
+    /// Also returns the total row count matching the filter.
+    ///
+    /// Filter expressions are validated before execution — if invalid, returns 400
+    /// with validation error details rather than executing the query.
+    ///
+    /// Operator and Admin roles can use preview (Operator needs read access for campaign building).
+    /// </summary>
+    /// <param name="id">The data source ID to preview.</param>
+    /// <param name="request">Filter expressions and optional row limit (max 100).</param>
+    [HttpPost("{id:guid}/preview")]
+    [Authorize(Policy = AuthorizationPolicies.RequireOperatorOrAdmin)]
+    [ProducesResponseType(typeof(PreviewDataSourceResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult<PreviewDataSourceResult>> PreviewDataSource(
+        Guid id,
+        [FromBody] PreviewDataSourceRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        if (request.MaxRows.HasValue && (request.MaxRows < 1 || request.MaxRows > 100))
+            return BadRequest("MaxRows must be between 1 and 100.");
+
+        try
+        {
+            var result = await _previewService.PreviewAsync(id, request, cancellationToken);
+
+            // If the result contains validation errors, return 400 with details
+            if (result.ValidationErrors.Count > 0)
+            {
+                var problemDetails = new ValidationProblemDetails
+                {
+                    Title = "Filter expression validation failed.",
+                    Status = StatusCodes.Status400BadRequest
+                };
+                problemDetails.Errors["filters"] = result.ValidationErrors.ToArray();
+                return BadRequest(problemDetails);
+            }
+
+            return Ok(result);
+        }
+        catch (NotFoundException)
+        {
+            return NotFound();
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ex.Message);
+        }
     }
 }

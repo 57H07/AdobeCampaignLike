@@ -193,10 +193,11 @@ public static class ServiceCollectionExtensions
         // Filter expression services (US-016)
         // FilterAstTranslator: translates AST to parameterized SQL WHERE clause.
         // FilterExpressionValidator: validates AST before translation (early 400 errors).
-        // Both are stateless — registered as Scoped to be safe.
+        // DataSourcePreviewService: executes filtered preview queries (max 100 rows).
         // ----------------------------------------------------------------
         services.AddScoped<IFilterAstTranslator, FilterAstTranslator>();
         services.AddScoped<IFilterExpressionValidator, FilterExpressionValidator>();
+        services.AddScoped<IDataSourcePreviewService, DataSourcePreviewService>();
 
         // ----------------------------------------------------------------
         // ASP.NET Core Identity: user and role management

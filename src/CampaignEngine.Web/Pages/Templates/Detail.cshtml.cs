@@ -1,4 +1,5 @@
 using CampaignEngine.Application.DependencyInjection;
+using CampaignEngine.Application.DTOs.DataSources;
 using CampaignEngine.Application.DTOs.Templates;
 using CampaignEngine.Application.Interfaces;
 using CampaignEngine.Domain.Entities;
@@ -13,6 +14,7 @@ namespace CampaignEngine.Web.Pages.Templates;
 /// Template detail page — read-only view accessible to all authenticated users.
 /// Shows all metadata, HTML body, and placeholder manifest.
 /// Status transition actions (Publish, Archive) restricted to Designer and Admin roles.
+/// Preview (US-010) restricted to Designer and Admin roles.
 /// </summary>
 [Authorize(Policy = AuthorizationPolicies.RequireAuthenticated)]
 public class TemplateDetailModel : PageModel
@@ -20,21 +22,30 @@ public class TemplateDetailModel : PageModel
     private readonly ITemplateService _templateService;
     private readonly IPlaceholderManifestService _manifestService;
     private readonly IPlaceholderParserService _parserService;
+    private readonly IDataSourceService _dataSourceService;
 
     public TemplateDetailModel(
         ITemplateService templateService,
         IPlaceholderManifestService manifestService,
-        IPlaceholderParserService parserService)
+        IPlaceholderParserService parserService,
+        IDataSourceService dataSourceService)
     {
         _templateService = templateService;
         _manifestService = manifestService;
         _parserService = parserService;
+        _dataSourceService = dataSourceService;
     }
 
     public TemplateDto? Template { get; private set; }
     public ManifestValidationResult? ValidationResult { get; private set; }
     public string? StatusMessage { get; set; }
     public bool IsSuccess { get; set; }
+
+    /// <summary>
+    /// Active data sources available for the preview data source selector.
+    /// Only populated for Designer and Admin roles.
+    /// </summary>
+    public IReadOnlyList<DataSourceDto> AvailableDataSources { get; private set; } = [];
 
     public async Task<IActionResult> OnGetAsync(Guid id, string? message = null, bool success = false)
     {
@@ -62,6 +73,18 @@ public class TemplateDetailModel : PageModel
         };
 
         ValidationResult = _parserService.ValidateManifestCompleteness(template.HtmlBody, manifests);
+
+        // Load available data sources for the preview modal (Designer / Admin only)
+        if (User.IsInRole("Designer") || User.IsInRole("Admin"))
+        {
+            var dsResult = await _dataSourceService.GetAllAsync(new DataSourceFilter
+            {
+                IsActive = true,
+                Page = 1,
+                PageSize = 100
+            });
+            AvailableDataSources = dsResult.Items;
+        }
 
         return Page();
     }
