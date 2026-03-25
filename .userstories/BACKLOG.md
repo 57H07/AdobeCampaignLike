@@ -1066,8 +1066,9 @@
 > Create and execute multi-step campaigns with recipient targeting
 
 #### [US-023] - Campaign creation and configuration
-**Status:** 🔵 IN PROGRESS
+**Status:** ✅ DONE
 **Start date:** 2026-03-25
+**End date:** 2026-03-25
 **Priority:** ðŸ”´ High
 **Complexity:** L
 **Epic:** Campaign Orchestrator
@@ -1080,12 +1081,12 @@
 > Create campaigns with template selection, data source, filters, free field values, and schedule.
 
 **Acceptance criteria:**
-- [ ] Campaign creation UI with wizard flow
-- [ ] Template selection (filtered by channel and status)
-- [ ] Data source selection with filter builder
-- [ ] Free field value input for operator-provided data
-- [ ] Schedule configuration (immediate or future date/time)
-- [ ] Campaign preview: estimated recipient count before execution
+- [x] Campaign creation UI with wizard flow ✅
+- [x] Template selection (filtered by channel and status) ✅
+- [x] Data source selection with filter builder ✅
+- [x] Free field value input for operator-provided data ✅
+- [x] Schedule configuration (immediate or future date/time) ✅
+- [x] Campaign preview: estimated recipient count before execution ✅
 
 **Technical tasks:**
 - [x] `TASK-023-01` - **[Model]** Create Campaign entity with relationships ✅ 2026-03-25
