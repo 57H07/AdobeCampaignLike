@@ -1182,8 +1182,8 @@
 - [x] `TASK-025-02` - **[Service]** Snapshot creation service (resolve sub-templates) ✅ 2026-03-25
 - [x] `TASK-025-03` - **[Service]** Link campaign to snapshot on scheduling ✅ 2026-03-25
 - [x] `TASK-025-04` - **[API]** GET /api/campaigns/{id}/snapshot endpoint ✅ 2026-03-25
-- [ ] `TASK-025-05` - **[Frontend]** Snapshot view in campaign details
-- [ ] `TASK-025-06` - **[Test]** Snapshot creation and isolation tests
+- [x] `TASK-025-05` - **[Frontend]** Snapshot view in campaign details ✅ 2026-03-25
+- [x] `TASK-025-06` - **[Test]** Snapshot creation and isolation tests ✅ 2026-03-25
 - [ ] `TASK-025-07` - **[Doc]** Template snapshot documentation
 
 **Business rules:**
