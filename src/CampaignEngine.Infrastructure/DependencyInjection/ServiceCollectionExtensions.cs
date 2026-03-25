@@ -201,12 +201,18 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IDataSourcePreviewService, DataSourcePreviewService>();
 
         // ----------------------------------------------------------------
-        // Campaign management (US-023)
+        // Campaign management (US-023, US-024)
         // CampaignService: CRUD, validation, draft creation.
         // RecipientCountService: pre-execution recipient count estimation.
+        // CampaignStepValidationService: multi-step business rule enforcement (max 10, order uniqueness).
+        // CampaignStepSchedulingService: calculates per-step execution dates from delays.
+        // TemplateSnapshotService: freezes template content at scheduling time (US-025).
         // ----------------------------------------------------------------
         services.AddScoped<ICampaignService, CampaignService>();
         services.AddScoped<IRecipientCountService, RecipientCountService>();
+        services.AddScoped<ICampaignStepValidationService, CampaignStepValidationService>();
+        services.AddSingleton<ICampaignStepSchedulingService, CampaignStepSchedulingService>();
+        services.AddScoped<ITemplateSnapshotService, TemplateSnapshotService>();
 
         // ----------------------------------------------------------------
         // ASP.NET Core Identity: user and role management

@@ -25,4 +25,16 @@ public interface ICampaignService
     /// Returns null if not found.
     /// </summary>
     Task<CampaignDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Transitions a campaign from Draft to Scheduled status.
+    /// Creates immutable template snapshots for all steps (US-025).
+    /// Business rules:
+    ///   - Campaign must be in Draft status.
+    ///   - ScheduledAt must be set and at least 5 minutes in the future.
+    ///   - Snapshot is created atomically with the status change.
+    /// Throws NotFoundException if campaign not found.
+    /// Throws ValidationException if transition is not allowed.
+    /// </summary>
+    Task<CampaignDto> ScheduleAsync(Guid id, CancellationToken cancellationToken = default);
 }

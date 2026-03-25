@@ -9,24 +9,28 @@ using Microsoft.EntityFrameworkCore;
 namespace CampaignEngine.Infrastructure.Campaigns;
 
 /// <summary>
-/// Manages campaign creation and retrieval.
+/// Manages campaign creation, retrieval, and scheduling.
 /// Business rules enforced:
 ///   - Campaign name must be unique.
 ///   - Only Published templates can be used in steps.
 ///   - ScheduledAt must be at least 5 minutes in the future.
+///   - Template snapshots are created atomically when scheduling (US-025).
 /// </summary>
 public sealed class CampaignService : ICampaignService
 {
     private static readonly TimeSpan MinScheduleAhead = TimeSpan.FromMinutes(5);
 
     private readonly CampaignEngineDbContext _dbContext;
+    private readonly ITemplateSnapshotService _snapshotService;
     private readonly IAppLogger<CampaignService> _logger;
 
     public CampaignService(
         CampaignEngineDbContext dbContext,
+        ITemplateSnapshotService snapshotService,
         IAppLogger<CampaignService> logger)
     {
         _dbContext = dbContext;
+        _snapshotService = snapshotService;
         _logger = logger;
     }
 
@@ -219,6 +223,51 @@ public sealed class CampaignService : ICampaignService
         return campaign is null ? null : MapToDto(campaign);
     }
 
+    /// <inheritdoc />
+    public async Task<CampaignDto> ScheduleAsync(
+        Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        var campaign = await _dbContext.Campaigns
+            .Include(c => c.Steps)
+            .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
+
+        if (campaign is null)
+            throw new NotFoundException("Campaign", id);
+
+        if (campaign.Status != CampaignStatus.Draft)
+            throw new ValidationException(new Dictionary<string, string[]>
+            {
+                ["status"] = [$"Campaign must be in Draft status to schedule. Current: {campaign.Status}."]
+            });
+
+        if (!campaign.ScheduledAt.HasValue)
+            throw new ValidationException(new Dictionary<string, string[]>
+            {
+                ["scheduledAt"] = ["Campaign ScheduledAt must be set before scheduling."]
+            });
+
+        var minSchedule = DateTime.UtcNow.Add(MinScheduleAhead);
+        if (campaign.ScheduledAt.Value < minSchedule)
+            throw new ValidationException(new Dictionary<string, string[]>
+            {
+                ["scheduledAt"] = [$"Scheduled date must be at least 5 minutes in the future (minimum: {minSchedule:yyyy-MM-dd HH:mm} UTC)."]
+            });
+
+        // Create immutable template snapshots for all steps (US-025)
+        await _snapshotService.CreateSnapshotsForCampaignAsync(id, cancellationToken);
+
+        campaign.Status = CampaignStatus.Scheduled;
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation(
+            "Campaign scheduled. Id={CampaignId}, ScheduledAt={ScheduledAt}",
+            campaign.Id, campaign.ScheduledAt);
+
+        return await GetByIdAsync(id, cancellationToken)
+               ?? throw new InvalidOperationException("Campaign was scheduled but could not be retrieved.");
+    }
+
     // ----------------------------------------------------------------
     // Private mapping helpers
     // ----------------------------------------------------------------
@@ -257,6 +306,7 @@ public sealed class CampaignService : ICampaignService
         DelayDays = s.DelayDays,
         StepFilter = s.StepFilter,
         ScheduledAt = s.ScheduledAt,
-        ExecutedAt = s.ExecutedAt
+        ExecutedAt = s.ExecutedAt,
+        TemplateSnapshotId = s.TemplateSnapshotId
     };
 }

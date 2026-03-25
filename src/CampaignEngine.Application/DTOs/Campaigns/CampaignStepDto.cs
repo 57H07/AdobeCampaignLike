@@ -31,4 +31,11 @@ public class CampaignStepDto
 
     /// <summary>UTC date/time when this step was executed.</summary>
     public DateTime? ExecutedAt { get; init; }
+
+    /// <summary>
+    /// ID of the frozen template snapshot used for this step.
+    /// Populated when the campaign is scheduled (US-025).
+    /// Null if the campaign has not yet been scheduled.
+    /// </summary>
+    public Guid? TemplateSnapshotId { get; init; }
 }

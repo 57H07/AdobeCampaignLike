@@ -11,7 +11,7 @@ namespace CampaignEngine.Web.Controllers;
 
 /// <summary>
 /// REST API for Campaign management.
-/// Operators and Admins can create and view campaigns.
+/// Operators and Admins can create, schedule, and view campaigns.
 /// GET endpoints are accessible to any authenticated user.
 /// </summary>
 [ApiController]
@@ -22,15 +22,18 @@ public class CampaignsController : ControllerBase
     private readonly ICampaignService _campaignService;
     private readonly IRecipientCountService _recipientCountService;
     private readonly ICurrentUserService _currentUserService;
+    private readonly ITemplateSnapshotService _snapshotService;
 
     public CampaignsController(
         ICampaignService campaignService,
         IRecipientCountService recipientCountService,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        ITemplateSnapshotService snapshotService)
     {
         _campaignService = campaignService;
         _recipientCountService = recipientCountService;
         _currentUserService = currentUserService;
+        _snapshotService = snapshotService;
     }
 
     // ----------------------------------------------------------------
@@ -140,6 +143,78 @@ public class CampaignsController : ControllerBase
             }
             return ValidationProblem(ModelState);
         }
+    }
+
+    // ----------------------------------------------------------------
+    // POST /api/campaigns/{id}/schedule
+    // ----------------------------------------------------------------
+
+    /// <summary>
+    /// Transitions a campaign from Draft to Scheduled status.
+    /// Creates immutable template snapshots for all campaign steps (US-025).
+    /// </summary>
+    /// <remarks>
+    /// Business rules:
+    /// - Campaign must be in Draft status.
+    /// - ScheduledAt must already be set and at least 5 minutes in the future.
+    /// - Template snapshots are created atomically with the status change.
+    /// </remarks>
+    /// <param name="id">Campaign GUID.</param>
+    [HttpPost("{id:guid}/schedule")]
+    [Authorize(Policy = AuthorizationPolicies.RequireOperatorOrAdmin)]
+    [ProducesResponseType(typeof(CampaignDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult<CampaignDto>> ScheduleCampaign(
+        Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var campaign = await _campaignService.ScheduleAsync(id, cancellationToken);
+            return Ok(campaign);
+        }
+        catch (NotFoundException)
+        {
+            return NotFound();
+        }
+        catch (ValidationException ex)
+        {
+            foreach (var (field, errors) in ex.Errors)
+            {
+                foreach (var error in errors)
+                    ModelState.AddModelError(field, error);
+            }
+            return ValidationProblem(ModelState);
+        }
+    }
+
+    // ----------------------------------------------------------------
+    // GET /api/campaigns/{id}/snapshot
+    // ----------------------------------------------------------------
+
+    /// <summary>
+    /// Returns the template snapshots associated with this campaign.
+    /// Snapshots are only present once the campaign has been scheduled.
+    /// </summary>
+    /// <param name="id">Campaign GUID.</param>
+    [HttpGet("{id:guid}/snapshot")]
+    [Authorize(Policy = AuthorizationPolicies.RequireAuthenticated)]
+    [ProducesResponseType(typeof(IReadOnlyList<TemplateSnapshotDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<IReadOnlyList<TemplateSnapshotDto>>> GetCampaignSnapshot(
+        Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        // Verify campaign exists
+        var campaign = await _campaignService.GetByIdAsync(id, cancellationToken);
+        if (campaign is null) return NotFound();
+
+        var snapshots = await _snapshotService.GetSnapshotsForCampaignAsync(id, cancellationToken);
+        return Ok(snapshots);
     }
 
     // ----------------------------------------------------------------
