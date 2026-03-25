@@ -755,8 +755,9 @@
 ---
 
 #### [US-016] - Filter expression builder (AST)
-**Status:** 🔵 IN PROGRESS
+**Status:** 🟢 DONE
 **Start date:** 2026-03-25
+**End date:** 2026-03-25
 **Priority:** ðŸ”´ High
 **Complexity:** L
 **Epic:** Data Source Connector
@@ -769,11 +770,11 @@
 > Operator builds filters as expression trees; connector translates to parameterized SQL. No raw SQL from operators.
 
 **Acceptance criteria:**
-- [ ] Filter UI supports field selection, operator, and value input
-- [ ] Supported operators: =, !=, >, <, >=, <=, LIKE, IN
-- [ ] Multiple filter conditions with AND/OR logic
-- [ ] Filter AST serialized to JSON for storage
-- [ ] AST translated to parameterized SQL WHERE clause
+- [x] Filter UI supports field selection, operator, and value input ✅
+- [x] Supported operators: =, !=, >, <, >=, <=, LIKE, IN ✅
+- [x] Multiple filter conditions with AND/OR logic ✅
+- [x] Filter AST serialized to JSON for storage ✅
+- [x] AST translated to parameterized SQL WHERE clause ✅
 
 **Technical tasks:**
 - [x] `TASK-016-01` - **[Model]** Create FilterExpression AST classes ✅ 2026-03-25
