@@ -753,7 +753,8 @@
 ---
 
 #### [US-016] - Filter expression builder (AST)
-**Status:** ðŸŸ¡ TODO
+**Status:** 🔵 IN PROGRESS
+**Start date:** 2026-03-25
 **Priority:** ðŸ”´ High
 **Complexity:** L
 **Epic:** Data Source Connector
