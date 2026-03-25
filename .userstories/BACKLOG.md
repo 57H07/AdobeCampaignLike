@@ -1158,8 +1158,10 @@
 ---
 
 #### [US-025] - Template snapshot for campaign integrity
-**Status:** ðŸŸ¡ TODO
-**Priority:** ðŸ”´ High
+**Status:** ✅ DONE
+**Start date:** 2026-03-25
+**End date:** 2026-03-25
+**Priority:** 🔴 High
 **Complexity:** M
 **Epic:** Campaign Orchestrator
 
@@ -1171,11 +1173,11 @@
 > Freeze template content at campaign scheduling time; all steps use the snapshot. Template snapshots guarantee campaign reproducibility.
 
 **Acceptance criteria:**
-- [ ] Template content frozen when campaign is scheduled
-- [ ] Snapshot includes resolved sub-templates
-- [ ] All campaign steps reference same snapshot
-- [ ] Snapshot stored in database for audit
-- [ ] Campaign display shows snapshot version used
+- [x] Template content frozen when campaign is scheduled ✅
+- [x] Snapshot includes resolved sub-templates ✅
+- [x] All campaign steps reference same snapshot ✅
+- [x] Snapshot stored in database for audit ✅
+- [x] Campaign display shows snapshot version used ✅
 
 **Technical tasks:**
 - [x] `TASK-025-01` - **[Model]** Create TemplateSnapshot entity ✅ 2026-03-25
