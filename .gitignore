@@ -51,4 +51,4 @@ desktop.ini
 secrets.json
 
 ## User stories exports
-.userstories/exports/*.html
+.userstories/exports/

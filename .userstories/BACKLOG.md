@@ -2,13 +2,13 @@
 
 **Source:** _docs/prd.md
 **Created:** 2026-03-19
-**Last updated:** 2026-03-20
+**Last updated:** 2026-03-26
 
 ---
 
 ## ðŸ“Š Overview
 
-**Total User Stories:** 36
+**Total User Stories:** 37
 **Estimated complexity:** 52-68 person-weeks (260-340 person-days)
 **Overall status:** ðŸŸ¡ Planning
 
@@ -728,21 +728,34 @@
 > IDataSourceConnector with SQL Server implementation. Schema-agnostic querying with parameterized SQL for security.
 
 **Acceptance criteria:**
-- [x] IDataSourceConnector interface defined âœ…
-- [x] SqlServerConnector implementation with Dapper âœ…
-- [x] Schema auto-discovery from SQL Server metadata âœ…
-- [x] Parameterized query generation prevents SQL injection âœ…
-- [x] Connection pooling and timeout configuration âœ…
+- [x] IDataSourceConnector interface defined
+ âœ…
+- [x] SqlServerConnector implementation with Dapper
+ âœ…
+- [x] Schema auto-discovery from SQL Server metadata
+ âœ…
+- [x] Parameterized query generation prevents SQL injection
+ âœ…
+- [x] Connection pooling and timeout configuration
+ âœ…
 
 **Technical tasks:**
-- [x] `TASK-015-01` - **[Interface]** Define IDataSourceConnector interface âœ… 2026-03-20
-- [x] `TASK-015-02` - **[Service]** Implement SqlServerConnector with Dapper âœ… 2026-03-20
-- [x] `TASK-015-03` - **[Service]** Schema discovery from INFORMATION_SCHEMA âœ… 2026-03-20
-- [x] `TASK-015-04` - **[Service]** Query builder with parameterization âœ… 2026-03-20
-- [x] `TASK-015-05` - **[Service]** Connection pool configuration âœ… 2026-03-20
-- [x] `TASK-015-06` - **[Test]** Integration tests with test database âœ… 2026-03-20
-- [x] `TASK-015-07` - **[Test]** SQL injection prevention tests âœ… 2026-03-20
-- [x] `TASK-015-08` - **[Doc]** SQL connector configuration guide âœ… 2026-03-20
+- [x] `TASK-015-01` - **[Interface]** Define IDataSourceConnector interface
+ âœ… 2026-03-20
+- [x] `TASK-015-02` - **[Service]** Implement SqlServerConnector with Dapper
+ âœ… 2026-03-20
+- [x] `TASK-015-03` - **[Service]** Schema discovery from INFORMATION_SCHEMA
+ âœ… 2026-03-20
+- [x] `TASK-015-04` - **[Service]** Query builder with parameterization
+ âœ… 2026-03-20
+- [x] `TASK-015-05` - **[Service]** Connection pool configuration
+ âœ… 2026-03-20
+- [x] `TASK-015-06` - **[Test]** Integration tests with test database
+ âœ… 2026-03-20
+- [x] `TASK-015-07` - **[Test]** SQL injection prevention tests
+ âœ… 2026-03-20
+- [x] `TASK-015-08` - **[Doc]** SQL connector configuration guide
+ âœ… 2026-03-20
 
 **Business rules:**
 1. All queries must use parameterized SQL (no string concatenation)
@@ -907,14 +920,22 @@
 - [x] SMTP error handling and retry logic ✅
 
 **Technical tasks:**
-- [x] `TASK-019-01` - **[Service]** Implement EmailDispatcher with MailKit ✅ 2026-03-20
-- [x] `TASK-019-02` - **[Config]** SMTP configuration model ✅ 2026-03-20
-- [x] `TASK-019-03` - **[Service]** Attachment handling from file paths ✅ 2026-03-20
-- [x] `TASK-019-04` - **[Service]** CC/BCC recipient list handling ✅ 2026-03-20
-- [x] `TASK-019-05` - **[Service]** SMTP error categorization (transient vs permanent) ✅ 2026-03-20
-- [x] `TASK-019-06` - **[Test]** Integration tests with local SMTP server ✅ 2026-03-20
-- [x] `TASK-019-07` - **[Test]** Attachment validation tests ✅ 2026-03-20
-- [x] `TASK-019-08` - **[Doc]** SMTP configuration guide ✅ 2026-03-20
+- [x] `TASK-019-01` - **[Service]** Implement EmailDispatcher with MailKit
+ ✅ 2026-03-20
+- [x] `TASK-019-02` - **[Config]** SMTP configuration model
+ ✅ 2026-03-20
+- [x] `TASK-019-03` - **[Service]** Attachment handling from file paths
+ ✅ 2026-03-20
+- [x] `TASK-019-04` - **[Service]** CC/BCC recipient list handling
+ ✅ 2026-03-20
+- [x] `TASK-019-05` - **[Service]** SMTP error categorization (transient vs permanent)
+ ✅ 2026-03-20
+- [x] `TASK-019-06` - **[Test]** Integration tests with local SMTP server
+ ✅ 2026-03-20
+- [x] `TASK-019-07` - **[Test]** Attachment validation tests
+ ✅ 2026-03-20
+- [x] `TASK-019-08` - **[Doc]** SMTP configuration guide
+ ✅ 2026-03-20
 
 **Business rules:**
 1. From address configurable per environment
@@ -998,14 +1019,22 @@
 - [x] Error handling for generation failures ✅
 
 **Technical tasks:**
-- [x] `TASK-021-01` - **[Service]** Implement LetterDispatcher ✅ 2026-03-20
-- [x] `TASK-021-02` - **[Service]** PDF generation wrapper (using US-013 post-processor) ✅ 2026-03-20
-- [x] `TASK-021-03` - **[Service]** PDF consolidation service with PdfSharp ✅ 2026-03-20
-- [x] `TASK-021-04` - **[Service]** Print provider file drop handler (UNC or API) ✅ 2026-03-20
-- [x] `TASK-021-05` - **[Service]** PDF metadata generation (manifest file) ✅ 2026-03-20
-- [x] `TASK-021-06` - **[Test]** PDF generation tests ✅ 2026-03-20
-- [x] `TASK-021-07` - **[Test]** Consolidation tests (verify page order) ✅ 2026-03-20
-- [x] `TASK-021-08` - **[Doc]** Letter channel configuration guide ✅ 2026-03-20
+- [x] `TASK-021-01` - **[Service]** Implement LetterDispatcher
+ ✅ 2026-03-20
+- [x] `TASK-021-02` - **[Service]** PDF generation wrapper (using US-013 post-processor)
+ ✅ 2026-03-20
+- [x] `TASK-021-03` - **[Service]** PDF consolidation service with PdfSharp
+ ✅ 2026-03-20
+- [x] `TASK-021-04` - **[Service]** Print provider file drop handler (UNC or API)
+ ✅ 2026-03-20
+- [x] `TASK-021-05` - **[Service]** PDF metadata generation (manifest file)
+ ✅ 2026-03-20
+- [x] `TASK-021-06` - **[Test]** PDF generation tests
+ ✅ 2026-03-20
+- [x] `TASK-021-07` - **[Test]** Consolidation tests (verify page order)
+ ✅ 2026-03-20
+- [x] `TASK-021-08` - **[Doc]** Letter channel configuration guide
+ ✅ 2026-03-20
 
 **Business rules:**
 1. A4 format, portrait orientation
@@ -1216,12 +1245,18 @@
 > Split recipients into chunks of 500, process via Hangfire workers in parallel, track completion atomically. Hangfire Community lacks batch primitives â€” use Chunk Coordinator pattern.
 
 **Acceptance criteria:**
-- [x] Recipients split into configurable chunks (default 500) ✅
-- [x] Each chunk processed as separate Hangfire job ✅
-- [x] Parallel processing across 4-8 workers ✅
-- [x] Atomic chunk completion tracking ✅
-- [x] Campaign completes when all chunks processed ✅
-- [x] Progress visible in real-time (processed/total) ✅
+- [x] Recipients split into configurable chunks (default 500)
+ ✅
+- [x] Each chunk processed as separate Hangfire job
+ ✅
+- [x] Parallel processing across 4-8 workers
+ ✅
+- [x] Atomic chunk completion tracking
+ ✅
+- [x] Campaign completes when all chunks processed
+ ✅
+- [x] Progress visible in real-time (processed/total)
+ ✅
 
 **Technical tasks:**
 - [x] `TASK-026-01` - **[Service]** Implement ChunkCoordinator service ✅ 2026-03-25
@@ -1869,6 +1904,37 @@
 - **Analysis date:** 2026-03-19
 - **PRD version:** 1.0 (Draft)
 - **Project directory:** f:\_Projets\AdobeCampaignLike
+
+---
+
+#### [US-038] - Upgrade Scriban to resolve high severity CVE GHSA-c875-h985-hvrc
+**Status:** 🟡 TODO
+**Priority:** 🔴 High
+**Complexity:** S
+**Epic:** Epic 10
+**Type:** [Bug]
+
+**As a** developer
+**I want to** upgrade the Scriban NuGet package past version 6.6.0
+**So that** the known high severity vulnerability GHSA-c875-h985-hvrc is eliminated and the build emits no NU1903 security warnings
+
+**Context:**
+> The Infrastructure project still references Scriban 6.6.0 which carries a high severity advisory (GHSA-c875-h985-hvrc). A previous fix (US-037) was supposed to address Scriban CVEs but the warning persists, indicating the package was not actually upgraded or has since regressed.
+
+**Acceptance criteria:**
+- [ ] Scriban package in CampaignEngine.Infrastructure.csproj is upgraded to the latest version that does not carry GHSA-c875-h985-hvrc
+- [ ] NU1903 warning for Scriban disappears from the build output
+- [ ] All existing Scriban-based rendering tests pass after the upgrade
+- [ ] Build completes with 0 security audit warnings related to Scriban
+
+**Technical tasks:**
+- [ ] `TASK-038-01` - **[Debug]** Verify current Scriban version in CampaignEngine.Infrastructure.csproj and confirm NU1903 warning reproduces on a clean build
+- [ ] `TASK-038-02` - **[TechDebt]** Upgrade Scriban to the latest patched version (check NuGet advisories for GHSA-c875-h985-hvrc fix version)
+- [ ] `TASK-038-03` - **[Test]** Run the full test suite to confirm no rendering regressions after the upgrade
+- [ ] `TASK-038-04` - **[Fix]** Verify build output is warning-free (0 NU1902/NU1903 Scriban warnings)
+
+**Dependencies:** None
+**Estimation:** 1-2 days
 
 ---
 
