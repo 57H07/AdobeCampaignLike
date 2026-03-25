@@ -1098,7 +1098,7 @@
 - [x] `TASK-023-08` - **[Frontend]** Free field input form ✅ 2026-03-25
 - [x] `TASK-023-09` - **[Frontend]** Schedule picker with validation ✅ 2026-03-25
 - [x] `TASK-023-10` - **[Service]** Recipient count estimation service ✅ 2026-03-25
-- [ ] `TASK-023-11` - **[Test]** Campaign creation workflow tests
+- [x] `TASK-023-11` - **[Test]** Campaign creation workflow tests ✅ 2026-03-25
 - [ ] `TASK-023-12` - **[Doc]** Campaign creation guide
 
 **Business rules:**
