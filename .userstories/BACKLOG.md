@@ -1908,8 +1908,9 @@
 ---
 
 #### [US-038] - Upgrade Scriban to resolve high severity CVE GHSA-c875-h985-hvrc
-**Status:** 🔵 IN PROGRESS
+**Status:** ✅ DONE
 **Start date:** 2026-03-26 00:00:00
+**End date:** 2026-03-26 00:00:00
 **Priority:** 🔴 High
 **Complexity:** S
 **Epic:** Epic 10
@@ -1923,10 +1924,10 @@
 > The Infrastructure project still references Scriban 6.6.0 which carries a high severity advisory (GHSA-c875-h985-hvrc). A previous fix (US-037) was supposed to address Scriban CVEs but the warning persists, indicating the package was not actually upgraded or has since regressed.
 
 **Acceptance criteria:**
-- [ ] Scriban package in CampaignEngine.Infrastructure.csproj is upgraded to the latest version that does not carry GHSA-c875-h985-hvrc
-- [ ] NU1903 warning for Scriban disappears from the build output
-- [ ] All existing Scriban-based rendering tests pass after the upgrade
-- [ ] Build completes with 0 security audit warnings related to Scriban
+- [x] Scriban package in CampaignEngine.Infrastructure.csproj is upgraded to the latest version that does not carry GHSA-c875-h985-hvrc ✅
+- [x] NU1903 warning for Scriban disappears from the build output ✅
+- [x] All existing Scriban-based rendering tests pass after the upgrade ✅
+- [x] Build completes with 0 security audit warnings related to Scriban ✅
 
 **Technical tasks:**
 - [x] `TASK-038-01` - **[Debug]** Verify current Scriban version in CampaignEngine.Infrastructure.csproj and confirm NU1903 warning reproduces on a clean build ✅ 2026-03-26
