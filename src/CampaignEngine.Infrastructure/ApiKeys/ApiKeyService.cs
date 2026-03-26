@@ -4,6 +4,7 @@ using CampaignEngine.Application.Interfaces;
 using CampaignEngine.Domain.Entities;
 using CampaignEngine.Domain.Exceptions;
 using CampaignEngine.Infrastructure.Persistence;
+using Mapster;
 using Microsoft.EntityFrameworkCore;
 
 namespace CampaignEngine.Infrastructure.ApiKeys;
@@ -82,7 +83,7 @@ public sealed class ApiKeyService : IApiKeyService
 
         return new ApiKeyCreatedResponse
         {
-            Key = MapToDto(entity),
+            Key = entity.Adapt<ApiKeyDto>(),
             PlaintextKey = plaintextKey
         };
     }
@@ -95,7 +96,7 @@ public sealed class ApiKeyService : IApiKeyService
             .OrderByDescending(k => k.CreatedAt)
             .ToListAsync(cancellationToken);
 
-        return keys.Select(MapToDto).ToList().AsReadOnly();
+        return keys.Select(k => k.Adapt<ApiKeyDto>()).ToList().AsReadOnly();
     }
 
     /// <inheritdoc />
@@ -105,7 +106,7 @@ public sealed class ApiKeyService : IApiKeyService
             .AsNoTracking()
             .FirstOrDefaultAsync(k => k.Id == id, cancellationToken);
 
-        return entity is null ? null : MapToDto(entity);
+        return entity is null ? null : entity.Adapt<ApiKeyDto>();
     }
 
     /// <inheritdoc />
@@ -212,19 +213,4 @@ public sealed class ApiKeyService : IApiKeyService
         return KeyPrefix + base64;
     }
 
-    private static ApiKeyDto MapToDto(ApiKey k) => new()
-    {
-        Id = k.Id,
-        Name = k.Name,
-        KeyPrefix = k.KeyPrefix,
-        IsActive = k.IsActive,
-        IsExpired = k.IsExpired,
-        ExpiresAt = k.ExpiresAt,
-        LastUsedAt = k.LastUsedAt,
-        CreatedBy = k.CreatedBy,
-        RateLimitPerMinute = k.RateLimitPerMinute,
-        Description = k.Description,
-        CreatedAt = k.CreatedAt,
-        UpdatedAt = k.UpdatedAt
-    };
 }

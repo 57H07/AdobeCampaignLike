@@ -18,11 +18,11 @@ public static class ServiceCollectionExtensions
     {
         // ----------------------------------------------------------------
         // Mapster — centralized mapping configuration
-        // Sets global TypeAdapterConfig so that entity.Adapt<TDto>() works
-        // throughout the application without injecting IMapper.
+        // Configures TypeAdapterConfig.GlobalSettings so that entity.Adapt<TDto>()
+        // works throughout the application without injecting IMapper.
         // ----------------------------------------------------------------
-        var mappingConfig = MappingConfig.GetTypeAdapterConfig();
-        services.AddSingleton(mappingConfig);
+        MappingConfig.ConfigureGlobalSettings();
+        services.AddSingleton(TypeAdapterConfig.GlobalSettings);
 
         // ----------------------------------------------------------------
         // Single send — request validation (stateless, no infrastructure deps)
