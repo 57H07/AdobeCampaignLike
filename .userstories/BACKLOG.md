@@ -1931,8 +1931,8 @@
 **Technical tasks:**
 - [x] `TASK-038-01` - **[Debug]** Verify current Scriban version in CampaignEngine.Infrastructure.csproj and confirm NU1903 warning reproduces on a clean build ✅ 2026-03-26
 - [x] `TASK-038-02` - **[TechDebt]** Upgrade Scriban to the latest patched version (check NuGet advisories for GHSA-c875-h985-hvrc fix version) ✅ 2026-03-26
-- [ ] `TASK-038-03` - **[Test]** Run the full test suite to confirm no rendering regressions after the upgrade
-- [ ] `TASK-038-04` - **[Fix]** Verify build output is warning-free (0 NU1902/NU1903 Scriban warnings)
+- [x] `TASK-038-03` - **[Test]** Run the full test suite to confirm no rendering regressions after the upgrade ✅ 2026-03-26
+- [x] `TASK-038-04` - **[Fix]** Verify build output is warning-free (0 NU1902/NU1903 Scriban warnings) ✅ 2026-03-26
 
 **Dependencies:** None
 **Estimation:** 1-2 days
