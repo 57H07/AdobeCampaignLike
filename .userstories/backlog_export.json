@@ -1,0 +1,344 @@
+[
+  {
+    "us_id": "US-001",
+    "title": "Project scaffold and layered architecture setup",
+    "status": "DONE",
+    "priority": "High",
+    "complexity": "M",
+    "epic": "Foundation & Infrastructure",
+    "dependencies": []
+  },
+  {
+    "us_id": "US-002",
+    "title": "Database provisioning and EF Core setup",
+    "status": "DONE",
+    "priority": "High",
+    "complexity": "M",
+    "epic": "Foundation & Infrastructure",
+    "dependencies": ["US-001"]
+  },
+  {
+    "us_id": "US-003",
+    "title": "Authentication and authorization implementation",
+    "status": "DONE",
+    "priority": "High",
+    "complexity": "M",
+    "epic": "Foundation & Infrastructure",
+    "dependencies": ["US-002"]
+  },
+  {
+    "us_id": "US-004",
+    "title": "Structured logging and observability setup",
+    "status": "DONE",
+    "priority": "High",
+    "complexity": "S",
+    "epic": "Foundation & Infrastructure",
+    "dependencies": ["US-001"]
+  },
+  {
+    "us_id": "US-005",
+    "title": "Template CRUD operations",
+    "status": "DONE",
+    "priority": "High",
+    "complexity": "M",
+    "epic": "Template Management",
+    "dependencies": ["US-002", "US-003"]
+  },
+  {
+    "us_id": "US-006",
+    "title": "Placeholder manifest declaration",
+    "status": "DONE",
+    "priority": "High",
+    "complexity": "M",
+    "epic": "Template Management",
+    "dependencies": ["US-005"]
+  },
+  {
+    "us_id": "US-007",
+    "title": "Sub-template composition",
+    "status": "DONE",
+    "priority": "High",
+    "complexity": "M",
+    "epic": "Template Management",
+    "dependencies": ["US-005"]
+  },
+  {
+    "us_id": "US-008",
+    "title": "Template versioning",
+    "status": "DONE",
+    "priority": "Medium",
+    "complexity": "M",
+    "epic": "Template Management",
+    "dependencies": ["US-005"]
+  },
+  {
+    "us_id": "US-009",
+    "title": "Template lifecycle workflow",
+    "status": "IN_PROGRESS",
+    "priority": "Medium",
+    "complexity": "S",
+    "epic": "Template Management",
+    "dependencies": ["US-005", "US-006"]
+  },
+  {
+    "us_id": "US-010",
+    "title": "Template preview with sample data",
+    "status": "DONE",
+    "priority": "High",
+    "complexity": "M",
+    "epic": "Template Management",
+    "dependencies": ["US-005", "US-006", "US-015"]
+  },
+  {
+    "us_id": "US-011",
+    "title": "Scriban template engine integration",
+    "status": "DONE",
+    "priority": "High",
+    "complexity": "M",
+    "epic": "Rendering Engine",
+    "dependencies": ["US-001"]
+  },
+  {
+    "us_id": "US-012",
+    "title": "Advanced rendering features (tables, lists, conditionals)",
+    "status": "DONE",
+    "priority": "High",
+    "complexity": "M",
+    "epic": "Rendering Engine",
+    "dependencies": ["US-011"]
+  },
+  {
+    "us_id": "US-013",
+    "title": "Channel-specific post-processing",
+    "status": "DONE",
+    "priority": "High",
+    "complexity": "L",
+    "epic": "Rendering Engine",
+    "dependencies": ["US-011"]
+  },
+  {
+    "us_id": "US-014",
+    "title": "Data source declaration and management",
+    "status": "DONE",
+    "priority": "High",
+    "complexity": "M",
+    "epic": "Data Source Connector",
+    "dependencies": ["US-002", "US-003"]
+  },
+  {
+    "us_id": "US-015",
+    "title": "SQL Server data connector implementation",
+    "status": "DONE",
+    "priority": "High",
+    "complexity": "M",
+    "epic": "Data Source Connector",
+    "dependencies": ["US-014"]
+  },
+  {
+    "us_id": "US-016",
+    "title": "Filter expression builder (AST)",
+    "status": "DONE",
+    "priority": "High",
+    "complexity": "L",
+    "epic": "Data Source Connector",
+    "dependencies": ["US-015"]
+  },
+  {
+    "us_id": "US-017",
+    "title": "REST API data connector (Phase 2)",
+    "status": "TODO",
+    "priority": "Medium",
+    "complexity": "M",
+    "epic": "Data Source Connector",
+    "dependencies": ["US-015"]
+  },
+  {
+    "us_id": "US-018",
+    "title": "Channel dispatcher abstraction",
+    "status": "DONE",
+    "priority": "High",
+    "complexity": "S",
+    "epic": "Dispatch Engine",
+    "dependencies": ["US-001"]
+  },
+  {
+    "us_id": "US-019",
+    "title": "Email dispatcher (SMTP)",
+    "status": "DONE",
+    "priority": "High",
+    "complexity": "M",
+    "epic": "Dispatch Engine",
+    "dependencies": ["US-018", "US-013"]
+  },
+  {
+    "us_id": "US-020",
+    "title": "SMS dispatcher",
+    "status": "DONE",
+    "priority": "High",
+    "complexity": "M",
+    "epic": "Dispatch Engine",
+    "dependencies": ["US-018", "US-013"]
+  },
+  {
+    "us_id": "US-021",
+    "title": "PDF letter dispatcher",
+    "status": "DONE",
+    "priority": "High",
+    "complexity": "L",
+    "epic": "Dispatch Engine",
+    "dependencies": ["US-018", "US-013"]
+  },
+  {
+    "us_id": "US-022",
+    "title": "Channel throttling and rate limiting",
+    "status": "TODO",
+    "priority": "Medium",
+    "complexity": "M",
+    "epic": "Dispatch Engine",
+    "dependencies": ["US-018", "US-019", "US-020", "US-021"]
+  },
+  {
+    "us_id": "US-023",
+    "title": "Campaign creation and configuration",
+    "status": "DONE",
+    "priority": "High",
+    "complexity": "L",
+    "epic": "Campaign Orchestrator",
+    "dependencies": ["US-005", "US-014", "US-016"]
+  },
+  {
+    "us_id": "US-024",
+    "title": "Multi-step campaign sequences",
+    "status": "DONE",
+    "priority": "High",
+    "complexity": "L",
+    "epic": "Campaign Orchestrator",
+    "dependencies": ["US-023"]
+  },
+  {
+    "us_id": "US-025",
+    "title": "Template snapshot for campaign integrity",
+    "status": "DONE",
+    "priority": "High",
+    "complexity": "M",
+    "epic": "Campaign Orchestrator",
+    "dependencies": ["US-023", "US-007"]
+  },
+  {
+    "us_id": "US-026",
+    "title": "Chunk-based batch processing with Hangfire",
+    "status": "DONE",
+    "priority": "High",
+    "complexity": "XL",
+    "epic": "Campaign Orchestrator",
+    "dependencies": ["US-023", "US-015"]
+  },
+  {
+    "us_id": "US-027",
+    "title": "Campaign status tracking and monitoring",
+    "status": "TODO",
+    "priority": "High",
+    "complexity": "M",
+    "epic": "Campaign Orchestrator",
+    "dependencies": ["US-023", "US-026"]
+  },
+  {
+    "us_id": "US-028",
+    "title": "Static and dynamic attachment management",
+    "status": "TODO",
+    "priority": "Medium",
+    "complexity": "M",
+    "epic": "Campaign Orchestrator",
+    "dependencies": ["US-023", "US-019"]
+  },
+  {
+    "us_id": "US-029",
+    "title": "CC and BCC management",
+    "status": "TODO",
+    "priority": "Medium",
+    "complexity": "S",
+    "epic": "Campaign Orchestrator",
+    "dependencies": ["US-023", "US-019"]
+  },
+  {
+    "us_id": "US-030",
+    "title": "Single send API endpoint",
+    "status": "DONE",
+    "priority": "High",
+    "complexity": "M",
+    "epic": "Generic Send API",
+    "dependencies": ["US-011", "US-018"]
+  },
+  {
+    "us_id": "US-031",
+    "title": "API authentication and authorization",
+    "status": "DONE",
+    "priority": "High",
+    "complexity": "M",
+    "epic": "Generic Send API",
+    "dependencies": ["US-030"]
+  },
+  {
+    "us_id": "US-032",
+    "title": "OpenAPI/Swagger documentation",
+    "status": "TODO",
+    "priority": "Medium",
+    "complexity": "S",
+    "epic": "Generic Send API",
+    "dependencies": ["US-030", "US-031"]
+  },
+  {
+    "us_id": "US-033",
+    "title": "API rate limiting per consumer",
+    "status": "TODO",
+    "priority": "Medium",
+    "complexity": "S",
+    "epic": "Generic Send API",
+    "dependencies": ["US-031"]
+  },
+  {
+    "us_id": "US-034",
+    "title": "Send logging and audit trail",
+    "status": "DONE",
+    "priority": "High",
+    "complexity": "M",
+    "epic": "Tracking & Audit",
+    "dependencies": ["US-018"]
+  },
+  {
+    "us_id": "US-035",
+    "title": "Retry mechanism with exponential backoff",
+    "status": "TODO",
+    "priority": "High",
+    "complexity": "M",
+    "epic": "Tracking & Audit",
+    "dependencies": ["US-034", "US-026"]
+  },
+  {
+    "us_id": "US-036",
+    "title": "Campaign progress dashboard",
+    "status": "TODO",
+    "priority": "Medium",
+    "complexity": "M",
+    "epic": "Reporting & Dashboards",
+    "dependencies": ["US-027", "US-034"]
+  },
+  {
+    "us_id": "US-037",
+    "title": "Fix build warnings: Scriban vulnerabilities and compiler warnings",
+    "status": "DONE",
+    "priority": "High",
+    "complexity": "S",
+    "epic": "Technical Debt & Maintenance",
+    "dependencies": []
+  },
+  {
+    "us_id": "US-038",
+    "title": "Upgrade Scriban to resolve high severity CVE GHSA-c875-h985-hvrc",
+    "status": "TODO",
+    "priority": "High",
+    "complexity": "S",
+    "epic": "Technical Debt & Maintenance",
+    "dependencies": []
+  }
+]
