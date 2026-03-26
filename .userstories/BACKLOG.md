@@ -1908,7 +1908,8 @@
 ---
 
 #### [US-038] - Upgrade Scriban to resolve high severity CVE GHSA-c875-h985-hvrc
-**Status:** 🟡 TODO
+**Status:** 🔵 IN PROGRESS
+**Start date:** 2026-03-26 00:00:00
 **Priority:** 🔴 High
 **Complexity:** S
 **Epic:** Epic 10
