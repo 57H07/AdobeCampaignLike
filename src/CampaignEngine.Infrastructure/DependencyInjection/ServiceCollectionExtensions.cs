@@ -294,6 +294,9 @@ public static class ServiceCollectionExtensions
         // Audit trail for authentication events.
         services.AddScoped<IAuthAuditService, AuthAuditService>();
 
+        // Identity service — abstracts UserManager/SignInManager for the Web layer.
+        services.AddScoped<IIdentityService, IdentityService>();
+
         // ----------------------------------------------------------------
         // API key management and authentication (US-031)
         // ApiKeyService handles key generation (BCrypt), validation, revocation, rotation.

@@ -1,8 +1,6 @@
 using CampaignEngine.Application.Interfaces;
-using CampaignEngine.Infrastructure.Identity;
 using CampaignEngine.Web.ViewModels.UserManagement;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
@@ -15,7 +13,7 @@ namespace CampaignEngine.Web.Pages.Admin.Users;
 [Authorize(Policy = CampaignEngine.Application.DependencyInjection.AuthorizationPolicies.RequireAdmin)]
 public class EditRoleModel : PageModel
 {
-    private readonly UserManager<ApplicationUser> _userManager;
+    private readonly IIdentityService _identityService;
     private readonly IAuthAuditService _auditService;
     private readonly ICurrentUserService _currentUserService;
 
@@ -23,31 +21,29 @@ public class EditRoleModel : PageModel
     public EditUserRoleViewModel Input { get; set; } = new();
 
     public EditRoleModel(
-        UserManager<ApplicationUser> userManager,
+        IIdentityService identityService,
         IAuthAuditService auditService,
         ICurrentUserService currentUserService)
     {
-        _userManager = userManager;
+        _identityService = identityService;
         _auditService = auditService;
         _currentUserService = currentUserService;
     }
 
     public async Task<IActionResult> OnGetAsync(string id)
     {
-        var user = await _userManager.FindByIdAsync(id);
+        var user = await _identityService.GetUserByIdAsync(id);
         if (user == null) return NotFound();
-
-        var roles = await _userManager.GetRolesAsync(user);
 
         Input = new EditUserRoleViewModel
         {
             UserId = user.Id,
-            UserName = user.UserName ?? string.Empty,
-            Email = user.Email ?? string.Empty,
+            UserName = user.UserName,
+            Email = user.Email,
             DisplayName = user.DisplayName,
             IsActive = user.IsActive,
-            CurrentRoles = roles.ToList(),
-            SelectedRole = roles.FirstOrDefault() ?? CampaignEngine.Domain.Enums.UserRole.Default
+            CurrentRoles = user.Roles.ToList(),
+            SelectedRole = user.Roles.FirstOrDefault() ?? CampaignEngine.Domain.Enums.UserRole.Default
         };
 
         return Page();
@@ -57,9 +53,6 @@ public class EditRoleModel : PageModel
     {
         if (!ModelState.IsValid) return Page();
 
-        var user = await _userManager.FindByIdAsync(Input.UserId);
-        if (user == null) return NotFound();
-
         // Validate the selected role is one of the known roles
         if (!CampaignEngine.Domain.Enums.UserRole.All.Contains(Input.SelectedRole))
         {
@@ -67,31 +60,31 @@ public class EditRoleModel : PageModel
             return Page();
         }
 
-        // Remove all existing roles, assign selected role
-        var existingRoles = await _userManager.GetRolesAsync(user);
-        foreach (var existingRole in existingRoles)
+        // Get the user's current roles before reassignment for audit logging
+        var existingUser = await _identityService.GetUserByIdAsync(Input.UserId);
+        if (existingUser == null) return NotFound();
+
+        var previousRoles = existingUser.Roles;
+
+        var result = await _identityService.AssignRoleAsync(Input.UserId, Input.SelectedRole);
+        if (result == null) return NotFound();
+
+        var (userId, userName) = result.Value;
+        var adminUserId = _currentUserService.UserId ?? "system";
+        var adminUserName = _currentUserService.UserName ?? "system";
+
+        foreach (var existingRole in previousRoles)
         {
-            await _userManager.RemoveFromRoleAsync(user, existingRole);
             await _auditService.LogRoleRemovedAsync(
-                _currentUserService.UserId ?? "system",
-                _currentUserService.UserName ?? "system",
-                user.Id,
-                user.UserName ?? user.Email ?? user.Id,
-                existingRole);
+                adminUserId, adminUserName, userId, userName, existingRole);
         }
 
-        await _userManager.AddToRoleAsync(user, Input.SelectedRole);
-
         await _auditService.LogRoleAssignedAsync(
-            _currentUserService.UserId ?? "system",
-            _currentUserService.UserName ?? "system",
-            user.Id,
-            user.UserName ?? user.Email ?? user.Id,
-            Input.SelectedRole);
+            adminUserId, adminUserName, userId, userName, Input.SelectedRole);
 
         return RedirectToPage("Index", new
         {
-            message = $"Role '{Input.SelectedRole}' assigned to user '{user.UserName}'.",
+            message = $"Role '{Input.SelectedRole}' assigned to user '{userName}'.",
             success = true
         });
     }

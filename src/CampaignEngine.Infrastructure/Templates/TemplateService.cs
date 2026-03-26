@@ -4,6 +4,7 @@ using CampaignEngine.Domain.Entities;
 using CampaignEngine.Domain.Enums;
 using CampaignEngine.Domain.Exceptions;
 using CampaignEngine.Infrastructure.Persistence;
+using Mapster;
 using Microsoft.EntityFrameworkCore;
 
 namespace CampaignEngine.Infrastructure.Templates;
@@ -63,7 +64,7 @@ public sealed class TemplateService : ITemplateService
 
         return new TemplatePagedResult
         {
-            Items = items.Select(MapToDto).ToList().AsReadOnly(),
+            Items = items.Select(t => t.Adapt<TemplateDto>()).ToList().AsReadOnly(),
             Total = total,
             Page = page,
             PageSize = pageSize,
@@ -181,15 +182,7 @@ public sealed class TemplateService : ITemplateService
             .ThenBy(t => t.Name)
             .ToListAsync(cancellationToken);
 
-        return items.Select(t => new TemplateSummaryDto
-        {
-            Id = t.Id,
-            Name = t.Name,
-            Channel = t.Channel.ToString(),
-            Status = t.Status.ToString(),
-            IsSubTemplate = t.IsSubTemplate,
-            Description = t.Description
-        }).ToList().AsReadOnly();
+        return items.Select(t => t.Adapt<TemplateSummaryDto>()).ToList().AsReadOnly();
     }
 
     // ----------------------------------------------------------------
@@ -289,7 +282,7 @@ public sealed class TemplateService : ITemplateService
             .OrderByDescending(h => h.Version)
             .ToListAsync(cancellationToken);
 
-        return history.Select(MapHistoryToDto).ToList().AsReadOnly();
+        return history.Select(h => h.Adapt<TemplateHistoryDto>()).ToList().AsReadOnly();
     }
 
     /// <inheritdoc />
@@ -439,29 +432,4 @@ public sealed class TemplateService : ITemplateService
         }
     }
 
-    private static TemplateDto MapToDto(Template t) => new()
-    {
-        Id = t.Id,
-        Name = t.Name,
-        Channel = t.Channel.ToString(),
-        HtmlBody = t.HtmlBody,
-        Status = t.Status.ToString(),
-        Version = t.Version,
-        IsSubTemplate = t.IsSubTemplate,
-        Description = t.Description,
-        CreatedAt = t.CreatedAt,
-        UpdatedAt = t.UpdatedAt
-    };
-
-    private static TemplateHistoryDto MapHistoryToDto(TemplateHistory h) => new()
-    {
-        Id = h.Id,
-        TemplateId = h.TemplateId,
-        Version = h.Version,
-        Name = h.Name,
-        Channel = h.Channel.ToString(),
-        HtmlBody = h.HtmlBody,
-        ChangedBy = h.ChangedBy,
-        CreatedAt = h.CreatedAt
-    };
 }

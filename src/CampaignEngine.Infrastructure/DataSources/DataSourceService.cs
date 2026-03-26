@@ -3,6 +3,7 @@ using CampaignEngine.Application.Interfaces;
 using CampaignEngine.Domain.Entities;
 using CampaignEngine.Domain.Exceptions;
 using CampaignEngine.Infrastructure.Persistence;
+using Mapster;
 using Microsoft.EntityFrameworkCore;
 
 namespace CampaignEngine.Infrastructure.DataSources;
@@ -79,7 +80,7 @@ public sealed class DataSourceService : IDataSourceService
             "DataSource created. Id={DataSourceId}, Name={Name}, Type={Type}",
             dataSource.Id, dataSource.Name, dataSource.Type);
 
-        return MapToDto(dataSource);
+        return dataSource.Adapt<DataSourceDto>();
     }
 
     /// <inheritdoc />
@@ -121,7 +122,7 @@ public sealed class DataSourceService : IDataSourceService
             "DataSource updated. Id={DataSourceId}, Name={Name}",
             dataSource.Id, dataSource.Name);
 
-        return MapToDto(dataSource);
+        return dataSource.Adapt<DataSourceDto>();
     }
 
     /// <inheritdoc />
@@ -155,7 +156,7 @@ public sealed class DataSourceService : IDataSourceService
 
         return new DataSourcePagedResult
         {
-            Items = items.Select(MapToDto).ToList(),
+            Items = items.Select(d => d.Adapt<DataSourceDto>()).ToList(),
             Total = total,
             Page = page,
             PageSize = pageSize
@@ -171,7 +172,7 @@ public sealed class DataSourceService : IDataSourceService
             .Include(d => d.Fields)
             .FirstOrDefaultAsync(d => d.Id == id, cancellationToken);
 
-        return dataSource is null ? null : MapToDto(dataSource);
+        return dataSource is null ? null : dataSource.Adapt<DataSourceDto>();
     }
 
     /// <inheritdoc />
@@ -241,7 +242,7 @@ public sealed class DataSourceService : IDataSourceService
             "DataSource schema updated. Id={DataSourceId}, FieldCount={Count}",
             id, fields.Count);
 
-        return MapToDto(dataSource);
+        return dataSource.Adapt<DataSourceDto>();
     }
 
     /// <inheritdoc />
@@ -264,34 +265,7 @@ public sealed class DataSourceService : IDataSourceService
             "DataSource IsActive changed. Id={DataSourceId}, IsActive={IsActive}",
             id, isActive);
 
-        return MapToDto(dataSource);
+        return dataSource.Adapt<DataSourceDto>();
     }
 
-    // ----------------------------------------------------------------
-    // Private mapping helpers
-    // ----------------------------------------------------------------
-
-    private static DataSourceDto MapToDto(DataSource ds) => new()
-    {
-        Id = ds.Id,
-        Name = ds.Name,
-        Type = ds.Type,
-        Description = ds.Description,
-        IsActive = ds.IsActive,
-        HasConnectionString = !string.IsNullOrEmpty(ds.EncryptedConnectionString),
-        Fields = ds.Fields
-            .OrderBy(f => f.FieldName)
-            .Select(f => new DataSourceFieldDto
-            {
-                Id = f.Id,
-                FieldName = f.FieldName,
-                DataType = f.DataType,
-                IsFilterable = f.IsFilterable,
-                IsRecipientAddress = f.IsRecipientAddress,
-                Description = f.Description
-            })
-            .ToList(),
-        CreatedAt = ds.CreatedAt,
-        UpdatedAt = ds.UpdatedAt
-    };
 }

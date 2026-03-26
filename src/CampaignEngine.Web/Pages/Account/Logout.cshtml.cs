@@ -1,7 +1,5 @@
 using CampaignEngine.Application.Interfaces;
-using CampaignEngine.Infrastructure.Identity;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
@@ -13,16 +11,16 @@ namespace CampaignEngine.Web.Pages.Account;
 [AllowAnonymous]
 public class LogoutModel : PageModel
 {
-    private readonly SignInManager<ApplicationUser> _signInManager;
+    private readonly IIdentityService _identityService;
     private readonly IAuthAuditService _auditService;
     private readonly ICurrentUserService _currentUserService;
 
     public LogoutModel(
-        SignInManager<ApplicationUser> signInManager,
+        IIdentityService identityService,
         IAuthAuditService auditService,
         ICurrentUserService currentUserService)
     {
-        _signInManager = signInManager;
+        _identityService = identityService;
         _auditService = auditService;
         _currentUserService = currentUserService;
     }
@@ -33,7 +31,7 @@ public class LogoutModel : PageModel
         var userName = _currentUserService.UserName;
         var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
 
-        await _signInManager.SignOutAsync();
+        await _identityService.SignOutAsync();
 
         if (userId != null && userName != null)
         {

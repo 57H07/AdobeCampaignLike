@@ -1,6 +1,8 @@
 using CampaignEngine.Application.Interfaces;
+using CampaignEngine.Application.Mappings;
 using CampaignEngine.Application.Services;
 using CampaignEngine.Domain.Enums;
+using Mapster;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -14,6 +16,14 @@ public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddApplication(this IServiceCollection services)
     {
+        // ----------------------------------------------------------------
+        // Mapster — centralized mapping configuration
+        // Sets global TypeAdapterConfig so that entity.Adapt<TDto>() works
+        // throughout the application without injecting IMapper.
+        // ----------------------------------------------------------------
+        var mappingConfig = MappingConfig.GetTypeAdapterConfig();
+        services.AddSingleton(mappingConfig);
+
         // ----------------------------------------------------------------
         // Single send — request validation (stateless, no infrastructure deps)
         // ----------------------------------------------------------------

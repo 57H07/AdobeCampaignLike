@@ -3,6 +3,7 @@ using CampaignEngine.Application.Interfaces;
 using CampaignEngine.Domain.Entities;
 using CampaignEngine.Domain.Exceptions;
 using CampaignEngine.Infrastructure.Persistence;
+using Mapster;
 using Microsoft.EntityFrameworkCore;
 
 namespace CampaignEngine.Infrastructure.Campaigns;
@@ -117,24 +118,10 @@ public sealed class TemplateSnapshotService : ITemplateSnapshotService
             if (step.TemplateSnapshot is null) continue;
             if (!seen.Add(step.TemplateSnapshot.Id)) continue;
 
-            result.Add(MapToDto(step.TemplateSnapshot));
+            result.Add(step.TemplateSnapshot.Adapt<TemplateSnapshotDto>());
         }
 
         return result;
     }
 
-    // ----------------------------------------------------------------
-    // Private mapping helpers
-    // ----------------------------------------------------------------
-
-    private static TemplateSnapshotDto MapToDto(TemplateSnapshot s) => new()
-    {
-        Id = s.Id,
-        OriginalTemplateId = s.OriginalTemplateId,
-        TemplateVersion = s.TemplateVersion,
-        Name = s.Name,
-        Channel = s.Channel.ToString(),
-        ResolvedHtmlBody = s.ResolvedHtmlBody,
-        CreatedAt = s.CreatedAt
-    };
 }

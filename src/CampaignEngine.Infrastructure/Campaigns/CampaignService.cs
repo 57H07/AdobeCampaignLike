@@ -4,6 +4,7 @@ using CampaignEngine.Domain.Entities;
 using CampaignEngine.Domain.Enums;
 using CampaignEngine.Domain.Exceptions;
 using CampaignEngine.Infrastructure.Persistence;
+using Mapster;
 using Microsoft.EntityFrameworkCore;
 
 namespace CampaignEngine.Infrastructure.Campaigns;
@@ -203,7 +204,7 @@ public sealed class CampaignService : ICampaignService
 
         return new CampaignPagedResult
         {
-            Items = items.Select(MapToDto).ToList(),
+            Items = items.Select(c => c.Adapt<CampaignDto>()).ToList(),
             Total = total,
             Page = page,
             PageSize = pageSize
@@ -220,7 +221,7 @@ public sealed class CampaignService : ICampaignService
             .Include(c => c.DataSource)
             .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
 
-        return campaign is null ? null : MapToDto(campaign);
+        return campaign is null ? null : campaign.Adapt<CampaignDto>();
     }
 
     /// <inheritdoc />
@@ -268,45 +269,4 @@ public sealed class CampaignService : ICampaignService
                ?? throw new InvalidOperationException("Campaign was scheduled but could not be retrieved.");
     }
 
-    // ----------------------------------------------------------------
-    // Private mapping helpers
-    // ----------------------------------------------------------------
-
-    private static CampaignDto MapToDto(Campaign c) => new()
-    {
-        Id = c.Id,
-        Name = c.Name,
-        Status = c.Status.ToString(),
-        DataSourceId = c.DataSourceId,
-        DataSourceName = c.DataSource?.Name,
-        FilterExpression = c.FilterExpression,
-        FreeFieldValues = c.FreeFieldValues,
-        ScheduledAt = c.ScheduledAt,
-        StartedAt = c.StartedAt,
-        CompletedAt = c.CompletedAt,
-        TotalRecipients = c.TotalRecipients,
-        ProcessedCount = c.ProcessedCount,
-        SuccessCount = c.SuccessCount,
-        FailureCount = c.FailureCount,
-        CreatedBy = c.CreatedBy,
-        Steps = c.Steps
-            .OrderBy(s => s.StepOrder)
-            .Select(MapStepToDto)
-            .ToList(),
-        CreatedAt = c.CreatedAt,
-        UpdatedAt = c.UpdatedAt
-    };
-
-    private static CampaignStepDto MapStepToDto(CampaignStep s) => new()
-    {
-        Id = s.Id,
-        StepOrder = s.StepOrder,
-        Channel = s.Channel.ToString(),
-        TemplateId = s.TemplateId,
-        DelayDays = s.DelayDays,
-        StepFilter = s.StepFilter,
-        ScheduledAt = s.ScheduledAt,
-        ExecutedAt = s.ExecutedAt,
-        TemplateSnapshotId = s.TemplateSnapshotId
-    };
 }
