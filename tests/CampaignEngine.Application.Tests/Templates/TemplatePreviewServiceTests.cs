@@ -6,7 +6,6 @@ using CampaignEngine.Domain.Entities;
 using CampaignEngine.Domain.Enums;
 using CampaignEngine.Domain.Exceptions;
 using CampaignEngine.Infrastructure.Persistence;
-using CampaignEngine.Infrastructure.Persistence.Security;
 using CampaignEngine.Infrastructure.Templates;
 using Microsoft.EntityFrameworkCore;
 

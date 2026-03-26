@@ -5,7 +5,6 @@ using CampaignEngine.Domain.Enums;
 using CampaignEngine.Domain.Exceptions;
 using CampaignEngine.Infrastructure.DataSources;
 using CampaignEngine.Infrastructure.Persistence;
-using CampaignEngine.Infrastructure.Persistence.Security;
 using Microsoft.EntityFrameworkCore;
 using Moq;
 

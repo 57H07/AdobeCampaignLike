@@ -4,7 +4,6 @@ using CampaignEngine.Application.Interfaces;
 using CampaignEngine.Domain.Exceptions;
 using CampaignEngine.Domain.Filters;
 using CampaignEngine.Infrastructure.Persistence;
-using CampaignEngine.Infrastructure.Persistence.Security;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 
