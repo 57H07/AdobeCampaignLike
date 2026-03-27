@@ -26,6 +26,119 @@
 }
 
 @* ------------------------------------------------------------------ *@
+@* Dashboard Status Cards (US-027) — shown when no filter is active    *@
+@* ------------------------------------------------------------------ *@
+@if (string.IsNullOrEmpty(Model.Filter.Status) && string.IsNullOrEmpty(Model.Filter.NameContains))
+{
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-4 col-lg-2">
+            <a asp-page="Index" asp-route-status="1" class="text-decoration-none">
+                <div class="card border-secondary h-100">
+                    <div class="card-body text-center py-3">
+                        <div class="fs-4 fw-bold text-secondary">@Model.StatusSummary.Draft</div>
+                        <div class="small text-muted">Draft</div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-6 col-md-4 col-lg-2">
+            <a asp-page="Index" asp-route-status="2" class="text-decoration-none">
+                <div class="card border-primary h-100">
+                    <div class="card-body text-center py-3">
+                        <div class="fs-4 fw-bold text-primary">@Model.StatusSummary.Scheduled</div>
+                        <div class="small text-muted">Scheduled</div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-6 col-md-4 col-lg-2">
+            <a asp-page="Index" asp-route-status="3" class="text-decoration-none">
+                <div class="card border-warning h-100">
+                    <div class="card-body text-center py-3">
+                        <div class="fs-4 fw-bold text-warning">@Model.StatusSummary.Active</div>
+                        <div class="small text-muted">Active</div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-6 col-md-4 col-lg-2">
+            <a asp-page="Index" asp-route-status="6" class="text-decoration-none">
+                <div class="card border-success h-100">
+                    <div class="card-body text-center py-3">
+                        <div class="fs-4 fw-bold text-success">@Model.StatusSummary.Completed</div>
+                        <div class="small text-muted">Completed</div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-6 col-md-4 col-lg-2">
+            <a asp-page="Index" asp-route-status="7" class="text-decoration-none">
+                <div class="card border-danger h-100">
+                    <div class="card-body text-center py-3">
+                        <div class="fs-4 fw-bold text-danger">@Model.StatusSummary.PartialFailure</div>
+                        <div class="small text-muted">Partial Failure</div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-6 col-md-4 col-lg-2">
+            <a asp-page="Index" asp-route-status="8" class="text-decoration-none">
+                <div class="card border-danger h-100">
+                    <div class="card-body text-center py-3">
+                        <div class="fs-4 fw-bold text-danger">@Model.StatusSummary.ManualReview</div>
+                        <div class="small text-muted">Manual Review</div>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    @* Active campaigns in-progress panel *@
+    @if (Model.ActiveCampaigns.Any())
+    {
+        <div class="card mb-4 border-warning">
+            <div class="card-header bg-warning bg-opacity-10 d-flex justify-content-between align-items-center">
+                <span class="fw-semibold">
+                    <i class="bi bi-activity text-warning"></i>
+                    Active Campaigns (@Model.ActiveCampaigns.Count)
+                </span>
+                <small class="text-muted">Currently running or processing</small>
+            </div>
+            <div class="card-body p-0">
+                @foreach (var c in Model.ActiveCampaigns)
+                {
+                    var pct = c.TotalRecipients > 0
+                        ? (int)(c.ProcessedCount * 100.0 / c.TotalRecipients)
+                        : 0;
+                    var barColor = c.FailureCount > 0 && c.TotalRecipients > 0
+                        ? (c.FailureCount * 100.0 / c.TotalRecipients >= 10 ? "bg-danger"
+                            : c.FailureCount * 100.0 / c.TotalRecipients >= 2 ? "bg-warning"
+                            : "bg-success")
+                        : "bg-success";
+                    <div class="p-3 border-bottom">
+                        <div class="d-flex justify-content-between align-items-start mb-1">
+                            <div>
+                                <a asp-page="Detail" asp-route-id="@c.Id" class="fw-semibold text-decoration-none">@c.Name</a>
+                                <span class="badge bg-warning text-dark ms-2">@c.Status</span>
+                            </div>
+                            <small class="text-muted text-nowrap">@c.ProcessedCount / @c.TotalRecipients</small>
+                        </div>
+                        <div class="progress" style="height: 8px;" title="@pct% processed">
+                            <div class="progress-bar @barColor" style="width: @pct%;" role="progressbar"
+                                 aria-valuenow="@pct" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                        @if (c.FailureCount > 0)
+                        {
+                            <small class="text-danger"><i class="bi bi-exclamation-circle"></i> @c.FailureCount failed</small>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    }
+}
+
+@* ------------------------------------------------------------------ *@
 @* Filter Panel                                                         *@
 @* ------------------------------------------------------------------ *@
 <div class="card mb-4">
@@ -42,8 +155,11 @@
                         <option value="1" selected="@(Model.Filter.Status == "1")">Draft</option>
                         <option value="2" selected="@(Model.Filter.Status == "2")">Scheduled</option>
                         <option value="3" selected="@(Model.Filter.Status == "3")">Running</option>
+                        <option value="4" selected="@(Model.Filter.Status == "4")">Step In Progress</option>
+                        <option value="5" selected="@(Model.Filter.Status == "5")">Waiting Next</option>
                         <option value="6" selected="@(Model.Filter.Status == "6")">Completed</option>
                         <option value="7" selected="@(Model.Filter.Status == "7")">Partial Failure</option>
+                        <option value="8" selected="@(Model.Filter.Status == "8")">Manual Review</option>
                     </select>
                 </div>
                 <div class="col-md-4">
@@ -78,6 +194,7 @@
                     <tr>
                         <th>Name</th>
                         <th>Status</th>
+                        <th>Progress</th>
                         <th>Data Source</th>
                         <th>Steps</th>
                         <th>Scheduled</th>
@@ -100,6 +217,9 @@
                             "ManualReview"  => "bg-danger",
                             _               => "bg-secondary"
                         };
+                        var pct = c.TotalRecipients > 0
+                            ? (int)(c.ProcessedCount * 100.0 / c.TotalRecipients)
+                            : 0;
                         <tr>
                             <td>
                                 <a asp-page="Detail" asp-route-id="@c.Id" class="fw-semibold text-decoration-none">@c.Name</a>
@@ -109,6 +229,25 @@
                                 }
                             </td>
                             <td><span class="badge @statusBadge">@c.Status</span></td>
+                            <td style="min-width: 120px;">
+                                @if (c.TotalRecipients > 0)
+                                {
+                                    <div class="progress" style="height:6px;" title="@pct% processed — @c.FailureCount failed">
+                                        <div class="progress-bar @(c.FailureCount > 0 ? "bg-warning" : "bg-success")"
+                                             style="width:@pct%"></div>
+                                    </div>
+                                    <small class="text-muted">@c.ProcessedCount/@c.TotalRecipients
+                                        @if (c.FailureCount > 0)
+                                        {
+                                            <span class="text-danger">(@c.FailureCount failed)</span>
+                                        }
+                                    </small>
+                                }
+                                else
+                                {
+                                    <small class="text-muted">—</small>
+                                }
+                            </td>
                             <td>
                                 @if (!string.IsNullOrEmpty(c.DataSourceName))
                                 {
@@ -141,7 +280,7 @@
                     @if (!Model.Items.Any())
                     {
                         <tr>
-                            <td colspan="7" class="text-center text-muted py-4">
+                            <td colspan="8" class="text-center text-muted py-4">
                                 No campaigns match the current filters.
                             </td>
                         </tr>
