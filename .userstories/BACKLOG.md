@@ -1659,12 +1659,12 @@
 - [ ] Chunk-level retry via Hangfire [AutomaticRetry] attribute
 
 **Technical tasks:**
-- [ ] `TASK-035-01` - **[Service]** Implement retry policy with exponential backoff
-- [ ] `TASK-035-02` - **[Service]** Transient failure detection (SMTP, SMS errors)
-- [ ] `TASK-035-03` - **[Hangfire]** Configure AutomaticRetry attribute on chunk jobs
-- [ ] `TASK-035-04` - **[Service]** Retry count tracking in SendLog
-- [ ] `TASK-035-05` - **[Test]** Retry logic tests
-- [ ] `TASK-035-06` - **[Test]** Exponential backoff timing tests
+- [x] `TASK-035-01` - **[Service]** Implement retry policy with exponential backoff ✅ 2026-03-27
+- [x] `TASK-035-02` - **[Service]** Transient failure detection (SMTP, SMS errors) ✅ 2026-03-27
+- [x] `TASK-035-03` - **[Hangfire]** Configure AutomaticRetry attribute on chunk jobs ✅ 2026-03-27
+- [x] `TASK-035-04` - **[Service]** Retry count tracking in SendLog ✅ 2026-03-27
+- [x] `TASK-035-05` - **[Test]** Retry logic tests ✅ 2026-03-27
+- [x] `TASK-035-06` - **[Test]** Exponential backoff timing tests ✅ 2026-03-27
 - [ ] `TASK-035-07` - **[Doc]** Retry policy documentation
 
 **Business rules:**
