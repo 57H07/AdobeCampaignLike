@@ -1316,8 +1316,8 @@
 - [x] `TASK-027-03` - **[Service]** Status transition service with validation ✅ 2026-03-27
 - [x] `TASK-027-04` - **[API]** GET /api/campaigns/{id}/status endpoint (real-time) ✅ 2026-03-27
 - [x] `TASK-027-05` - **[Frontend]** Campaign dashboard with status cards ✅ 2026-03-27
-- [ ] `TASK-027-06` - **[Frontend]** Progress bar component with live updates
-- [ ] `TASK-027-07` - **[Frontend]** Campaign detail view with status history
+- [x] `TASK-027-06` - **[Frontend]** Progress bar component with live updates ✅ 2026-03-27
+- [x] `TASK-027-07` - **[Frontend]** Campaign detail view with status history ✅ 2026-03-27
 - [ ] `TASK-027-08` - **[Test]** Status transition validation tests
 - [ ] `TASK-027-09` - **[Doc]** Campaign status lifecycle guide
 

@@ -70,24 +70,71 @@
 
         @if (Model.Campaign.Status != "Draft")
         {
-            <div class="card mb-4">
-                <div class="card-header"><h6 class="mb-0">Progress</h6></div>
-                <div class="card-body">
-                    <dl class="row mb-0">
-                        <dt class="col-sm-6">Total Recipients</dt>
-                        <dd class="col-sm-6">@Model.Campaign.TotalRecipients</dd>
-                        <dt class="col-sm-6">Processed</dt>
-                        <dd class="col-sm-6">@Model.Campaign.ProcessedCount</dd>
-                        <dt class="col-sm-6">Success</dt>
-                        <dd class="col-sm-6 text-success">@Model.Campaign.SuccessCount</dd>
-                        <dt class="col-sm-6">Failures</dt>
-                        <dd class="col-sm-6 text-danger">@Model.Campaign.FailureCount</dd>
-                    </dl>
-                    @if (Model.Campaign.TotalRecipients > 0)
+            var snap = Model.StatusSnapshot;
+            var pctLive = snap is not null && snap.TotalRecipients > 0
+                ? snap.ProgressPercent : 0;
+            var barColorLive = snap is not null && snap.TotalRecipients > 0 && snap.FailureCount > 0
+                ? (snap.FailureRatePercent >= 10 ? "bg-danger"
+                    : snap.FailureRatePercent >= 2 ? "bg-warning"
+                    : "bg-success")
+                : "bg-success";
+
+            <div class="card mb-4" id="progressCard">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">Progress</h6>
+                    @if (Model.IsActive)
                     {
-                        var pct = (int)(Model.Campaign.ProcessedCount * 100.0 / Model.Campaign.TotalRecipients);
-                        <div class="progress mt-2" style="height:8px;" title="@pct% processed">
-                            <div class="progress-bar" style="width:@pct%"></div>
+                        <small class="text-muted">
+                            <span class="spinner-border spinner-border-sm text-warning me-1" role="status"></span>
+                            Live — auto-refreshes every 10 s
+                        </small>
+                    }
+                </div>
+                <div class="card-body" id="progressBody">
+                    <dl class="row mb-2">
+                        <dt class="col-sm-6">Total Recipients</dt>
+                        <dd class="col-sm-6" id="totalRecipients">@(snap?.TotalRecipients ?? Model.Campaign.TotalRecipients)</dd>
+                        <dt class="col-sm-6">Processed</dt>
+                        <dd class="col-sm-6" id="processedCount">@(snap?.ProcessedCount ?? Model.Campaign.ProcessedCount)</dd>
+                        <dt class="col-sm-6">Success</dt>
+                        <dd class="col-sm-6 text-success" id="successCount">@(snap?.SuccessCount ?? Model.Campaign.SuccessCount)</dd>
+                        <dt class="col-sm-6">Failures</dt>
+                        <dd class="col-sm-6 text-danger" id="failureCount">@(snap?.FailureCount ?? Model.Campaign.FailureCount)</dd>
+                        @if (snap is not null && snap.TotalRecipients > 0)
+                        {
+                            <dt class="col-sm-6">Failure Rate</dt>
+                            <dd class="col-sm-6 @(snap.FailureRatePercent >= 10 ? "text-danger fw-bold" : snap.FailureRatePercent >= 2 ? "text-warning" : "text-muted")" id="failureRate">
+                                @snap.FailureRatePercent.ToString("0.00")%
+                                @if (snap.FailureRatePercent >= 10)
+                                {
+                                    <span class="badge bg-danger ms-1">Manual Review</span>
+                                }
+                                else if (snap.FailureRatePercent >= 2)
+                                {
+                                    <span class="badge bg-warning text-dark ms-1">Partial Failure</span>
+                                }
+                            </dd>
+                        }
+                    </dl>
+                    @if ((snap?.TotalRecipients ?? Model.Campaign.TotalRecipients) > 0)
+                    {
+                        <div class="progress" style="height:10px;" id="progressBarWrapper"
+                             title="@pctLive% processed — @(snap?.FailureCount ?? 0) failed">
+                            <div class="progress-bar @barColorLive" id="progressBar"
+                                 style="width:@pctLive%;"
+                                 role="progressbar"
+                                 aria-valuenow="@pctLive" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                        <div class="d-flex justify-content-between mt-1">
+                            <small class="text-muted" id="progressLabel">@pctLive% processed</small>
+                            @if (snap?.StartedAt.HasValue == true)
+                            {
+                                <small class="text-muted">Started: @snap.StartedAt.Value.ToString("yyyy-MM-dd HH:mm") UTC</small>
+                            }
+                            @if (snap?.CompletedAt.HasValue == true)
+                            {
+                                <small class="text-muted">Completed: @snap.CompletedAt.Value.ToString("yyyy-MM-dd HH:mm") UTC</small>
+                            }
                         </div>
                     }
                 </div>
@@ -264,5 +311,142 @@
                 </div>
             </div>
         }
+
+        @* ------------------------------------------------------------------ *@
+        @* Status Transition History (US-027)                                  *@
+        @* ------------------------------------------------------------------ *@
+        @if (Model.StatusSnapshot is not null && Model.StatusSnapshot.History.Any())
+        {
+            <div class="card mb-4">
+                <div class="card-header">
+                    <a class="text-decoration-none text-body d-flex justify-content-between"
+                       data-bs-toggle="collapse" href="#statusHistoryPanel" role="button">
+                        <span><i class="bi bi-clock-history"></i> Status History (@Model.StatusSnapshot.History.Count)</span>
+                        <i class="bi bi-chevron-down"></i>
+                    </a>
+                </div>
+                <div class="collapse show" id="statusHistoryPanel">
+                    <div class="card-body p-0">
+                        <table class="table table-sm mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Timestamp (UTC)</th>
+                                    <th>From</th>
+                                    <th></th>
+                                    <th>To</th>
+                                    <th>Reason</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var entry in Model.StatusSnapshot.History.OrderByDescending(h => h.OccurredAt))
+                                {
+                                    var fromBadge = entry.FromStatus switch
+                                    {
+                                        "Draft"          => "bg-secondary",
+                                        "Scheduled"      => "bg-primary",
+                                        "Running"        => "bg-warning text-dark",
+                                        "StepInProgress" => "bg-warning text-dark",
+                                        "WaitingNext"    => "bg-info text-dark",
+                                        "Completed"      => "bg-success",
+                                        "PartialFailure" => "bg-danger",
+                                        "ManualReview"   => "bg-danger",
+                                        _                => "bg-secondary"
+                                    };
+                                    var toBadge = entry.ToStatus switch
+                                    {
+                                        "Draft"          => "bg-secondary",
+                                        "Scheduled"      => "bg-primary",
+                                        "Running"        => "bg-warning text-dark",
+                                        "StepInProgress" => "bg-warning text-dark",
+                                        "WaitingNext"    => "bg-info text-dark",
+                                        "Completed"      => "bg-success",
+                                        "PartialFailure" => "bg-danger",
+                                        "ManualReview"   => "bg-danger",
+                                        _                => "bg-secondary"
+                                    };
+                                    <tr>
+                                        <td class="text-nowrap">
+                                            <small>@entry.OccurredAt.ToString("yyyy-MM-dd HH:mm:ss")</small>
+                                        </td>
+                                        <td><span class="badge @fromBadge">@entry.FromStatus</span></td>
+                                        <td class="text-muted text-center"><i class="bi bi-arrow-right"></i></td>
+                                        <td><span class="badge @toBadge">@entry.ToStatus</span></td>
+                                        <td>
+                                            @if (!string.IsNullOrEmpty(entry.Reason))
+                                            {
+                                                <small class="text-muted">@entry.Reason</small>
+                                            }
+                                            else
+                                            {
+                                                <small class="text-muted">—</small>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        }
     </div>
 </div>
+
+@* ------------------------------------------------------------------ *@
+@* Live progress auto-refresh (US-027) — active campaigns only        *@
+@* ------------------------------------------------------------------ *@
+@if (Model.IsActive)
+{
+    <script>
+        (function () {
+            var campaignId = '@Model.Campaign.Id';
+            var intervalMs = 10000; // 10 seconds
+
+            function refreshProgress() {
+                fetch('/api/campaigns/' + campaignId + '/status', {
+                    headers: { 'Accept': 'application/json' },
+                    credentials: 'same-origin'
+                })
+                .then(function (res) { return res.ok ? res.json() : null; })
+                .then(function (data) {
+                    if (!data) return;
+
+                    var total      = data.totalRecipients || 0;
+                    var processed  = data.processedCount || 0;
+                    var success    = data.successCount || 0;
+                    var failure    = data.failureCount || 0;
+                    var pct        = total > 0 ? Math.round(processed * 100 / total) : 0;
+                    var failRate   = total > 0 ? (failure * 100 / total) : 0;
+                    var barColor   = failure > 0 && total > 0
+                        ? (failRate >= 10 ? 'bg-danger' : failRate >= 2 ? 'bg-warning' : 'bg-success')
+                        : 'bg-success';
+
+                    var el = function (id) { return document.getElementById(id); };
+
+                    if (el('totalRecipients'))  el('totalRecipients').textContent  = total;
+                    if (el('processedCount'))   el('processedCount').textContent   = processed;
+                    if (el('successCount'))     el('successCount').textContent     = success;
+                    if (el('failureCount'))     el('failureCount').textContent     = failure;
+                    if (el('progressLabel'))    el('progressLabel').textContent    = pct + '% processed';
+
+                    var bar = el('progressBar');
+                    if (bar) {
+                        bar.style.width      = pct + '%';
+                        bar.className        = 'progress-bar ' + barColor;
+                        bar.setAttribute('aria-valuenow', pct);
+                    }
+
+                    // Stop polling when terminal status reached
+                    var terminal = ['Completed', 'PartialFailure', 'ManualReview'];
+                    if (terminal.indexOf(data.status) !== -1) {
+                        clearInterval(timer);
+                        window.location.reload();
+                    }
+                })
+                .catch(function () { /* silent — keep polling */ });
+            }
+
+            var timer = setInterval(refreshProgress, intervalMs);
+        })();
+    </script>
+}
