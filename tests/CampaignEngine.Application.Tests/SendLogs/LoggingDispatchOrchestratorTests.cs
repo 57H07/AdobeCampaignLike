@@ -226,7 +226,7 @@ public class LoggingDispatchOrchestratorTests
         _registry.Setup(r => r.HasDispatcher(ChannelType.Email)).Returns(true);
         _registry.Setup(r => r.GetDispatcher(ChannelType.Email)).Returns(mockDispatcher);
 
-        // Capture the onRetry callback and invoke it once to simulate a retry
+        // Override the retry policy to invoke the onRetry callback once to simulate a retry
         _retryPolicy
             .Setup(p => p.ExecuteAsync(
                 It.IsAny<Func<int, CancellationToken, Task<DispatchResult>>>(),
