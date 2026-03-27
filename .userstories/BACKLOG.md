@@ -1319,7 +1319,7 @@
 - [x] `TASK-027-06` - **[Frontend]** Progress bar component with live updates ✅ 2026-03-27
 - [x] `TASK-027-07` - **[Frontend]** Campaign detail view with status history ✅ 2026-03-27
 - [x] `TASK-027-08` - **[Test]** Status transition validation tests ✅ 2026-03-27
-- [ ] `TASK-027-09` - **[Doc]** Campaign status lifecycle guide
+- [x] `TASK-027-09` - **[Doc]** Campaign status lifecycle guide ✅ 2026-03-27
 
 **Business rules:**
 1. Status flow: Draft â†’ Scheduled â†’ Running â†’ StepInProgress â†’ Completed
