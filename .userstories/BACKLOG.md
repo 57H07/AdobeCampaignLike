@@ -1665,7 +1665,7 @@
 - [x] `TASK-035-04` - **[Service]** Retry count tracking in SendLog ✅ 2026-03-27
 - [x] `TASK-035-05` - **[Test]** Retry logic tests ✅ 2026-03-27
 - [x] `TASK-035-06` - **[Test]** Exponential backoff timing tests ✅ 2026-03-27
-- [ ] `TASK-035-07` - **[Doc]** Retry policy documentation
+- [x] `TASK-035-07` - **[Doc]** Retry policy documentation ✅ 2026-03-27
 
 **Business rules:**
 1. Max 3 retry attempts per send
