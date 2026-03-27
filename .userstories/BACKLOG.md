@@ -1636,7 +1636,7 @@
 ---
 
 #### [US-035] - Retry mechanism with exponential backoff
-**Status:** ðŸŸ¡ TODO
+
 **Priority:** ðŸ”´ High
 **Complexity:** M
 **Epic:** Tracking & Audit
