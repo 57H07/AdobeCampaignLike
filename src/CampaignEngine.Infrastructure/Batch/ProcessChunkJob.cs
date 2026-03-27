@@ -18,13 +18,15 @@ namespace CampaignEngine.Infrastructure.Batch;
 ///   4. Dispatches via the registered channel dispatcher with logging.
 ///   5. Reports completion metrics to IChunkCoordinatorService.
 ///
-/// Hangfire retry policy: configured at registration time via
-/// DisableAutomaticRetry attribute — manual retry is managed by
-/// the ChunkCoordinatorService.RecordChunkFailureAsync to allow
-/// tracking retry attempts in the database.
+/// Chunk-level retry policy (TASK-035-03):
+///   Hangfire AutomaticRetry is enabled with 3 attempts for transient
+///   infrastructure failures (e.g. DbContext failure, job queue issue).
+///   Individual send-level retries with exponential backoff (30s/2min/10min)
+///   are handled by IRetryPolicy within the dispatch loop.
+///   OnAttemptsExceeded = Delete removes the job from failed queue after exhaustion.
 /// </summary>
 [DisableConcurrentExecution(timeoutInSeconds: 3600)]
-[AutomaticRetry(Attempts = 0)] // Manual retry via ChunkCoordinatorService
+[AutomaticRetry(Attempts = 3, OnAttemptsExceeded = AttemptsExceededAction.Delete)]
 public sealed class ProcessChunkJob : IProcessChunkJob
 {
     private readonly CampaignEngineDbContext _dbContext;

@@ -147,7 +147,17 @@ public static class ServiceCollectionExtensions
         // Template preview service — renders a template with sample data for designer workflow (US-010).
         services.AddScoped<ITemplatePreviewService, TemplatePreviewService>();
 
-        // Logging dispatch orchestrator — wraps dispatchers with before/after SEND_LOG recording.
+        // Retry policy — exponential backoff (30s/2min/10min, max 3 attempts) for transient dispatch failures.
+        // Configured via CampaignEngine:BatchProcessing:MaxRetryAttempts and RetryDelaysSeconds.
+        // Registered as Singleton: stateless, configuration-driven.
+        services.AddSingleton<IRetryPolicy, RetryPolicy>();
+
+        // Transient failure detector — classifies exceptions as transient or permanent.
+        // Centralizes SMTP 4xx/network and SMS 429/5xx detection logic.
+        services.AddSingleton<ITransientFailureDetector, TransientFailureDetector>();
+
+        // Logging dispatch orchestrator — wraps dispatchers with before/after SEND_LOG recording
+        // and automatic retry via IRetryPolicy.
         services.AddScoped<ILoggingDispatchOrchestrator, LoggingDispatchOrchestrator>();
 
         // Channel dispatchers registered as IChannelDispatcher implementations.

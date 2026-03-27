@@ -5,13 +5,21 @@ using CampaignEngine.Domain.Enums;
 namespace CampaignEngine.Infrastructure.Dispatch;
 
 /// <summary>
-/// Orchestrates a single send attempt with full SEND_LOG lifecycle logging.
+/// Orchestrates a single send attempt with full SEND_LOG lifecycle logging
+/// and automatic retry on transient failures.
+///
 /// Wraps IChannelDispatcher calls to ensure every attempt is recorded:
-///   1. Log Pending  — before dispatch
+///   1. Log Pending  — before first dispatch attempt
 ///   2. Dispatch     — via the channel-specific IChannelDispatcher
 ///   3. Log Sent     — on success
-///   4. Log Failed   — on permanent failure
-///   5. Log Retrying — on transient failure
+///   4. Log Retrying — on transient failure (with retry count increment)
+///   5. Log Failed   — on permanent failure or after all retries exhausted
+///
+/// Retry policy (US-035):
+///   - Up to 3 retry attempts for transient failures
+///   - Exponential backoff: 30s / 2min / 10min
+///   - Retry count tracked in SendLog (RetryCount field)
+///   - Permanent failures are never retried
 ///
 /// Business rules (US-034):
 ///   - All sends logged before dispatch attempt (Pending)
@@ -22,21 +30,25 @@ public class LoggingDispatchOrchestrator : ILoggingDispatchOrchestrator
 {
     private readonly IChannelDispatcherRegistry _registry;
     private readonly ISendLogService _sendLogService;
+    private readonly IRetryPolicy _retryPolicy;
     private readonly IAppLogger<LoggingDispatchOrchestrator> _logger;
 
     public LoggingDispatchOrchestrator(
         IChannelDispatcherRegistry registry,
         ISendLogService sendLogService,
+        IRetryPolicy retryPolicy,
         IAppLogger<LoggingDispatchOrchestrator> logger)
     {
         _registry = registry;
         _sendLogService = sendLogService;
+        _retryPolicy = retryPolicy;
         _logger = logger;
     }
 
     /// <summary>
     /// Sends a message, logging the attempt to SEND_LOG before and after dispatch.
-    /// Returns the SendLog ID and the dispatch result.
+    /// Automatically retries on transient failures with exponential backoff.
+    /// Returns the SendLog ID and the final dispatch result.
     /// </summary>
     public async Task<(Guid SendLogId, DispatchResult Result)> SendWithLoggingAsync(
         DispatchRequest request,
@@ -57,34 +69,54 @@ public class LoggingDispatchOrchestrator : ILoggingDispatchOrchestrator
             correlationId: correlationId,
             cancellationToken: cancellationToken);
 
-        DispatchResult result;
-
-        try
-        {
-            // Step 2: Dispatch via channel-specific dispatcher
-            if (!_registry.HasDispatcher(request.Channel))
+        // Step 2: Execute with retry policy
+        var result = await _retryPolicy.ExecuteAsync(
+            operation: async (retryAttempt, ct) =>
             {
-                result = DispatchResult.Fail(
-                    $"No dispatcher registered for channel '{request.Channel}'.",
-                    isTransient: false);
-            }
-            else
-            {
-                var dispatcher = _registry.GetDispatcher(request.Channel);
-                result = await dispatcher.SendAsync(request, cancellationToken);
-            }
-        }
-        catch (Exception ex)
-        {
-            // Unexpected exception — treat as transient failure
-            result = DispatchResult.Fail(
-                $"Unhandled exception during dispatch: {ex.Message}",
-                isTransient: true);
+                var attemptCount = currentRetryCount + retryAttempt;
 
-            _logger.LogError(ex,
-                "Unhandled exception during dispatch — SendLogId={SendLogId} Channel={Channel} Recipient={Recipient}",
-                sendLogId, request.Channel, recipientAddress);
-        }
+                try
+                {
+                    if (!_registry.HasDispatcher(request.Channel))
+                    {
+                        return DispatchResult.Fail(
+                            $"No dispatcher registered for channel '{request.Channel}'.",
+                            isTransient: false);
+                    }
+
+                    var dispatcher = _registry.GetDispatcher(request.Channel);
+                    return await dispatcher.SendAsync(request, ct);
+                }
+                catch (Exception ex)
+                {
+                    // Unexpected exception — treat as transient failure
+                    var errorMsg = $"Unhandled exception during dispatch: {ex.Message}";
+
+                    _logger.LogError(ex,
+                        "Unhandled exception during dispatch — SendLogId={SendLogId} Channel={Channel} Recipient={Recipient} Attempt={Attempt}",
+                        sendLogId, request.Channel, recipientAddress, attemptCount + 1);
+
+                    return DispatchResult.Fail(errorMsg, isTransient: true);
+                }
+            },
+            onRetry: async (failedResult, retryAttemptNumber, delay) =>
+            {
+                var retryCount = currentRetryCount + retryAttemptNumber;
+
+                _logger.LogWarning(
+                    "Transient dispatch failure — SendLogId={SendLogId} Attempt={Attempt}/{Max} " +
+                    "RetryIn={DelaySeconds}s Error={Error}",
+                    sendLogId, retryAttemptNumber, _retryPolicy.MaxAttempts,
+                    delay.TotalSeconds, failedResult.ErrorDetail);
+
+                // Update SendLog with Retrying status and current retry count (TASK-035-04)
+                await _sendLogService.LogRetryingAsync(
+                    sendLogId,
+                    failedResult.ErrorDetail ?? "Transient failure — retrying",
+                    retryCount,
+                    cancellationToken);
+            },
+            cancellationToken: cancellationToken);
 
         // Step 3: Update SEND_LOG with final result
         if (result.Success)
@@ -96,14 +128,17 @@ public class LoggingDispatchOrchestrator : ILoggingDispatchOrchestrator
         }
         else if (result.IsTransientFailure)
         {
-            await _sendLogService.LogRetryingAsync(
+            // Transient failure after all retries exhausted — mark as Failed
+            // (RetryPolicy.ExecuteAsync has already called onRetry for each attempt)
+            await _sendLogService.LogFailedAsync(
                 sendLogId,
-                result.ErrorDetail ?? "Transient failure",
-                currentRetryCount + 1,
+                result.ErrorDetail ?? "Transient failure — max retries exhausted",
+                _retryPolicy.MaxAttempts,
                 cancellationToken);
         }
         else
         {
+            // Permanent failure — log with current retry count
             await _sendLogService.LogFailedAsync(
                 sendLogId,
                 result.ErrorDetail ?? "Permanent failure",

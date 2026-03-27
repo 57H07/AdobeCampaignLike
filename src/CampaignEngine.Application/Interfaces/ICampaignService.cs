@@ -37,4 +37,11 @@ public interface ICampaignService
     /// Throws ValidationException if transition is not allowed.
     /// </summary>
     Task<CampaignDto> ScheduleAsync(Guid id, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Returns a real-time status snapshot for a campaign, including progress counters
+    /// and the full status transition history.
+    /// Returns null if the campaign is not found.
+    /// </summary>
+    Task<CampaignStatusDto?> GetStatusAsync(Guid id, CancellationToken cancellationToken = default);
 }

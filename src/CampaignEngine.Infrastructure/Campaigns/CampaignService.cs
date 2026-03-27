@@ -21,17 +21,20 @@ public sealed class CampaignService : ICampaignService
     private readonly ICampaignRepository _campaignRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ITemplateSnapshotService _snapshotService;
+    private readonly ICampaignStatusService _statusService;
     private readonly IAppLogger<CampaignService> _logger;
 
     public CampaignService(
         ICampaignRepository campaignRepository,
         IUnitOfWork unitOfWork,
         ITemplateSnapshotService snapshotService,
+        ICampaignStatusService statusService,
         IAppLogger<CampaignService> logger)
     {
         _campaignRepository = campaignRepository;
         _unitOfWork = unitOfWork;
         _snapshotService = snapshotService;
+        _statusService = statusService;
         _logger = logger;
     }
 
@@ -176,6 +179,8 @@ public sealed class CampaignService : ICampaignService
         if (campaign is null)
             throw new NotFoundException("Campaign", id);
 
+        var previousStatus = campaign.Status;
+
         // Domain entity enforces: Draft status, ScheduledAt set, ≥5 min ahead
         campaign.Schedule();
 
@@ -183,11 +188,47 @@ public sealed class CampaignService : ICampaignService
         await _snapshotService.CreateSnapshotsForCampaignAsync(id, cancellationToken);
         await _unitOfWork.CommitAsync(cancellationToken);
 
+        // Log the status transition (US-027)
+        await _statusService.LogTransitionAsync(
+            id, previousStatus, campaign.Status, "Scheduled by operator", cancellationToken);
+
         _logger.LogInformation(
             "Campaign scheduled. Id={CampaignId}, ScheduledAt={ScheduledAt}",
             campaign.Id, campaign.ScheduledAt);
 
         return await GetByIdAsync(id, cancellationToken)
                ?? throw new InvalidOperationException("Campaign was scheduled but could not be retrieved.");
+    }
+
+    /// <inheritdoc />
+    public async Task<CampaignStatusDto?> GetStatusAsync(
+        Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        var campaign = await _campaignRepository.GetNoTrackingAsync(id, cancellationToken);
+        if (campaign is null)
+            return null;
+
+        var history = await _statusService.GetHistoryAsync(id, cancellationToken);
+
+        return new CampaignStatusDto
+        {
+            CampaignId = campaign.Id,
+            Name = campaign.Name,
+            Status = campaign.Status.ToString(),
+            TotalRecipients = campaign.TotalRecipients,
+            ProcessedCount = campaign.ProcessedCount,
+            SuccessCount = campaign.SuccessCount,
+            FailureCount = campaign.FailureCount,
+            StartedAt = campaign.StartedAt,
+            CompletedAt = campaign.CompletedAt,
+            History = history.Select(h => new CampaignStatusTransitionEntry
+            {
+                FromStatus = h.FromStatus,
+                ToStatus = h.ToStatus,
+                Reason = h.Reason,
+                OccurredAt = h.OccurredAt
+            }).ToList()
+        };
     }
 }

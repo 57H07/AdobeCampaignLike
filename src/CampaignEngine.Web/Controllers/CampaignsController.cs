@@ -218,6 +218,34 @@ public class CampaignsController : ControllerBase
     }
 
     // ----------------------------------------------------------------
+    // GET /api/campaigns/{id}/status
+    // ----------------------------------------------------------------
+
+    /// <summary>
+    /// Returns the real-time status snapshot for a campaign,
+    /// including progress counters and the full status transition history (US-027).
+    /// </summary>
+    /// <remarks>
+    /// This endpoint is designed for polling: call it every few seconds during campaign execution
+    /// to display live progress. The response includes processed/total counts, failure rate,
+    /// and an ordered log of all status transitions with timestamps.
+    /// </remarks>
+    /// <param name="id">Campaign GUID.</param>
+    [HttpGet("{id:guid}/status")]
+    [Authorize(Policy = AuthorizationPolicies.RequireAuthenticated)]
+    [ProducesResponseType(typeof(CampaignStatusDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<CampaignStatusDto>> GetCampaignStatus(
+        Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        var status = await _campaignService.GetStatusAsync(id, cancellationToken);
+        if (status is null) return NotFound();
+        return Ok(status);
+    }
+
+    // ----------------------------------------------------------------
     // POST /api/campaigns/estimate-recipients
     // ----------------------------------------------------------------
 
