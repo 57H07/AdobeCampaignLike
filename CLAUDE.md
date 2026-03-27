@@ -84,7 +84,7 @@ Follow existing test file structure. Use `FluentAssertions` for assertions, `Moq
 - **Never push `orchestrator/*` or `worktree-*` branches to `origin`.**
   These branches are created locally by the orchestration system and must stay local.
   Only `main` (and explicit feature branches created by the user) are pushed to `origin`.
-- Merge completed work into `main` locally, then push `main`.
+- Ask the user for merging completed work into `main`.
 - After merging, delete local orchestrator branches and remove any registered worktrees.
 
 ## Backlog & Docs
