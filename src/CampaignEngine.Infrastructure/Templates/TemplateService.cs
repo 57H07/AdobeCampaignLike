@@ -1,17 +1,16 @@
 using CampaignEngine.Application.DTOs.Templates;
 using CampaignEngine.Application.Interfaces;
+using CampaignEngine.Application.Interfaces.Repositories;
 using CampaignEngine.Domain.Entities;
 using CampaignEngine.Domain.Enums;
 using CampaignEngine.Domain.Exceptions;
-using CampaignEngine.Infrastructure.Persistence;
 using Mapster;
-using Microsoft.EntityFrameworkCore;
 
 namespace CampaignEngine.Infrastructure.Templates;
 
 /// <summary>
 /// Infrastructure implementation of ITemplateService.
-/// Persists templates to SQL Server via EF Core.
+/// Persists templates to SQL Server via EF Core through ITemplateRepository.
 /// Business rules enforced here:
 ///   - Template name must be unique within the same channel.
 ///   - Soft delete sets IsDeleted flag; record is preserved for audit.
@@ -19,18 +18,21 @@ namespace CampaignEngine.Infrastructure.Templates;
 /// </summary>
 public sealed class TemplateService : ITemplateService
 {
-    private readonly CampaignEngineDbContext _dbContext;
+    private readonly ITemplateRepository _templateRepository;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly IAppLogger<TemplateService> _logger;
     private readonly IPlaceholderManifestService _manifestService;
     private readonly IPlaceholderParserService _parserService;
 
     public TemplateService(
-        CampaignEngineDbContext dbContext,
+        ITemplateRepository templateRepository,
+        IUnitOfWork unitOfWork,
         IAppLogger<TemplateService> logger,
         IPlaceholderManifestService manifestService,
         IPlaceholderParserService parserService)
     {
-        _dbContext = dbContext;
+        _templateRepository = templateRepository;
+        _unitOfWork = unitOfWork;
         _logger = logger;
         _manifestService = manifestService;
         _parserService = parserService;
@@ -44,23 +46,8 @@ public sealed class TemplateService : ITemplateService
         int pageSize,
         CancellationToken cancellationToken = default)
     {
-        // The global query filter on Template already excludes soft-deleted records.
-        var query = _dbContext.Templates.AsNoTracking();
-
-        if (channel.HasValue)
-            query = query.Where(t => t.Channel == channel.Value);
-
-        if (status.HasValue)
-            query = query.Where(t => t.Status == status.Value);
-
-        var total = await query.CountAsync(cancellationToken);
-
-        var items = await query
-            .OrderBy(t => t.Channel)
-            .ThenBy(t => t.Name)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .ToListAsync(cancellationToken);
+        var (items, total) = await _templateRepository.GetPagedAsync(
+            channel, status, page, pageSize, cancellationToken);
 
         return new TemplatePagedResult
         {
@@ -75,9 +62,7 @@ public sealed class TemplateService : ITemplateService
     /// <inheritdoc />
     public async Task<Template?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        return await _dbContext.Templates
-            .AsNoTracking()
-            .FirstOrDefaultAsync(t => t.Id == id, cancellationToken);
+        return await _templateRepository.GetByIdNoTrackingAsync(id, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -98,8 +83,8 @@ public sealed class TemplateService : ITemplateService
             Version = 1
         };
 
-        _dbContext.Templates.Add(template);
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        await _templateRepository.AddAsync(template, cancellationToken);
+        await _unitOfWork.CommitAsync(cancellationToken);
 
         _logger.LogInformation(
             "Template created: Id={TemplateId}, Name={Name}, Channel={Channel}",
@@ -114,8 +99,7 @@ public sealed class TemplateService : ITemplateService
         UpdateTemplateRequest request,
         CancellationToken cancellationToken = default)
     {
-        var template = await _dbContext.Templates
-            .FirstOrDefaultAsync(t => t.Id == id, cancellationToken);
+        var template = await _templateRepository.GetTrackedAsync(id, cancellationToken);
 
         if (template is null)
             throw new NotFoundException(nameof(Template), id);
@@ -133,7 +117,7 @@ public sealed class TemplateService : ITemplateService
             Channel = template.Channel,
             ChangedBy = request.ChangedBy
         };
-        _dbContext.TemplateHistories.Add(snapshot);
+        await _templateRepository.AddHistoryAsync(snapshot, cancellationToken);
 
         // Apply changes and increment version
         template.Name = request.Name;
@@ -144,7 +128,7 @@ public sealed class TemplateService : ITemplateService
         if (request.IsSubTemplate.HasValue)
             template.IsSubTemplate = request.IsSubTemplate.Value;
 
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        await _unitOfWork.CommitAsync(cancellationToken);
 
         _logger.LogInformation(
             "Template updated: Id={TemplateId}, Name={Name}, Version={Version}",
@@ -156,8 +140,7 @@ public sealed class TemplateService : ITemplateService
     /// <inheritdoc />
     public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        var template = await _dbContext.Templates
-            .FirstOrDefaultAsync(t => t.Id == id, cancellationToken);
+        var template = await _templateRepository.GetTrackedAsync(id, cancellationToken);
 
         if (template is null)
             throw new NotFoundException(nameof(Template), id);
@@ -165,7 +148,7 @@ public sealed class TemplateService : ITemplateService
         template.IsDeleted = true;
         template.DeletedAt = DateTime.UtcNow;
 
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        await _unitOfWork.CommitAsync(cancellationToken);
 
         _logger.LogInformation(
             "Template soft-deleted: Id={TemplateId}, Name={Name}", template.Id, template.Name);
@@ -175,13 +158,7 @@ public sealed class TemplateService : ITemplateService
     public async Task<IReadOnlyList<TemplateSummaryDto>> GetSubTemplatesAsync(
         CancellationToken cancellationToken = default)
     {
-        var items = await _dbContext.Templates
-            .AsNoTracking()
-            .Where(t => t.IsSubTemplate)
-            .OrderBy(t => t.Channel)
-            .ThenBy(t => t.Name)
-            .ToListAsync(cancellationToken);
-
+        var items = await _templateRepository.GetSubTemplatesAsync(cancellationToken);
         return items.Select(t => t.Adapt<TemplateSummaryDto>()).ToList().AsReadOnly();
     }
 
@@ -192,8 +169,7 @@ public sealed class TemplateService : ITemplateService
     /// <inheritdoc />
     public async Task<Template> PublishAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        var template = await _dbContext.Templates
-            .FirstOrDefaultAsync(t => t.Id == id, cancellationToken);
+        var template = await _templateRepository.GetTrackedAsync(id, cancellationToken);
 
         if (template is null)
             throw new NotFoundException(nameof(Template), id);
@@ -221,7 +197,7 @@ public sealed class TemplateService : ITemplateService
 
         template.Status = TemplateStatus.Published;
 
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        await _unitOfWork.CommitAsync(cancellationToken);
 
         _logger.LogInformation(
             "Template published: Id={TemplateId}, Name={Name}", template.Id, template.Name);
@@ -236,8 +212,7 @@ public sealed class TemplateService : ITemplateService
     /// <inheritdoc />
     public async Task<Template> ArchiveAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        var template = await _dbContext.Templates
-            .FirstOrDefaultAsync(t => t.Id == id, cancellationToken);
+        var template = await _templateRepository.GetTrackedAsync(id, cancellationToken);
 
         if (template is null)
             throw new NotFoundException(nameof(Template), id);
@@ -251,7 +226,7 @@ public sealed class TemplateService : ITemplateService
 
         template.Status = TemplateStatus.Archived;
 
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        await _unitOfWork.CommitAsync(cancellationToken);
 
         _logger.LogInformation(
             "Template archived: Id={TemplateId}, Name={Name}", template.Id, template.Name);
@@ -269,18 +244,12 @@ public sealed class TemplateService : ITemplateService
         CancellationToken cancellationToken = default)
     {
         // Ensure template exists (including soft-deleted — history is always accessible)
-        var exists = await _dbContext.Templates
-            .IgnoreQueryFilters()
-            .AnyAsync(t => t.Id == id, cancellationToken);
+        var exists = await _templateRepository.ExistsIncludingDeletedAsync(id, cancellationToken);
 
         if (!exists)
             throw new NotFoundException(nameof(Template), id);
 
-        var history = await _dbContext.TemplateHistories
-            .AsNoTracking()
-            .Where(h => h.TemplateId == id)
-            .OrderByDescending(h => h.Version)
-            .ToListAsync(cancellationToken);
+        var history = await _templateRepository.GetHistoryAsync(id, cancellationToken);
 
         return history.Select(h => h.Adapt<TemplateHistoryDto>()).ToList().AsReadOnly();
     }
@@ -293,18 +262,13 @@ public sealed class TemplateService : ITemplateService
         CancellationToken cancellationToken = default)
     {
         // Get template (fromVersion and toVersion must exist)
-        var template = await _dbContext.Templates
-            .IgnoreQueryFilters()
-            .AsNoTracking()
-            .FirstOrDefaultAsync(t => t.Id == id, cancellationToken);
+        var template = await _templateRepository.GetIgnoreQueryFiltersAsync(id, cancellationToken);
 
         if (template is null)
             throw new NotFoundException(nameof(Template), id);
 
         // Resolve 'from' snapshot
-        var fromEntry = await _dbContext.TemplateHistories
-            .AsNoTracking()
-            .FirstOrDefaultAsync(h => h.TemplateId == id && h.Version == fromVersion, cancellationToken);
+        var fromEntry = await _templateRepository.GetHistoryEntryAsync(id, fromVersion, cancellationToken);
 
         if (fromEntry is null)
             throw new NotFoundException($"Version {fromVersion} of template", id);
@@ -325,9 +289,8 @@ public sealed class TemplateService : ITemplateService
             }
             else
             {
-                var toEntry = await _dbContext.TemplateHistories
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(h => h.TemplateId == id && h.Version == toVersion.Value, cancellationToken);
+                var toEntry = await _templateRepository.GetHistoryEntryAsync(
+                    id, toVersion.Value, cancellationToken);
 
                 if (toEntry is null)
                     throw new NotFoundException($"Version {toVersion.Value} of template", id);
@@ -366,15 +329,12 @@ public sealed class TemplateService : ITemplateService
         string? changedBy,
         CancellationToken cancellationToken = default)
     {
-        var template = await _dbContext.Templates
-            .FirstOrDefaultAsync(t => t.Id == id, cancellationToken);
+        var template = await _templateRepository.GetTrackedAsync(id, cancellationToken);
 
         if (template is null)
             throw new NotFoundException(nameof(Template), id);
 
-        var historyEntry = await _dbContext.TemplateHistories
-            .AsNoTracking()
-            .FirstOrDefaultAsync(h => h.TemplateId == id && h.Version == version, cancellationToken);
+        var historyEntry = await _templateRepository.GetHistoryEntryAsync(id, version, cancellationToken);
 
         if (historyEntry is null)
             throw new NotFoundException($"Version {version} of template", id);
@@ -390,14 +350,14 @@ public sealed class TemplateService : ITemplateService
             Channel = template.Channel,
             ChangedBy = changedBy
         };
-        _dbContext.TemplateHistories.Add(snapshot);
+        await _templateRepository.AddHistoryAsync(snapshot, cancellationToken);
 
         // Apply the historic content as a new version
         template.Name = historyEntry.Name;
         template.HtmlBody = historyEntry.HtmlBody;
         template.Version++;
 
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        await _unitOfWork.CommitAsync(cancellationToken);
 
         _logger.LogInformation(
             "Template reverted: Id={TemplateId}, RevertedToVersion={RevertedVersion}, NewVersion={NewVersion}",
@@ -416,14 +376,7 @@ public sealed class TemplateService : ITemplateService
         Guid? excludeId,
         CancellationToken cancellationToken)
     {
-        // The global query filter excludes soft-deleted records automatically.
-        var query = _dbContext.Templates
-            .Where(t => t.Name == name && t.Channel == channel);
-
-        if (excludeId.HasValue)
-            query = query.Where(t => t.Id != excludeId.Value);
-
-        var exists = await query.AnyAsync(cancellationToken);
+        var exists = await _templateRepository.NameExistsAsync(name, channel, excludeId, cancellationToken);
 
         if (exists)
         {
@@ -431,5 +384,4 @@ public sealed class TemplateService : ITemplateService
                 $"A template named '{name}' already exists for channel '{channel}'.");
         }
     }
-
 }

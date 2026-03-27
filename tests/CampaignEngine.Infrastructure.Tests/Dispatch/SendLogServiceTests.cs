@@ -2,6 +2,8 @@ using CampaignEngine.Application.Interfaces;
 using CampaignEngine.Domain.Entities;
 using CampaignEngine.Domain.Enums;
 using CampaignEngine.Infrastructure.Dispatch;
+using CampaignEngine.Infrastructure.Persistence;
+using CampaignEngine.Infrastructure.Persistence.Repositories;
 using CampaignEngine.Infrastructure.Tests.Persistence;
 
 namespace CampaignEngine.Infrastructure.Tests.Dispatch;
@@ -24,7 +26,9 @@ public class SendLogServiceTests : DbContextTestBase
     public SendLogServiceTests()
     {
         var mockLogger = new Mock<IAppLogger<SendLogService>>();
-        _service = new SendLogService(Context, mockLogger.Object);
+        var sendLogRepository = new SendLogRepository(Context);
+        var unitOfWork = new UnitOfWork(Context);
+        _service = new SendLogService(sendLogRepository, unitOfWork, mockLogger.Object);
     }
 
     // ----------------------------------------------------------------

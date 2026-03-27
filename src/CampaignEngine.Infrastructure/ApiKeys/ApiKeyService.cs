@@ -1,11 +1,10 @@
 using BCrypt.Net;
 using CampaignEngine.Application.DTOs.ApiKeys;
 using CampaignEngine.Application.Interfaces;
+using CampaignEngine.Application.Interfaces.Repositories;
 using CampaignEngine.Domain.Entities;
 using CampaignEngine.Domain.Exceptions;
-using CampaignEngine.Infrastructure.Persistence;
 using Mapster;
-using Microsoft.EntityFrameworkCore;
 
 namespace CampaignEngine.Infrastructure.ApiKeys;
 
@@ -32,12 +31,17 @@ public sealed class ApiKeyService : IApiKeyService
     // Key prefix to make CampaignEngine keys recognisable.
     private const string KeyPrefix = "ce_";
 
-    private readonly CampaignEngineDbContext _db;
+    private readonly IApiKeyRepository _apiKeyRepository;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly IAppLogger<ApiKeyService> _logger;
 
-    public ApiKeyService(CampaignEngineDbContext db, IAppLogger<ApiKeyService> logger)
+    public ApiKeyService(
+        IApiKeyRepository apiKeyRepository,
+        IUnitOfWork unitOfWork,
+        IAppLogger<ApiKeyService> logger)
     {
-        _db = db;
+        _apiKeyRepository = apiKeyRepository;
+        _unitOfWork = unitOfWork;
         _logger = logger;
     }
 
@@ -48,8 +52,7 @@ public sealed class ApiKeyService : IApiKeyService
         CancellationToken cancellationToken = default)
     {
         // Check name uniqueness
-        var exists = await _db.ApiKeys
-            .AnyAsync(k => k.Name == request.Name, cancellationToken);
+        var exists = await _apiKeyRepository.ExistsWithNameAsync(request.Name, cancellationToken);
 
         if (exists)
             throw new ValidationException($"An API key with the name '{request.Name}' already exists.");
@@ -74,8 +77,8 @@ public sealed class ApiKeyService : IApiKeyService
             CreatedBy = createdByUserName
         };
 
-        _db.ApiKeys.Add(entity);
-        await _db.SaveChangesAsync(cancellationToken);
+        await _apiKeyRepository.AddAsync(entity, cancellationToken);
+        await _unitOfWork.CommitAsync(cancellationToken);
 
         _logger.LogInformation(
             "API key created — Id={KeyId} Name={KeyName} CreatedBy={CreatedBy} ExpiresAt={ExpiresAt}",
@@ -91,35 +94,28 @@ public sealed class ApiKeyService : IApiKeyService
     /// <inheritdoc />
     public async Task<IReadOnlyList<ApiKeyDto>> GetAllAsync(CancellationToken cancellationToken = default)
     {
-        var keys = await _db.ApiKeys
-            .AsNoTracking()
-            .OrderByDescending(k => k.CreatedAt)
-            .ToListAsync(cancellationToken);
-
+        var keys = await _apiKeyRepository.GetAllAsync(cancellationToken);
         return keys.Select(k => k.Adapt<ApiKeyDto>()).ToList().AsReadOnly();
     }
 
     /// <inheritdoc />
     public async Task<ApiKeyDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        var entity = await _db.ApiKeys
-            .AsNoTracking()
-            .FirstOrDefaultAsync(k => k.Id == id, cancellationToken);
-
+        var entity = await _apiKeyRepository.GetByIdNoTrackingAsync(id, cancellationToken);
         return entity is null ? null : entity.Adapt<ApiKeyDto>();
     }
 
     /// <inheritdoc />
     public async Task RevokeAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        var entity = await _db.ApiKeys.FindAsync([id], cancellationToken)
+        var entity = await _apiKeyRepository.GetByIdAsync(id, cancellationToken)
             ?? throw new NotFoundException("ApiKey", id);
 
         if (!entity.IsActive)
             throw new ValidationException($"API key '{entity.Name}' is already revoked.");
 
         entity.IsActive = false;
-        await _db.SaveChangesAsync(cancellationToken);
+        await _unitOfWork.CommitAsync(cancellationToken);
 
         _logger.LogWarning(
             "API key revoked — Id={KeyId} Name={KeyName}", entity.Id, entity.Name);
@@ -131,7 +127,7 @@ public sealed class ApiKeyService : IApiKeyService
         string rotatedByUserName,
         CancellationToken cancellationToken = default)
     {
-        var existing = await _db.ApiKeys.FindAsync([id], cancellationToken)
+        var existing = await _apiKeyRepository.GetByIdAsync(id, cancellationToken)
             ?? throw new NotFoundException("ApiKey", id);
 
         // Revoke the old key
@@ -148,7 +144,7 @@ public sealed class ApiKeyService : IApiKeyService
                 : null
         };
 
-        await _db.SaveChangesAsync(cancellationToken);
+        await _unitOfWork.CommitAsync(cancellationToken);
 
         _logger.LogInformation(
             "API key rotated — OldId={OldKeyId} OldName={OldKeyName} RotatedBy={RotatedBy}",
@@ -170,9 +166,7 @@ public sealed class ApiKeyService : IApiKeyService
         var prefix = plaintextKey[..8];
 
         // Fetch candidate keys by prefix — should be 0 or 1 in practice
-        var candidates = await _db.ApiKeys
-            .Where(k => k.KeyPrefix == prefix && k.IsActive)
-            .ToListAsync(cancellationToken);
+        var candidates = await _apiKeyRepository.GetActiveCandidatesByPrefixAsync(prefix, cancellationToken);
 
         foreach (var candidate in candidates)
         {
@@ -186,7 +180,7 @@ public sealed class ApiKeyService : IApiKeyService
 
             // Valid — update LastUsedAt
             candidate.LastUsedAt = DateTime.UtcNow;
-            await _db.SaveChangesAsync(cancellationToken);
+            await _unitOfWork.CommitAsync(cancellationToken);
 
             return candidate;
         }
@@ -212,5 +206,4 @@ public sealed class ApiKeyService : IApiKeyService
             .Replace("=", "");
         return KeyPrefix + base64;
     }
-
 }

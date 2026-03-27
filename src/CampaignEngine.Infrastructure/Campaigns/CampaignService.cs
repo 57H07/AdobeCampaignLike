@@ -1,11 +1,10 @@
 using CampaignEngine.Application.DTOs.Campaigns;
 using CampaignEngine.Application.Interfaces;
+using CampaignEngine.Application.Interfaces.Repositories;
 using CampaignEngine.Domain.Entities;
 using CampaignEngine.Domain.Enums;
 using CampaignEngine.Domain.Exceptions;
-using CampaignEngine.Infrastructure.Persistence;
 using Mapster;
-using Microsoft.EntityFrameworkCore;
 
 namespace CampaignEngine.Infrastructure.Campaigns;
 
@@ -21,16 +20,19 @@ public sealed class CampaignService : ICampaignService
 {
     private static readonly TimeSpan MinScheduleAhead = TimeSpan.FromMinutes(5);
 
-    private readonly CampaignEngineDbContext _dbContext;
+    private readonly ICampaignRepository _campaignRepository;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ITemplateSnapshotService _snapshotService;
     private readonly IAppLogger<CampaignService> _logger;
 
     public CampaignService(
-        CampaignEngineDbContext dbContext,
+        ICampaignRepository campaignRepository,
+        IUnitOfWork unitOfWork,
         ITemplateSnapshotService snapshotService,
         IAppLogger<CampaignService> logger)
     {
-        _dbContext = dbContext;
+        _campaignRepository = campaignRepository;
+        _unitOfWork = unitOfWork;
         _snapshotService = snapshotService;
         _logger = logger;
     }
@@ -46,8 +48,7 @@ public sealed class CampaignService : ICampaignService
         // ----------------------------------------------------------------
         // Validate: unique name
         // ----------------------------------------------------------------
-        var nameExists = await _dbContext.Campaigns
-            .AnyAsync(c => c.Name == request.Name, cancellationToken);
+        var nameExists = await _campaignRepository.ExistsWithNameAsync(request.Name, cancellationToken);
 
         if (nameExists)
             throw new ValidationException(new Dictionary<string, string[]>
@@ -96,10 +97,7 @@ public sealed class CampaignService : ICampaignService
         // Validate: only Published templates allowed
         // ----------------------------------------------------------------
         var templateIds = request.Steps.Select(s => s.TemplateId).Distinct().ToList();
-        var templates = await _dbContext.Templates
-            .Where(t => templateIds.Contains(t.Id))
-            .Select(t => new { t.Id, t.Name, t.Status, t.Channel })
-            .ToListAsync(cancellationToken);
+        var templates = await _campaignRepository.GetTemplateValidationsAsync(templateIds, cancellationToken);
 
         // Check all templates exist
         var missingIds = templateIds.Except(templates.Select(t => t.Id)).ToList();
@@ -122,8 +120,8 @@ public sealed class CampaignService : ICampaignService
         // ----------------------------------------------------------------
         if (request.DataSourceId.HasValue)
         {
-            var dsExists = await _dbContext.DataSources
-                .AnyAsync(d => d.Id == request.DataSourceId.Value, cancellationToken);
+            var dsExists = await _campaignRepository.DataSourceExistsAsync(
+                request.DataSourceId.Value, cancellationToken);
 
             if (!dsExists)
                 throw new ValidationException(new Dictionary<string, string[]>
@@ -160,8 +158,8 @@ public sealed class CampaignService : ICampaignService
             });
         }
 
-        _dbContext.Campaigns.Add(campaign);
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        await _campaignRepository.AddAsync(campaign, cancellationToken);
+        await _unitOfWork.CommitAsync(cancellationToken);
 
         _logger.LogInformation(
             "Campaign created. Id={CampaignId}, Name={Name}, Steps={StepCount}, CreatedBy={CreatedBy}",
@@ -177,38 +175,7 @@ public sealed class CampaignService : ICampaignService
         CampaignFilter filter,
         CancellationToken cancellationToken = default)
     {
-        var query = _dbContext.Campaigns
-            .Include(c => c.Steps)
-            .Include(c => c.DataSource)
-            .AsQueryable();
-
-        if (filter.Status.HasValue)
-            query = query.Where(c => c.Status == filter.Status.Value);
-
-        if (!string.IsNullOrWhiteSpace(filter.NameContains))
-            query = query.Where(c => c.Name.Contains(filter.NameContains));
-
-        if (filter.DataSourceId.HasValue)
-            query = query.Where(c => c.DataSourceId == filter.DataSourceId.Value);
-
-        var total = await query.CountAsync(cancellationToken);
-
-        var page = Math.Max(1, filter.Page);
-        var pageSize = Math.Clamp(filter.PageSize, 1, 100);
-
-        var items = await query
-            .OrderByDescending(c => c.CreatedAt)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .ToListAsync(cancellationToken);
-
-        return new CampaignPagedResult
-        {
-            Items = items.Select(c => c.Adapt<CampaignDto>()).ToList(),
-            Total = total,
-            Page = page,
-            PageSize = pageSize
-        };
+        return await _campaignRepository.GetPagedAsync(filter, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -216,11 +183,7 @@ public sealed class CampaignService : ICampaignService
         Guid id,
         CancellationToken cancellationToken = default)
     {
-        var campaign = await _dbContext.Campaigns
-            .Include(c => c.Steps)
-            .Include(c => c.DataSource)
-            .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
-
+        var campaign = await _campaignRepository.GetWithDetailsAsync(id, cancellationToken);
         return campaign is null ? null : campaign.Adapt<CampaignDto>();
     }
 
@@ -229,9 +192,7 @@ public sealed class CampaignService : ICampaignService
         Guid id,
         CancellationToken cancellationToken = default)
     {
-        var campaign = await _dbContext.Campaigns
-            .Include(c => c.Steps)
-            .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
+        var campaign = await _campaignRepository.GetWithStepsAsync(id, cancellationToken);
 
         if (campaign is null)
             throw new NotFoundException("Campaign", id);
@@ -259,7 +220,7 @@ public sealed class CampaignService : ICampaignService
         await _snapshotService.CreateSnapshotsForCampaignAsync(id, cancellationToken);
 
         campaign.Status = CampaignStatus.Scheduled;
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        await _unitOfWork.CommitAsync(cancellationToken);
 
         _logger.LogInformation(
             "Campaign scheduled. Id={CampaignId}, ScheduledAt={ScheduledAt}",
@@ -268,5 +229,4 @@ public sealed class CampaignService : ICampaignService
         return await GetByIdAsync(id, cancellationToken)
                ?? throw new InvalidOperationException("Campaign was scheduled but could not be retrieved.");
     }
-
 }

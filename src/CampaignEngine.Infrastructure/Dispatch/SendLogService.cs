@@ -1,8 +1,7 @@
 using CampaignEngine.Application.Interfaces;
+using CampaignEngine.Application.Interfaces.Repositories;
 using CampaignEngine.Domain.Entities;
 using CampaignEngine.Domain.Enums;
-using CampaignEngine.Infrastructure.Persistence;
-using Microsoft.EntityFrameworkCore;
 
 namespace CampaignEngine.Infrastructure.Dispatch;
 
@@ -17,12 +16,17 @@ namespace CampaignEngine.Infrastructure.Dispatch;
 /// </summary>
 public class SendLogService : ISendLogService
 {
-    private readonly CampaignEngineDbContext _db;
+    private readonly ISendLogRepository _sendLogRepository;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly IAppLogger<SendLogService> _logger;
 
-    public SendLogService(CampaignEngineDbContext db, IAppLogger<SendLogService> logger)
+    public SendLogService(
+        ISendLogRepository sendLogRepository,
+        IUnitOfWork unitOfWork,
+        IAppLogger<SendLogService> logger)
     {
-        _db = db;
+        _sendLogRepository = sendLogRepository;
+        _unitOfWork = unitOfWork;
         _logger = logger;
     }
 
@@ -48,8 +52,8 @@ public class SendLogService : ISendLogService
             RetryCount = 0
         };
 
-        _db.SendLogs.Add(entry);
-        await _db.SaveChangesAsync(cancellationToken);
+        await _sendLogRepository.AddAsync(entry, cancellationToken);
+        await _unitOfWork.CommitAsync(cancellationToken);
 
         _logger.LogInformation(
             "SendLog [{Status}] created — Id={SendLogId} CampaignId={CampaignId} Channel={Channel} Recipient={Recipient}",
@@ -70,7 +74,7 @@ public class SendLogService : ISendLogService
         entry.SentAt = sentAt;
         entry.ErrorDetail = null;
 
-        await _db.SaveChangesAsync(cancellationToken);
+        await _unitOfWork.CommitAsync(cancellationToken);
 
         _logger.LogInformation(
             "SendLog [{Status}] — Id={SendLogId} SentAt={SentAt}",
@@ -90,7 +94,7 @@ public class SendLogService : ISendLogService
         entry.ErrorDetail = errorDetail;
         entry.RetryCount = retryCount;
 
-        await _db.SaveChangesAsync(cancellationToken);
+        await _unitOfWork.CommitAsync(cancellationToken);
 
         _logger.LogWarning(
             "SendLog [{Status}] — Id={SendLogId} RetryCount={RetryCount} Error={ErrorDetail}",
@@ -110,7 +114,7 @@ public class SendLogService : ISendLogService
         entry.ErrorDetail = errorDetail;
         entry.RetryCount = retryCount;
 
-        await _db.SaveChangesAsync(cancellationToken);
+        await _unitOfWork.CommitAsync(cancellationToken);
 
         _logger.LogInformation(
             "SendLog [{Status}] — Id={SendLogId} RetryCount={RetryCount} Error={ErrorDetail}",
@@ -128,13 +132,8 @@ public class SendLogService : ISendLogService
         int pageSize = 50,
         CancellationToken cancellationToken = default)
     {
-        var query = BuildQuery(campaignId, recipientAddress, status, from, to);
-
-        return await query
-            .OrderByDescending(l => l.CreatedAt)
-            .Skip((pageNumber - 1) * pageSize)
-            .Take(pageSize)
-            .ToListAsync(cancellationToken);
+        return await _sendLogRepository.QueryAsync(
+            campaignId, recipientAddress, status, from, to, pageNumber, pageSize, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -146,15 +145,14 @@ public class SendLogService : ISendLogService
         DateTime? to = null,
         CancellationToken cancellationToken = default)
     {
-        var query = BuildQuery(campaignId, recipientAddress, status, from, to);
-        return await query.CountAsync(cancellationToken);
+        return await _sendLogRepository.CountAsync(
+            campaignId, recipientAddress, status, from, to, cancellationToken);
     }
 
     /// <inheritdoc />
     public async Task<SendLog?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        return await _db.SendLogs
-            .FirstOrDefaultAsync(l => l.Id == id, cancellationToken);
+        return await _sendLogRepository.FindByIdTrackedAsync(id, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -164,8 +162,8 @@ public class SendLogService : ISendLogService
         string? errorDetail,
         CancellationToken cancellationToken = default)
     {
-        var entry = await _db.SendLogs
-            .FirstOrDefaultAsync(l => l.ExternalMessageId == externalMessageId, cancellationToken);
+        var entry = await _sendLogRepository.FindByExternalMessageIdAsync(
+            externalMessageId, cancellationToken);
 
         if (entry is null)
         {
@@ -187,7 +185,7 @@ public class SendLogService : ISendLogService
             entry.ErrorDetail = errorDetail;
         }
 
-        await _db.SaveChangesAsync(cancellationToken);
+        await _unitOfWork.CommitAsync(cancellationToken);
 
         _logger.LogInformation(
             "SendLog delivery status updated via callback — " +
@@ -203,7 +201,7 @@ public class SendLogService : ISendLogService
     {
         var entry = await FindOrThrowAsync(sendLogId, cancellationToken);
         entry.ExternalMessageId = externalMessageId;
-        await _db.SaveChangesAsync(cancellationToken);
+        await _unitOfWork.CommitAsync(cancellationToken);
 
         _logger.LogDebug(
             "SendLog ExternalMessageId set — Id={SendLogId} ExternalMessageId={ExternalMessageId}",
@@ -214,36 +212,9 @@ public class SendLogService : ISendLogService
     // Private helpers
     // ----------------------------------------------------------------
 
-    private IQueryable<SendLog> BuildQuery(
-        Guid? campaignId,
-        string? recipientAddress,
-        SendStatus? status,
-        DateTime? from,
-        DateTime? to)
-    {
-        var query = _db.SendLogs.AsQueryable();
-
-        if (campaignId.HasValue)
-            query = query.Where(l => l.CampaignId == campaignId.Value);
-
-        if (!string.IsNullOrWhiteSpace(recipientAddress))
-            query = query.Where(l => l.RecipientAddress.Contains(recipientAddress));
-
-        if (status.HasValue)
-            query = query.Where(l => l.Status == status.Value);
-
-        if (from.HasValue)
-            query = query.Where(l => l.CreatedAt >= from.Value);
-
-        if (to.HasValue)
-            query = query.Where(l => l.CreatedAt <= to.Value);
-
-        return query;
-    }
-
     private async Task<SendLog> FindOrThrowAsync(Guid id, CancellationToken cancellationToken)
     {
-        var entry = await _db.SendLogs.FindAsync([id], cancellationToken);
+        var entry = await _sendLogRepository.FindByIdTrackedAsync(id, cancellationToken);
         if (entry is null)
             throw new InvalidOperationException($"SendLog with Id '{id}' not found.");
         return entry;

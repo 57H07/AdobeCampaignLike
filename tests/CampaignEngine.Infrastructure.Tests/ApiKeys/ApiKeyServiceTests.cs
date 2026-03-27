@@ -2,6 +2,8 @@ using CampaignEngine.Application.DTOs.ApiKeys;
 using CampaignEngine.Application.Interfaces;
 using CampaignEngine.Domain.Entities;
 using CampaignEngine.Infrastructure.ApiKeys;
+using CampaignEngine.Infrastructure.Persistence;
+using CampaignEngine.Infrastructure.Persistence.Repositories;
 using CampaignEngine.Infrastructure.Tests.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -21,7 +23,9 @@ public class ApiKeyServiceTests : DbContextTestBase
     public ApiKeyServiceTests()
     {
         var logger = new Mock<IAppLogger<ApiKeyService>>();
-        _service = new ApiKeyService(Context, logger.Object);
+        var apiKeyRepository = new ApiKeyRepository(Context);
+        var unitOfWork = new UnitOfWork(Context);
+        _service = new ApiKeyService(apiKeyRepository, unitOfWork, logger.Object);
     }
 
     // ----------------------------------------------------------------

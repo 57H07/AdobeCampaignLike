@@ -5,6 +5,7 @@ using CampaignEngine.Infrastructure.Batch;
 using CampaignEngine.Infrastructure.Campaigns;
 using CampaignEngine.Infrastructure.Configuration;
 using CampaignEngine.Infrastructure.Persistence;
+using CampaignEngine.Infrastructure.Persistence.Repositories;
 using Hangfire;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -61,15 +62,21 @@ public class ChunkFailureRecoveryTests : IDisposable
     private ChunkCoordinatorService BuildSut(int maxRetry = 3)
     {
         var chunkingService = new RecipientChunkingService(BuildOptions(maxRetry));
+        var campaignRepository = new CampaignRepository(_context);
+        var chunkRepository = new CampaignChunkRepository(_context);
+        var unitOfWork = new UnitOfWork(_context);
         return new ChunkCoordinatorService(
-            _context,
+            campaignRepository,
+            chunkRepository,
+            unitOfWork,
             chunkingService,
             new Mock<IDataSourceConnector>().Object,
             new Mock<IConnectionStringEncryptor>().Object,
             _completionServiceMock.Object,
             new Mock<IBackgroundJobClient>().Object,
             BuildOptions(maxRetry),
-            new Mock<IAppLogger<ChunkCoordinatorService>>().Object);
+            new Mock<IAppLogger<ChunkCoordinatorService>>().Object,
+            _context);
     }
 
     private async Task<(Campaign Campaign, CampaignStep Step)> SeedAsync(

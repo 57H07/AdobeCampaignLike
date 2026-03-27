@@ -6,6 +6,8 @@ using CampaignEngine.Domain.Entities;
 using CampaignEngine.Domain.Enums;
 using CampaignEngine.Domain.Exceptions;
 using CampaignEngine.Infrastructure.Dispatch;
+using CampaignEngine.Infrastructure.Persistence;
+using CampaignEngine.Infrastructure.Persistence.Repositories;
 using CampaignEngine.Infrastructure.Rendering;
 using CampaignEngine.Infrastructure.Send;
 using CampaignEngine.Infrastructure.Tests.Persistence;
@@ -77,7 +79,9 @@ public class SingleSendServiceTests : DbContextTestBase
     private ISendLogService CreateRealSendLogService()
     {
         var logLogger = new Mock<IAppLogger<SendLogService>>();
-        return new SendLogService(Context, logLogger.Object);
+        var sendLogRepository = new SendLogRepository(Context);
+        var unitOfWork = new UnitOfWork(Context);
+        return new SendLogService(sendLogRepository, unitOfWork, logLogger.Object);
     }
 
     private async Task<Template> SeedPublishedEmailTemplateAsync(params string[] placeholderKeys)
