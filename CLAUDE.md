@@ -79,6 +79,14 @@ tests/CampaignEngine.Infrastructure.Tests — EF Core + dispatcher integration t
 
 Follow existing test file structure. Use `FluentAssertions` for assertions, `Moq` for mocks.
 
+## Git Workflow
+
+- **Never push `orchestrator/*` or `worktree-*` branches to `origin`.**
+  These branches are created locally by the orchestration system and must stay local.
+  Only `main` (and explicit feature branches created by the user) are pushed to `origin`.
+- Merge completed work into `main` locally, then push `main`.
+- After merging, delete local orchestrator branches and remove any registered worktrees.
+
 ## Backlog & Docs
 
 - User stories: `.userstories/BACKLOG.md` (37 stories, machine-readable: `backlog_parsed.json`)
