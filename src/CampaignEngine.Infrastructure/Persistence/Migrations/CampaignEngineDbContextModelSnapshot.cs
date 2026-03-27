@@ -83,6 +83,42 @@ namespace CampaignEngine.Infrastructure.Persistence.Migrations
                     b.ToTable("ApiKeys", (string)null);
                 });
 
+            modelBuilder.Entity("CampaignEngine.Domain.Entities.CampaignStatusHistory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("CampaignId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("FromStatus")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("OccurredAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("ToStatus")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CampaignId", "OccurredAt")
+                        .HasDatabaseName("IX_CampaignStatusHistories_CampaignId_OccurredAt");
+
+                    b.ToTable("CampaignStatusHistories", (string)null);
+                });
+
             modelBuilder.Entity("CampaignEngine.Domain.Entities.CampaignChunk", b =>
                 {
                     b.Property<Guid>("Id")
@@ -686,6 +722,17 @@ namespace CampaignEngine.Infrastructure.Persistence.Migrations
                     b.Navigation("DataSource");
                 });
 
+            modelBuilder.Entity("CampaignEngine.Domain.Entities.CampaignStatusHistory", b =>
+                {
+                    b.HasOne("CampaignEngine.Domain.Entities.Campaign", "Campaign")
+                        .WithMany("StatusHistory")
+                        .HasForeignKey("CampaignId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Campaign");
+                });
+
             modelBuilder.Entity("CampaignEngine.Domain.Entities.CampaignChunk", b =>
                 {
                     b.HasOne("CampaignEngine.Domain.Entities.Campaign", "Campaign")
@@ -783,6 +830,8 @@ namespace CampaignEngine.Infrastructure.Persistence.Migrations
                     b.Navigation("Attachments");
 
                     b.Navigation("SendLogs");
+
+                    b.Navigation("StatusHistory");
 
                     b.Navigation("Steps");
                 });

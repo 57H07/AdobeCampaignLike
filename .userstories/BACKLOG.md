@@ -1310,9 +1310,9 @@
 - [ ] Failed send count visible per campaign
 
 **Technical tasks:**
-- [ ] `TASK-027-01` - **[Model]** Add Status enum to Campaign entity
-- [ ] `TASK-027-02` - **[Model]** Add progress counters (total, processed, failed)
-- [ ] `TASK-027-03` - **[Service]** Status transition service with validation
+- [x] `TASK-027-01` - **[Model]** Add Status enum to Campaign entity ✅ 2026-03-27
+- [x] `TASK-027-02` - **[Model]** Add progress counters (total, processed, failed) ✅ 2026-03-27
+- [x] `TASK-027-03` - **[Service]** Status transition service with validation ✅ 2026-03-27
 - [ ] `TASK-027-04` - **[API]** GET /api/campaigns/{id}/status endpoint (real-time)
 - [ ] `TASK-027-05` - **[Frontend]** Campaign dashboard with status cards
 - [ ] `TASK-027-06` - **[Frontend]** Progress bar component with live updates

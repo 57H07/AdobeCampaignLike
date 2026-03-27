@@ -49,6 +49,7 @@ public class Campaign : SoftDeletableEntity
     public ICollection<CampaignStep> Steps { get; set; } = new List<CampaignStep>();
     public ICollection<CampaignAttachment> Attachments { get; set; } = new List<CampaignAttachment>();
     public ICollection<SendLog> SendLogs { get; set; } = new List<SendLog>();
+    public ICollection<CampaignStatusHistory> StatusHistory { get; set; } = new List<CampaignStatusHistory>();
 
     // ----------------------------------------------------------------
     // Domain behaviour
