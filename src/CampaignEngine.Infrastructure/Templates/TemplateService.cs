@@ -174,14 +174,6 @@ public sealed class TemplateService : ITemplateService
         if (template is null)
             throw new NotFoundException(nameof(Template), id);
 
-        // Business rule: only Draft templates can be published
-        if (template.Status != TemplateStatus.Draft)
-        {
-            throw new ValidationException(
-                $"Template '{template.Name}' cannot be published: current status is '{template.Status}'. " +
-                "Only Draft templates can be published.");
-        }
-
         // Business rule: manifest must be complete before publishing
         var manifestEntries = await _manifestService.GetByTemplateIdAsync(id, cancellationToken);
         var validationResult = _parserService.ValidateManifestCompleteness(template.HtmlBody, manifestEntries);
@@ -195,7 +187,8 @@ public sealed class TemplateService : ITemplateService
                 "All placeholders used in the template HTML must be declared in the manifest before publishing.");
         }
 
-        template.Status = TemplateStatus.Published;
+        // Domain entity enforces: only Draft templates can be published
+        template.Publish();
 
         await _unitOfWork.CommitAsync(cancellationToken);
 
@@ -217,14 +210,8 @@ public sealed class TemplateService : ITemplateService
         if (template is null)
             throw new NotFoundException(nameof(Template), id);
 
-        // Business rule: Archived templates cannot transition anywhere
-        if (template.Status == TemplateStatus.Archived)
-        {
-            throw new ValidationException(
-                $"Template '{template.Name}' is already Archived. Archived templates cannot change status.");
-        }
-
-        template.Status = TemplateStatus.Archived;
+        // Domain entity enforces: Archived templates cannot transition anywhere
+        template.Archive();
 
         await _unitOfWork.CommitAsync(cancellationToken);
 

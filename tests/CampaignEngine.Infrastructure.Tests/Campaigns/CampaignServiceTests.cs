@@ -279,37 +279,44 @@ public class CampaignServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task CreateAsync_WithScheduledAtLessThan5Minutes_ThrowsValidationException()
+    public async Task ScheduleAsync_WithScheduledAtLessThan5Minutes_ThrowsDomainException()
     {
-        // Arrange
+        // ScheduledAt timing is validated by Campaign.Schedule() at scheduling time,
+        // not at creation time. Creating with a near-future date succeeds; scheduling fails.
         var template = await SeedPublishedTemplateAsync();
         var request = BuildValidRequest(template.Id);
         request.ScheduledAt = DateTime.UtcNow.AddMinutes(2); // only 2 min, not 5
+        var campaign = await _service.CreateAsync(request, null);
 
         // Act
-        var act = () => _service.CreateAsync(request, null);
+        var act = () => _service.ScheduleAsync(campaign.Id);
 
         // Assert
-        var ex = await act.Should().ThrowAsync<ValidationException>();
-        ex.Which.Errors.Should().ContainKey("scheduledAt");
-        ex.Which.Errors["scheduledAt"].Should().ContainMatch("*5 minutes*");
+        var ex = await act.Should().ThrowAsync<DomainException>();
+        ex.Which.Message.Should().Contain("5 minutes");
     }
 
     [Fact]
-    public async Task CreateAsync_WithScheduledAtInPast_ThrowsValidationException()
+    public async Task ScheduleAsync_WithScheduledAtInPast_ThrowsDomainException()
     {
-        // Arrange
+        // Creating with a past ScheduledAt is allowed (just stored data).
+        // The domain invariant is enforced when scheduling.
         var template = await SeedPublishedTemplateAsync();
         var request = BuildValidRequest(template.Id);
-        request.ScheduledAt = DateTime.UtcNow.AddHours(-1); // in the past
+        request.ScheduledAt = DateTime.UtcNow.AddMinutes(10); // valid for creation
+        var campaign = await _service.CreateAsync(request, null);
+
+        // Simulate time passing: update ScheduledAt to the past directly via context
+        var entity = await _context.Campaigns.FindAsync(campaign.Id);
+        entity!.ScheduledAt = DateTime.UtcNow.AddHours(-1);
+        await _context.SaveChangesAsync();
 
         // Act
-        var act = () => _service.CreateAsync(request, null);
+        var act = () => _service.ScheduleAsync(campaign.Id);
 
         // Assert
-        var ex = await act.Should().ThrowAsync<ValidationException>();
-        ex.Which.Errors.Should().ContainKey("scheduledAt");
-        ex.Which.Errors["scheduledAt"].Should().ContainMatch("*5 minutes*");
+        var ex = await act.Should().ThrowAsync<DomainException>();
+        ex.Which.Message.Should().Contain("5 minutes");
     }
 
     [Fact]

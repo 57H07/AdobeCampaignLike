@@ -18,8 +18,6 @@ namespace CampaignEngine.Infrastructure.Campaigns;
 /// </summary>
 public sealed class CampaignService : ICampaignService
 {
-    private static readonly TimeSpan MinScheduleAhead = TimeSpan.FromMinutes(5);
-
     private readonly ICampaignRepository _campaignRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ITemplateSnapshotService _snapshotService;
@@ -57,7 +55,7 @@ public sealed class CampaignService : ICampaignService
             });
 
         // ----------------------------------------------------------------
-        // Validate: at least one step and at most 10 steps
+        // Validate: at least one step required (upper bound enforced by Campaign.AddStep)
         // ----------------------------------------------------------------
         if (request.Steps == null || request.Steps.Count == 0)
             throw new ValidationException(new Dictionary<string, string[]>
@@ -65,13 +63,7 @@ public sealed class CampaignService : ICampaignService
                 ["steps"] = ["At least one campaign step is required."]
             });
 
-        if (request.Steps.Count > 10)
-            throw new ValidationException(new Dictionary<string, string[]>
-            {
-                ["steps"] = [$"A campaign may have at most 10 steps. Provided: {request.Steps.Count}."]
-            });
-
-        // Validate: step orders are unique and contiguous (1-based)
+        // Validate: step orders are unique
         var stepOrders = request.Steps.Select(s => s.StepOrder).OrderBy(o => o).ToList();
         var duplicateOrders = stepOrders.GroupBy(o => o).Where(g => g.Count() > 1).Select(g => g.Key).ToList();
         if (duplicateOrders.Count > 0)
@@ -79,19 +71,6 @@ public sealed class CampaignService : ICampaignService
             {
                 ["steps"] = [$"Step orders must be unique. Duplicate order(s): {string.Join(", ", duplicateOrders)}."]
             });
-
-        // ----------------------------------------------------------------
-        // Validate: ScheduledAt must be at least 5 minutes in the future
-        // ----------------------------------------------------------------
-        if (request.ScheduledAt.HasValue)
-        {
-            var minSchedule = DateTime.UtcNow.Add(MinScheduleAhead);
-            if (request.ScheduledAt.Value < minSchedule)
-                throw new ValidationException(new Dictionary<string, string[]>
-                {
-                    ["scheduledAt"] = [$"Scheduled date must be at least 5 minutes in the future (minimum: {minSchedule:yyyy-MM-dd HH:mm} UTC)."]
-                });
-        }
 
         // ----------------------------------------------------------------
         // Validate: only Published templates allowed
@@ -144,10 +123,10 @@ public sealed class CampaignService : ICampaignService
             CreatedBy = createdBy
         };
 
-        // Add ordered steps
+        // Add ordered steps — Campaign.AddStep enforces the 10-step maximum
         foreach (var stepRequest in request.Steps.OrderBy(s => s.StepOrder))
         {
-            campaign.Steps.Add(new CampaignStep
+            campaign.AddStep(new CampaignStep
             {
                 CampaignId = campaign.Id,
                 StepOrder = stepRequest.StepOrder,
@@ -197,29 +176,11 @@ public sealed class CampaignService : ICampaignService
         if (campaign is null)
             throw new NotFoundException("Campaign", id);
 
-        if (campaign.Status != CampaignStatus.Draft)
-            throw new ValidationException(new Dictionary<string, string[]>
-            {
-                ["status"] = [$"Campaign must be in Draft status to schedule. Current: {campaign.Status}."]
-            });
-
-        if (!campaign.ScheduledAt.HasValue)
-            throw new ValidationException(new Dictionary<string, string[]>
-            {
-                ["scheduledAt"] = ["Campaign ScheduledAt must be set before scheduling."]
-            });
-
-        var minSchedule = DateTime.UtcNow.Add(MinScheduleAhead);
-        if (campaign.ScheduledAt.Value < minSchedule)
-            throw new ValidationException(new Dictionary<string, string[]>
-            {
-                ["scheduledAt"] = [$"Scheduled date must be at least 5 minutes in the future (minimum: {minSchedule:yyyy-MM-dd HH:mm} UTC)."]
-            });
+        // Domain entity enforces: Draft status, ScheduledAt set, ≥5 min ahead
+        campaign.Schedule();
 
         // Create immutable template snapshots for all steps (US-025)
         await _snapshotService.CreateSnapshotsForCampaignAsync(id, cancellationToken);
-
-        campaign.Status = CampaignStatus.Scheduled;
         await _unitOfWork.CommitAsync(cancellationToken);
 
         _logger.LogInformation(
