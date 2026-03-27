@@ -1318,7 +1318,7 @@
 - [x] `TASK-027-05` - **[Frontend]** Campaign dashboard with status cards ✅ 2026-03-27
 - [x] `TASK-027-06` - **[Frontend]** Progress bar component with live updates ✅ 2026-03-27
 - [x] `TASK-027-07` - **[Frontend]** Campaign detail view with status history ✅ 2026-03-27
-- [ ] `TASK-027-08` - **[Test]** Status transition validation tests
+- [x] `TASK-027-08` - **[Test]** Status transition validation tests ✅ 2026-03-27
 - [ ] `TASK-027-09` - **[Doc]** Campaign status lifecycle guide
 
 **Business rules:**
@@ -1637,8 +1637,9 @@
 ---
 
 #### [US-035] - Retry mechanism with exponential backoff
-**Status:** 🔵 IN PROGRESS
+**Status:** ✅ DONE
 **Start date:** 2026-03-27
+**End date:** 2026-03-27
 
 **Priority:** ðŸ”´ High
 **Complexity:** M
@@ -1652,11 +1653,11 @@
 > Configurable exponential backoff (30s / 2min / 10min, 3 attempts) per send; chunk-level retry via Hangfire AutomaticRetry.
 
 **Acceptance criteria:**
-- [ ] Failed sends automatically retried up to 3 times
-- [ ] Exponential backoff: 30s, 2min, 10min
-- [ ] Retry count tracked in SendLog
-- [ ] Transient vs permanent failure detection
-- [ ] Chunk-level retry via Hangfire [AutomaticRetry] attribute
+- [x] Failed sends automatically retried up to 3 times ✅
+- [x] Exponential backoff: 30s, 2min, 10min ✅
+- [x] Retry count tracked in SendLog ✅
+- [x] Transient vs permanent failure detection ✅
+- [x] Chunk-level retry via Hangfire [AutomaticRetry] attribute ✅
 
 **Technical tasks:**
 - [x] `TASK-035-01` - **[Service]** Implement retry policy with exponential backoff ✅ 2026-03-27
