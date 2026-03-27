@@ -1290,8 +1290,9 @@
 ---
 
 #### [US-027] - Campaign status tracking and monitoring
-**Status:** 🔵 IN PROGRESS
+**Status:** ✅ DONE
 **Start date:** 2026-03-27 00:00 UTC
+**End date:** 2026-03-27 23:59 UTC
 **Priority:** ðŸ”´ High
 **Complexity:** M
 **Epic:** Campaign Orchestrator
@@ -1304,11 +1305,11 @@
 > Real-time progress: Draft â†’ Scheduled â†’ Running â†’ StepInProgress â†’ Completed / PartialFailure / ManualReview.
 
 **Acceptance criteria:**
-- [ ] Campaign status enum with all lifecycle states
-- [ ] Real-time progress tracking (processed/total counts)
-- [ ] Status transitions logged with timestamps
-- [ ] Dashboard showing active campaigns and progress
-- [ ] Failed send count visible per campaign
+- [x] Campaign status enum with all lifecycle states ✅
+- [x] Real-time progress tracking (processed/total counts) ✅
+- [x] Status transitions logged with timestamps ✅
+- [x] Dashboard showing active campaigns and progress ✅
+- [x] Failed send count visible per campaign ✅
 
 **Technical tasks:**
 - [x] `TASK-027-01` - **[Model]** Add Status enum to Campaign entity ✅ 2026-03-27
