@@ -20,6 +20,7 @@ public class CampaignServiceTests : IDisposable
     private readonly CampaignEngineDbContext _context;
     private readonly Mock<IAppLogger<CampaignService>> _loggerMock;
     private readonly Mock<ITemplateSnapshotService> _snapshotServiceMock;
+    private readonly Mock<ICampaignStatusService> _statusServiceMock;
     private readonly CampaignService _service;
 
     public CampaignServiceTests()
@@ -31,12 +32,13 @@ public class CampaignServiceTests : IDisposable
         _context = new CampaignEngineDbContext(options);
         _loggerMock = new Mock<IAppLogger<CampaignService>>();
         _snapshotServiceMock = new Mock<ITemplateSnapshotService>();
+        _statusServiceMock = new Mock<ICampaignStatusService>();
 
         var campaignRepository = new CampaignRepository(_context);
         var unitOfWork = new UnitOfWork(_context);
 
         _service = new CampaignService(
-            campaignRepository, unitOfWork, _snapshotServiceMock.Object, _loggerMock.Object);
+            campaignRepository, unitOfWork, _snapshotServiceMock.Object, _statusServiceMock.Object, _loggerMock.Object);
     }
 
     public void Dispose() => _context.Dispose();
