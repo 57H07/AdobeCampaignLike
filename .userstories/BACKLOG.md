@@ -1636,6 +1636,8 @@
 ---
 
 #### [US-035] - Retry mechanism with exponential backoff
+**Status:** 🔵 IN PROGRESS
+**Start date:** 2026-03-27
 
 **Priority:** ðŸ”´ High
 **Complexity:** M
@@ -1681,7 +1683,7 @@
 > Monitoring and analytics for campaigns
 
 #### [US-036] - Campaign progress dashboard
-**Status:** ðŸŸ¡ TODO
+**Status:** 🟡 TODO
 **Priority:** ðŸŸ  Medium
 **Complexity:** M
 **Epic:** Reporting & Dashboards
