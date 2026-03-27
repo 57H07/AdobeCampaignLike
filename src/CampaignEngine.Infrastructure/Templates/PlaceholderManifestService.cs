@@ -3,6 +3,7 @@ using CampaignEngine.Application.Interfaces;
 using CampaignEngine.Domain.Entities;
 using CampaignEngine.Domain.Exceptions;
 using CampaignEngine.Infrastructure.Persistence;
+using Mapster;
 using Microsoft.EntityFrameworkCore;
 
 namespace CampaignEngine.Infrastructure.Templates;
@@ -39,7 +40,7 @@ public sealed class PlaceholderManifestService : IPlaceholderManifestService
             .OrderBy(p => p.Key)
             .ToListAsync(cancellationToken);
 
-        return entries.Select(MapToDto).ToList().AsReadOnly();
+        return entries.Select(e => e.Adapt<PlaceholderManifestEntryDto>()).ToList().AsReadOnly();
     }
 
     /// <inheritdoc />
@@ -60,7 +61,7 @@ public sealed class PlaceholderManifestService : IPlaceholderManifestService
             "Placeholder manifest entry added: TemplateId={TemplateId}, Key={Key}, Type={Type}",
             templateId, entry.Key, entry.Type);
 
-        return MapToDto(entry);
+        return entry.Adapt<PlaceholderManifestEntryDto>();
     }
 
     /// <inheritdoc />
@@ -89,7 +90,7 @@ public sealed class PlaceholderManifestService : IPlaceholderManifestService
             "Placeholder manifest entry updated: EntryId={EntryId}, TemplateId={TemplateId}, Key={Key}",
             entryId, templateId, entry.Key);
 
-        return MapToDto(entry);
+        return entry.Adapt<PlaceholderManifestEntryDto>();
     }
 
     /// <inheritdoc />
@@ -152,7 +153,7 @@ public sealed class PlaceholderManifestService : IPlaceholderManifestService
             "Placeholder manifest replaced for TemplateId={TemplateId}. {Count} entries saved.",
             templateId, newEntries.Count);
 
-        return newEntries.OrderBy(e => e.Key).Select(MapToDto).ToList().AsReadOnly();
+        return newEntries.OrderBy(e => e.Key).Select(e => e.Adapt<PlaceholderManifestEntryDto>()).ToList().AsReadOnly();
     }
 
     // ----------------------------------------------------------------
@@ -212,15 +213,4 @@ public sealed class PlaceholderManifestService : IPlaceholderManifestService
         return request.IsFromDataSource;
     }
 
-    private static PlaceholderManifestEntryDto MapToDto(PlaceholderManifestEntry entry) => new()
-    {
-        Id = entry.Id,
-        TemplateId = entry.TemplateId,
-        Key = entry.Key,
-        Type = entry.Type.ToString(),
-        IsFromDataSource = entry.IsFromDataSource,
-        Description = entry.Description,
-        CreatedAt = entry.CreatedAt,
-        UpdatedAt = entry.UpdatedAt
-    };
 }

@@ -1,9 +1,9 @@
 using CampaignEngine.Application.DTOs.Campaigns;
 using CampaignEngine.Application.Interfaces;
+using CampaignEngine.Application.Interfaces.Repositories;
 using CampaignEngine.Domain.Entities;
 using CampaignEngine.Domain.Exceptions;
-using CampaignEngine.Infrastructure.Persistence;
-using Microsoft.EntityFrameworkCore;
+using Mapster;
 
 namespace CampaignEngine.Infrastructure.Campaigns;
 
@@ -14,16 +14,22 @@ namespace CampaignEngine.Infrastructure.Campaigns;
 /// </summary>
 public sealed class TemplateSnapshotService : ITemplateSnapshotService
 {
-    private readonly CampaignEngineDbContext _dbContext;
+    private readonly ICampaignRepository _campaignRepository;
+    private readonly ITemplateRepository _templateRepository;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ISubTemplateResolverService _subTemplateResolver;
     private readonly IAppLogger<TemplateSnapshotService> _logger;
 
     public TemplateSnapshotService(
-        CampaignEngineDbContext dbContext,
+        ICampaignRepository campaignRepository,
+        ITemplateRepository templateRepository,
+        IUnitOfWork unitOfWork,
         ISubTemplateResolverService subTemplateResolver,
         IAppLogger<TemplateSnapshotService> logger)
     {
-        _dbContext = dbContext;
+        _campaignRepository = campaignRepository;
+        _templateRepository = templateRepository;
+        _unitOfWork = unitOfWork;
         _subTemplateResolver = subTemplateResolver;
         _logger = logger;
     }
@@ -33,9 +39,7 @@ public sealed class TemplateSnapshotService : ITemplateSnapshotService
         Guid campaignId,
         CancellationToken cancellationToken = default)
     {
-        var campaign = await _dbContext.Campaigns
-            .Include(c => c.Steps)
-            .FirstOrDefaultAsync(c => c.Id == campaignId, cancellationToken)
+        var campaign = await _campaignRepository.GetWithStepsAsync(campaignId, cancellationToken)
             ?? throw new NotFoundException("Campaign", campaignId);
 
         if (campaign.Steps.Count == 0)
@@ -47,9 +51,7 @@ public sealed class TemplateSnapshotService : ITemplateSnapshotService
             .Distinct()
             .ToList();
 
-        var templates = await _dbContext.Templates
-            .Where(t => templateIds.Contains(t.Id))
-            .ToListAsync(cancellationToken);
+        var templates = await _templateRepository.GetByIdsAsync(templateIds, cancellationToken);
 
         var templateMap = templates.ToDictionary(t => t.Id);
 
@@ -84,12 +86,12 @@ public sealed class TemplateSnapshotService : ITemplateSnapshotService
                 ResolvedHtmlBody = resolvedBody
             };
 
-            _dbContext.TemplateSnapshots.Add(snapshot);
+            await _templateRepository.AddSnapshotAsync(snapshot, cancellationToken);
             snapshotCache[step.TemplateId] = snapshot;
             step.TemplateSnapshotId = snapshot.Id;
         }
 
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        await _unitOfWork.CommitAsync(cancellationToken);
 
         _logger.LogInformation(
             "Created {SnapshotCount} template snapshot(s) for campaign {CampaignId}.",
@@ -102,11 +104,8 @@ public sealed class TemplateSnapshotService : ITemplateSnapshotService
         Guid campaignId,
         CancellationToken cancellationToken = default)
     {
-        var steps = await _dbContext.CampaignSteps
-            .Where(s => s.CampaignId == campaignId && s.TemplateSnapshotId != null)
-            .Include(s => s.TemplateSnapshot)
-            .OrderBy(s => s.StepOrder)
-            .ToListAsync(cancellationToken);
+        var steps = await _templateRepository.GetCampaignStepsWithSnapshotsAsync(
+            campaignId, cancellationToken);
 
         // Deduplicate: if two steps share the same snapshot, return it once
         var seen = new HashSet<Guid>();
@@ -117,24 +116,9 @@ public sealed class TemplateSnapshotService : ITemplateSnapshotService
             if (step.TemplateSnapshot is null) continue;
             if (!seen.Add(step.TemplateSnapshot.Id)) continue;
 
-            result.Add(MapToDto(step.TemplateSnapshot));
+            result.Add(step.TemplateSnapshot.Adapt<TemplateSnapshotDto>());
         }
 
         return result;
     }
-
-    // ----------------------------------------------------------------
-    // Private mapping helpers
-    // ----------------------------------------------------------------
-
-    private static TemplateSnapshotDto MapToDto(TemplateSnapshot s) => new()
-    {
-        Id = s.Id,
-        OriginalTemplateId = s.OriginalTemplateId,
-        TemplateVersion = s.TemplateVersion,
-        Name = s.Name,
-        Channel = s.Channel.ToString(),
-        ResolvedHtmlBody = s.ResolvedHtmlBody,
-        CreatedAt = s.CreatedAt
-    };
 }

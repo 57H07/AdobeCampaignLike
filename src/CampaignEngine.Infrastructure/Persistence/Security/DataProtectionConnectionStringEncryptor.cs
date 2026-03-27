@@ -1,3 +1,4 @@
+using CampaignEngine.Application.Interfaces;
 using Microsoft.AspNetCore.DataProtection;
 
 namespace CampaignEngine.Infrastructure.Persistence.Security;

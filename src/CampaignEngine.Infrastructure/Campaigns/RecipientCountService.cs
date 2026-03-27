@@ -4,7 +4,7 @@ using CampaignEngine.Application.Interfaces;
 using CampaignEngine.Domain.Exceptions;
 using CampaignEngine.Domain.Filters;
 using CampaignEngine.Infrastructure.Persistence;
-using CampaignEngine.Infrastructure.Persistence.Security;
+using CampaignEngine.Infrastructure.Serialization;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 
@@ -82,7 +82,7 @@ public sealed class RecipientCountService : IRecipientCountService
                         request.FilterExpression,
                         new JsonSerializerOptions
                         {
-                            Converters = { new Domain.Filters.FilterExpressionJsonConverter() }
+                            Converters = { new FilterExpressionJsonConverter() }
                         });
 
                     if (parsed != null)

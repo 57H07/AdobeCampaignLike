@@ -5,7 +5,7 @@ using CampaignEngine.Domain.Enums;
 using CampaignEngine.Domain.Exceptions;
 using CampaignEngine.Infrastructure.DataSources;
 using CampaignEngine.Infrastructure.Persistence;
-using CampaignEngine.Infrastructure.Persistence.Security;
+using CampaignEngine.Infrastructure.Persistence.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Moq;
 
@@ -40,8 +40,12 @@ public class DataSourceServiceTests : IDisposable
         _connectionTestMock = new Mock<IConnectionTestService>();
         _loggerMock = new Mock<IAppLogger<DataSourceService>>();
 
+        var dataSourceRepository = new DataSourceRepository(_context);
+        var unitOfWork = new UnitOfWork(_context);
+
         _service = new DataSourceService(
-            _context, _encryptorMock.Object, _connectionTestMock.Object, _loggerMock.Object);
+            dataSourceRepository, unitOfWork, _encryptorMock.Object,
+            _connectionTestMock.Object, _loggerMock.Object);
     }
 
     public void Dispose() => _context.Dispose();

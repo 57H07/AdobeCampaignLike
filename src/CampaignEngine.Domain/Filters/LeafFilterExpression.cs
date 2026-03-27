@@ -1,4 +1,3 @@
-using System.Text.Json.Serialization;
 using CampaignEngine.Domain.Enums;
 
 namespace CampaignEngine.Domain.Filters;
@@ -14,20 +13,17 @@ namespace CampaignEngine.Domain.Filters;
 public sealed class LeafFilterExpression : FilterExpression
 {
     /// <inheritdoc />
-    [JsonPropertyName("type")]
     public override string NodeType => "leaf";
 
     /// <summary>
     /// The data source field name to filter on.
     /// Must match a declared field in the data source schema (validated before SQL generation).
     /// </summary>
-    [JsonPropertyName("fieldName")]
     public string FieldName { get; set; } = string.Empty;
 
     /// <summary>
     /// The comparison operator to apply.
     /// </summary>
-    [JsonPropertyName("operator")]
     public FilterOperator Operator { get; set; }
 
     /// <summary>
@@ -39,6 +35,5 @@ public sealed class LeafFilterExpression : FilterExpression
     ///
     /// All values are passed as Dapper parameters — never interpolated into SQL text.
     /// </summary>
-    [JsonPropertyName("value")]
     public object? Value { get; set; }
 }

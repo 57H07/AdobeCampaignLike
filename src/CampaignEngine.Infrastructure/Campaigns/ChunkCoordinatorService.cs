@@ -1,11 +1,11 @@
 using CampaignEngine.Application.DTOs.DataSources;
 using CampaignEngine.Application.Interfaces;
+using CampaignEngine.Application.Interfaces.Repositories;
 using CampaignEngine.Domain.Entities;
 using CampaignEngine.Domain.Enums;
 using CampaignEngine.Domain.Exceptions;
 using CampaignEngine.Infrastructure.Configuration;
 using CampaignEngine.Infrastructure.Persistence;
-using CampaignEngine.Infrastructure.Persistence.Security;
 using Hangfire;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -28,7 +28,9 @@ namespace CampaignEngine.Infrastructure.Campaigns;
 /// </summary>
 public sealed class ChunkCoordinatorService : IChunkCoordinatorService
 {
-    private readonly CampaignEngineDbContext _dbContext;
+    private readonly ICampaignRepository _campaignRepository;
+    private readonly ICampaignChunkRepository _chunkRepository;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly IRecipientChunkingService _chunkingService;
     private readonly IDataSourceConnector _connector;
     private readonly IConnectionStringEncryptor _encryptor;
@@ -37,22 +39,30 @@ public sealed class ChunkCoordinatorService : IChunkCoordinatorService
     private readonly BatchProcessingOptions _options;
     private readonly IAppLogger<ChunkCoordinatorService> _logger;
 
+    // Need direct DbContext access for raw SQL (ExecuteSqlRawAsync)
+    private readonly CampaignEngineDbContext _dbContext;
+
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
     };
 
     public ChunkCoordinatorService(
-        CampaignEngineDbContext dbContext,
+        ICampaignRepository campaignRepository,
+        ICampaignChunkRepository chunkRepository,
+        IUnitOfWork unitOfWork,
         IRecipientChunkingService chunkingService,
         IDataSourceConnector connector,
         IConnectionStringEncryptor encryptor,
         ICampaignCompletionService completionService,
         IBackgroundJobClient jobClient,
         IOptions<CampaignEngineOptions> options,
-        IAppLogger<ChunkCoordinatorService> logger)
+        IAppLogger<ChunkCoordinatorService> logger,
+        CampaignEngineDbContext dbContext)
     {
-        _dbContext = dbContext;
+        _campaignRepository = campaignRepository;
+        _chunkRepository = chunkRepository;
+        _unitOfWork = unitOfWork;
         _chunkingService = chunkingService;
         _connector = connector;
         _encryptor = encryptor;
@@ -60,6 +70,7 @@ public sealed class ChunkCoordinatorService : IChunkCoordinatorService
         _jobClient = jobClient;
         _options = options.Value.BatchProcessing;
         _logger = logger;
+        _dbContext = dbContext;
     }
 
     /// <inheritdoc />
@@ -134,7 +145,7 @@ public sealed class ChunkCoordinatorService : IChunkCoordinatorService
         // ----------------------------------------------------------------
         // 4. Persist CampaignChunk entities and update campaign status
         // ----------------------------------------------------------------
-        using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+        await _unitOfWork.BeginTransactionAsync(cancellationToken);
 
         try
         {
@@ -163,11 +174,10 @@ public sealed class ChunkCoordinatorService : IChunkCoordinatorService
                 };
 
                 chunkEntities.Add(chunkEntity);
-                _dbContext.CampaignChunks.Add(chunkEntity);
+                await _chunkRepository.AddAsync(chunkEntity, cancellationToken);
             }
 
-            await _dbContext.SaveChangesAsync(cancellationToken);
-            await transaction.CommitAsync(cancellationToken);
+            await _unitOfWork.CommitTransactionAsync(cancellationToken);
 
             // ----------------------------------------------------------------
             // 5. Enqueue one Hangfire job per chunk (after transaction commit)
@@ -181,7 +191,7 @@ public sealed class ChunkCoordinatorService : IChunkCoordinatorService
                 chunkEntity.HangfireJobId = jobId;
             }
 
-            await _dbContext.SaveChangesAsync(cancellationToken);
+            await _unitOfWork.CommitAsync(cancellationToken);
 
             _logger.LogInformation(
                 "Campaign {CampaignId} Step {StepId}: enqueued {ChunkCount} Hangfire jobs",
@@ -191,7 +201,7 @@ public sealed class ChunkCoordinatorService : IChunkCoordinatorService
         }
         catch
         {
-            await transaction.RollbackAsync(cancellationToken);
+            await _unitOfWork.RollbackTransactionAsync(cancellationToken);
             throw;
         }
     }
@@ -207,8 +217,7 @@ public sealed class ChunkCoordinatorService : IChunkCoordinatorService
         // Atomic SQL UPDATE: increment step completion counter.
         // The chunk that brings CompletedChunks == TotalChunks triggers finalization.
         // ----------------------------------------------------------------
-        var chunk = await _dbContext.CampaignChunks
-            .FirstOrDefaultAsync(c => c.Id == chunkId, cancellationToken);
+        var chunk = await _chunkRepository.GetTrackedAsync(chunkId, cancellationToken);
 
         if (chunk is null)
         {
@@ -224,7 +233,7 @@ public sealed class ChunkCoordinatorService : IChunkCoordinatorService
         chunk.CompletedAt = DateTime.UtcNow;
 
         // Atomically increment campaign processed/success/failure counters
-        // using raw SQL UPDATE...OUTPUT to avoid EF concurrency races
+        // using raw SQL UPDATE to avoid EF concurrency races
         await _dbContext.Database.ExecuteSqlRawAsync(
             """
             UPDATE Campaigns SET
@@ -239,16 +248,13 @@ public sealed class ChunkCoordinatorService : IChunkCoordinatorService
             failureCount,
             chunk.CampaignId);
 
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        await _unitOfWork.CommitAsync(cancellationToken);
 
         // ----------------------------------------------------------------
         // Completion detection: count remaining non-terminal chunks
         // ----------------------------------------------------------------
-        var pendingOrProcessingCount = await _dbContext.CampaignChunks
-            .CountAsync(c =>
-                c.CampaignStepId == chunk.CampaignStepId &&
-                (c.Status == ChunkStatus.Pending || c.Status == ChunkStatus.Processing),
-                cancellationToken);
+        var pendingOrProcessingCount = await _chunkRepository.CountPendingOrProcessingAsync(
+            chunk.CampaignStepId, cancellationToken);
 
         var isLastChunk = pendingOrProcessingCount == 0;
 
@@ -273,8 +279,7 @@ public sealed class ChunkCoordinatorService : IChunkCoordinatorService
         string errorMessage,
         CancellationToken cancellationToken = default)
     {
-        var chunk = await _dbContext.CampaignChunks
-            .FirstOrDefaultAsync(c => c.Id == chunkId, cancellationToken);
+        var chunk = await _chunkRepository.GetTrackedAsync(chunkId, cancellationToken);
 
         if (chunk is null)
         {
@@ -296,7 +301,7 @@ public sealed class ChunkCoordinatorService : IChunkCoordinatorService
                 "Campaign {CampaignId} Chunk {ChunkId}: permanently failed after {Attempts} attempts",
                 chunk.CampaignId, chunkId, chunk.RetryAttempts);
 
-            await _dbContext.SaveChangesAsync(cancellationToken);
+            await _unitOfWork.CommitAsync(cancellationToken);
 
             // Check if this was the last chunk (even though it failed)
             await RecordChunkCompletionAsync(chunkId, 0, chunk.RecipientCount, cancellationToken);
@@ -304,7 +309,7 @@ public sealed class ChunkCoordinatorService : IChunkCoordinatorService
         else
         {
             chunk.Status = ChunkStatus.Pending;
-            await _dbContext.SaveChangesAsync(cancellationToken);
+            await _unitOfWork.CommitAsync(cancellationToken);
 
             // Re-enqueue with delay based on retry attempt
             var delaySeconds = _options.RetryDelaysSeconds.Length > chunk.RetryAttempts - 1
@@ -316,7 +321,7 @@ public sealed class ChunkCoordinatorService : IChunkCoordinatorService
                 TimeSpan.FromSeconds(delaySeconds));
 
             chunk.HangfireJobId = jobId;
-            await _dbContext.SaveChangesAsync(cancellationToken);
+            await _unitOfWork.CommitAsync(cancellationToken);
 
             _logger.LogWarning(
                 "Campaign {CampaignId} Chunk {ChunkId}: scheduled retry {Attempt}/{Max} in {Delay}s. Job: {JobId}",
@@ -329,19 +334,12 @@ public sealed class ChunkCoordinatorService : IChunkCoordinatorService
         Guid campaignId,
         CancellationToken cancellationToken = default)
     {
-        var campaign = await _dbContext.Campaigns
-            .AsNoTracking()
-            .FirstOrDefaultAsync(c => c.Id == campaignId, cancellationToken);
+        var campaign = await _campaignRepository.GetNoTrackingAsync(campaignId, cancellationToken);
 
         if (campaign is null)
             throw new NotFoundException("Campaign", campaignId);
 
-        var chunkStats = await _dbContext.CampaignChunks
-            .AsNoTracking()
-            .Where(c => c.CampaignId == campaignId)
-            .GroupBy(c => c.Status)
-            .Select(g => new { Status = g.Key, Count = g.Count() })
-            .ToListAsync(cancellationToken);
+        var chunkStats = await _chunkRepository.GetStatusCountsAsync(campaignId, cancellationToken);
 
         var totalChunks = chunkStats.Sum(s => s.Count);
         var completedChunks = chunkStats.Where(s => s.Status == ChunkStatus.Completed).Sum(s => s.Count);

@@ -4,6 +4,7 @@ using CampaignEngine.Domain.Entities;
 using CampaignEngine.Domain.Enums;
 using CampaignEngine.Domain.Exceptions;
 using CampaignEngine.Infrastructure.Persistence;
+using CampaignEngine.Infrastructure.Persistence.Repositories;
 using CampaignEngine.Infrastructure.Templates;
 using Microsoft.EntityFrameworkCore;
 
@@ -32,9 +33,12 @@ public class TemplateLifecycleTests : IDisposable
         var logger = new Mock<IAppLogger<TemplateService>>();
         _manifestServiceMock = new Mock<IPlaceholderManifestService>();
         _parserServiceMock = new Mock<IPlaceholderParserService>();
+        var templateRepository = new TemplateRepository(_context);
+        var unitOfWork = new UnitOfWork(_context);
 
         _service = new TemplateService(
-            _context,
+            templateRepository,
+            unitOfWork,
             logger.Object,
             _manifestServiceMock.Object,
             _parserServiceMock.Object);

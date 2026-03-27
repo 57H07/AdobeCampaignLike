@@ -1,4 +1,5 @@
 using CampaignEngine.Application.Interfaces;
+using CampaignEngine.Application.Interfaces.Repositories;
 using CampaignEngine.Infrastructure.ApiKeys;
 using CampaignEngine.Infrastructure.Batch;
 using CampaignEngine.Infrastructure.Campaigns;
@@ -9,6 +10,7 @@ using CampaignEngine.Infrastructure.Dispatch;
 using CampaignEngine.Infrastructure.Identity;
 using CampaignEngine.Infrastructure.Logging;
 using CampaignEngine.Infrastructure.Persistence;
+using CampaignEngine.Infrastructure.Persistence.Repositories;
 using CampaignEngine.Infrastructure.Persistence.Security;
 using CampaignEngine.Infrastructure.Persistence.Seed;
 using CampaignEngine.Infrastructure.Rendering;
@@ -64,6 +66,18 @@ public static class ServiceCollectionExtensions
                     sqlOptions.MigrationsAssembly(typeof(CampaignEngineDbContext).Assembly.FullName);
                 });
         });
+
+        // ----------------------------------------------------------------
+        // Unit of Work + Repository Pattern
+        // All scoped to match DbContext lifetime.
+        // ----------------------------------------------------------------
+        services.AddScoped<IUnitOfWork, UnitOfWork>();
+        services.AddScoped<ICampaignRepository, CampaignRepository>();
+        services.AddScoped<ITemplateRepository, TemplateRepository>();
+        services.AddScoped<IDataSourceRepository, DataSourceRepository>();
+        services.AddScoped<ISendLogRepository, SendLogRepository>();
+        services.AddScoped<IApiKeyRepository, ApiKeyRepository>();
+        services.AddScoped<ICampaignChunkRepository, CampaignChunkRepository>();
 
         // ----------------------------------------------------------------
         // Connection string encryption via ASP.NET Core Data Protection
@@ -293,6 +307,9 @@ public static class ServiceCollectionExtensions
 
         // Audit trail for authentication events.
         services.AddScoped<IAuthAuditService, AuthAuditService>();
+
+        // Identity service — abstracts UserManager/SignInManager for the Web layer.
+        services.AddScoped<IIdentityService, IdentityService>();
 
         // ----------------------------------------------------------------
         // API key management and authentication (US-031)

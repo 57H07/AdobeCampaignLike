@@ -1,4 +1,4 @@
-namespace CampaignEngine.Infrastructure.Persistence.Security;
+namespace CampaignEngine.Application.Interfaces;
 
 /// <summary>
 /// Provides encryption and decryption for sensitive connection strings

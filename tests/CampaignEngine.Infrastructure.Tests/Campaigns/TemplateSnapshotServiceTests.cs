@@ -3,6 +3,8 @@ using CampaignEngine.Domain.Entities;
 using CampaignEngine.Domain.Enums;
 using CampaignEngine.Domain.Exceptions;
 using CampaignEngine.Infrastructure.Campaigns;
+using CampaignEngine.Infrastructure.Persistence;
+using CampaignEngine.Infrastructure.Persistence.Repositories;
 using CampaignEngine.Infrastructure.Tests.Persistence;
 
 namespace CampaignEngine.Infrastructure.Tests.Campaigns;
@@ -27,7 +29,13 @@ public class TemplateSnapshotServiceTests : DbContextTestBase
             .Setup(r => r.ResolveAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Guid _, string body, CancellationToken _) => body);
 
-        _service = new TemplateSnapshotService(Context, _resolverMock.Object, _loggerMock.Object);
+        var campaignRepository = new CampaignRepository(Context);
+        var templateRepository = new TemplateRepository(Context);
+        var unitOfWork = new UnitOfWork(Context);
+
+        _service = new TemplateSnapshotService(
+            campaignRepository, templateRepository, unitOfWork,
+            _resolverMock.Object, _loggerMock.Object);
     }
 
     // ----------------------------------------------------------------

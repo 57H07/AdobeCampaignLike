@@ -1,10 +1,9 @@
 using CampaignEngine.Application.DTOs.DataSources;
 using CampaignEngine.Application.Interfaces;
+using CampaignEngine.Application.Interfaces.Repositories;
 using CampaignEngine.Domain.Entities;
 using CampaignEngine.Domain.Exceptions;
-using CampaignEngine.Infrastructure.Persistence;
-using CampaignEngine.Infrastructure.Persistence.Security;
-using Microsoft.EntityFrameworkCore;
+using Mapster;
 
 namespace CampaignEngine.Infrastructure.DataSources;
 
@@ -15,18 +14,21 @@ namespace CampaignEngine.Infrastructure.DataSources;
 /// </summary>
 public sealed class DataSourceService : IDataSourceService
 {
-    private readonly CampaignEngineDbContext _dbContext;
+    private readonly IDataSourceRepository _dataSourceRepository;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly IConnectionStringEncryptor _encryptor;
     private readonly IConnectionTestService _connectionTestService;
     private readonly IAppLogger<DataSourceService> _logger;
 
     public DataSourceService(
-        CampaignEngineDbContext dbContext,
+        IDataSourceRepository dataSourceRepository,
+        IUnitOfWork unitOfWork,
         IConnectionStringEncryptor encryptor,
         IConnectionTestService connectionTestService,
         IAppLogger<DataSourceService> logger)
     {
-        _dbContext = dbContext;
+        _dataSourceRepository = dataSourceRepository;
+        _unitOfWork = unitOfWork;
         _encryptor = encryptor;
         _connectionTestService = connectionTestService;
         _logger = logger;
@@ -38,8 +40,7 @@ public sealed class DataSourceService : IDataSourceService
         CancellationToken cancellationToken = default)
     {
         // Validate unique name
-        var exists = await _dbContext.DataSources
-            .AnyAsync(d => d.Name == request.Name, cancellationToken);
+        var exists = await _dataSourceRepository.ExistsWithNameAsync(request.Name, cancellationToken);
 
         if (exists)
             throw new ValidationException(new Dictionary<string, string[]>
@@ -73,14 +74,14 @@ public sealed class DataSourceService : IDataSourceService
             }
         }
 
-        _dbContext.DataSources.Add(dataSource);
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        await _dataSourceRepository.AddAsync(dataSource, cancellationToken);
+        await _unitOfWork.CommitAsync(cancellationToken);
 
         _logger.LogInformation(
             "DataSource created. Id={DataSourceId}, Name={Name}, Type={Type}",
             dataSource.Id, dataSource.Name, dataSource.Type);
 
-        return MapToDto(dataSource);
+        return dataSource.Adapt<DataSourceDto>();
     }
 
     /// <inheritdoc />
@@ -89,16 +90,14 @@ public sealed class DataSourceService : IDataSourceService
         UpdateDataSourceRequest request,
         CancellationToken cancellationToken = default)
     {
-        var dataSource = await _dbContext.DataSources
-            .Include(d => d.Fields)
-            .FirstOrDefaultAsync(d => d.Id == id, cancellationToken);
+        var dataSource = await _dataSourceRepository.GetWithFieldsAsync(id, cancellationToken);
 
         if (dataSource is null)
             throw new NotFoundException("DataSource", id);
 
         // Validate unique name (excluding self)
-        var nameConflict = await _dbContext.DataSources
-            .AnyAsync(d => d.Name == request.Name && d.Id != id, cancellationToken);
+        var nameConflict = await _dataSourceRepository.ExistsWithNameExcludingAsync(
+            request.Name, id, cancellationToken);
 
         if (nameConflict)
             throw new ValidationException(new Dictionary<string, string[]>
@@ -116,13 +115,13 @@ public sealed class DataSourceService : IDataSourceService
             dataSource.EncryptedConnectionString = _encryptor.Encrypt(request.ConnectionString);
         }
 
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        await _unitOfWork.CommitAsync(cancellationToken);
 
         _logger.LogInformation(
             "DataSource updated. Id={DataSourceId}, Name={Name}",
             dataSource.Id, dataSource.Name);
 
-        return MapToDto(dataSource);
+        return dataSource.Adapt<DataSourceDto>();
     }
 
     /// <inheritdoc />
@@ -130,33 +129,14 @@ public sealed class DataSourceService : IDataSourceService
         DataSourceFilter filter,
         CancellationToken cancellationToken = default)
     {
-        var query = _dbContext.DataSources
-            .Include(d => d.Fields)
-            .AsQueryable();
-
-        if (filter.Type.HasValue)
-            query = query.Where(d => d.Type == filter.Type.Value);
-
-        if (filter.IsActive.HasValue)
-            query = query.Where(d => d.IsActive == filter.IsActive.Value);
-
-        if (!string.IsNullOrWhiteSpace(filter.NameContains))
-            query = query.Where(d => d.Name.Contains(filter.NameContains));
-
-        var total = await query.CountAsync(cancellationToken);
+        var (items, total) = await _dataSourceRepository.GetPagedAsync(filter, cancellationToken);
 
         var page = Math.Max(1, filter.Page);
         var pageSize = Math.Clamp(filter.PageSize, 1, 100);
 
-        var items = await query
-            .OrderBy(d => d.Name)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .ToListAsync(cancellationToken);
-
         return new DataSourcePagedResult
         {
-            Items = items.Select(MapToDto).ToList(),
+            Items = items.Select(d => d.Adapt<DataSourceDto>()).ToList(),
             Total = total,
             Page = page,
             PageSize = pageSize
@@ -168,11 +148,8 @@ public sealed class DataSourceService : IDataSourceService
         Guid id,
         CancellationToken cancellationToken = default)
     {
-        var dataSource = await _dbContext.DataSources
-            .Include(d => d.Fields)
-            .FirstOrDefaultAsync(d => d.Id == id, cancellationToken);
-
-        return dataSource is null ? null : MapToDto(dataSource);
+        var dataSource = await _dataSourceRepository.GetWithFieldsAsync(id, cancellationToken);
+        return dataSource is null ? null : dataSource.Adapt<DataSourceDto>();
     }
 
     /// <inheritdoc />
@@ -180,8 +157,7 @@ public sealed class DataSourceService : IDataSourceService
         Guid id,
         CancellationToken cancellationToken = default)
     {
-        var dataSource = await _dbContext.DataSources
-            .FirstOrDefaultAsync(d => d.Id == id, cancellationToken);
+        var dataSource = await _dataSourceRepository.GetByIdTrackedAsync(id, cancellationToken);
 
         if (dataSource is null)
             throw new NotFoundException("DataSource", id);
@@ -207,9 +183,7 @@ public sealed class DataSourceService : IDataSourceService
         IReadOnlyList<UpsertFieldRequest> fields,
         CancellationToken cancellationToken = default)
     {
-        var dataSource = await _dbContext.DataSources
-            .Include(d => d.Fields)
-            .FirstOrDefaultAsync(d => d.Id == id, cancellationToken);
+        var dataSource = await _dataSourceRepository.GetWithFieldsAsync(id, cancellationToken);
 
         if (dataSource is null)
             throw new NotFoundException("DataSource", id);
@@ -217,8 +191,8 @@ public sealed class DataSourceService : IDataSourceService
         // Delete existing fields first in a separate save, then add new ones.
         // This two-step approach avoids InMemory provider tracking conflicts.
         var oldFields = dataSource.Fields.ToList();
-        _dbContext.DataSourceFields.RemoveRange(oldFields);
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        _dataSourceRepository.RemoveFieldRange(oldFields);
+        await _unitOfWork.CommitAsync(cancellationToken);
 
         var newFieldEntities = fields.Select(f => new DataSourceField
         {
@@ -230,19 +204,17 @@ public sealed class DataSourceService : IDataSourceService
             Description = f.Description
         }).ToList();
 
-        _dbContext.DataSourceFields.AddRange(newFieldEntities);
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        _dataSourceRepository.AddFieldRange(newFieldEntities);
+        await _unitOfWork.CommitAsync(cancellationToken);
 
         // Refresh the navigation collection to reflect the new schema
-        await _dbContext.Entry(dataSource)
-            .Collection(d => d.Fields)
-            .LoadAsync(cancellationToken);
+        await _dataSourceRepository.ReloadFieldsAsync(dataSource, cancellationToken);
 
         _logger.LogInformation(
             "DataSource schema updated. Id={DataSourceId}, FieldCount={Count}",
             id, fields.Count);
 
-        return MapToDto(dataSource);
+        return dataSource.Adapt<DataSourceDto>();
     }
 
     /// <inheritdoc />
@@ -251,48 +223,18 @@ public sealed class DataSourceService : IDataSourceService
         bool isActive,
         CancellationToken cancellationToken = default)
     {
-        var dataSource = await _dbContext.DataSources
-            .Include(d => d.Fields)
-            .FirstOrDefaultAsync(d => d.Id == id, cancellationToken);
+        var dataSource = await _dataSourceRepository.GetWithFieldsAsync(id, cancellationToken);
 
         if (dataSource is null)
             throw new NotFoundException("DataSource", id);
 
         dataSource.IsActive = isActive;
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        await _unitOfWork.CommitAsync(cancellationToken);
 
         _logger.LogInformation(
             "DataSource IsActive changed. Id={DataSourceId}, IsActive={IsActive}",
             id, isActive);
 
-        return MapToDto(dataSource);
+        return dataSource.Adapt<DataSourceDto>();
     }
-
-    // ----------------------------------------------------------------
-    // Private mapping helpers
-    // ----------------------------------------------------------------
-
-    private static DataSourceDto MapToDto(DataSource ds) => new()
-    {
-        Id = ds.Id,
-        Name = ds.Name,
-        Type = ds.Type,
-        Description = ds.Description,
-        IsActive = ds.IsActive,
-        HasConnectionString = !string.IsNullOrEmpty(ds.EncryptedConnectionString),
-        Fields = ds.Fields
-            .OrderBy(f => f.FieldName)
-            .Select(f => new DataSourceFieldDto
-            {
-                Id = f.Id,
-                FieldName = f.FieldName,
-                DataType = f.DataType,
-                IsFilterable = f.IsFilterable,
-                IsRecipientAddress = f.IsRecipientAddress,
-                Description = f.Description
-            })
-            .ToList(),
-        CreatedAt = ds.CreatedAt,
-        UpdatedAt = ds.UpdatedAt
-    };
 }

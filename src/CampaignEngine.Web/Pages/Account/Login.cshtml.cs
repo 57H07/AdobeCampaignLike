@@ -1,8 +1,7 @@
 using System.ComponentModel.DataAnnotations;
+using CampaignEngine.Application.DTOs.Identity;
 using CampaignEngine.Application.Interfaces;
-using CampaignEngine.Infrastructure.Identity;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
@@ -15,8 +14,7 @@ namespace CampaignEngine.Web.Pages.Account;
 [AllowAnonymous]
 public class LoginModel : PageModel
 {
-    private readonly SignInManager<ApplicationUser> _signInManager;
-    private readonly UserManager<ApplicationUser> _userManager;
+    private readonly IIdentityService _identityService;
     private readonly IAuthAuditService _auditService;
 
     [BindProperty]
@@ -26,12 +24,10 @@ public class LoginModel : PageModel
     public string? ErrorMessage { get; private set; }
 
     public LoginModel(
-        SignInManager<ApplicationUser> signInManager,
-        UserManager<ApplicationUser> userManager,
+        IIdentityService identityService,
         IAuthAuditService auditService)
     {
-        _signInManager = signInManager;
-        _userManager = userManager;
+        _identityService = identityService;
         _auditService = auditService;
     }
 
@@ -48,24 +44,21 @@ public class LoginModel : PageModel
 
         var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
 
-        var result = await _signInManager.PasswordSignInAsync(
-            Input.UserName,
-            Input.Password,
-            Input.RememberMe,
-            lockoutOnFailure: true);
+        var result = await _identityService.PasswordSignInAsync(new LoginRequest
+        {
+            UserName = Input.UserName,
+            Password = Input.Password,
+            RememberMe = Input.RememberMe
+        });
 
         if (result.Succeeded)
         {
-            var user = await _userManager.FindByNameAsync(Input.UserName)
-                       ?? await _userManager.FindByEmailAsync(Input.UserName);
-
-            if (user != null)
+            if (result.UserId != null)
             {
-                // Update last login timestamp
-                user.LastLoginAt = DateTime.UtcNow;
-                await _userManager.UpdateAsync(user);
-
-                await _auditService.LogLoginAsync(user.Id, user.UserName ?? user.Email ?? user.Id, ipAddress);
+                await _auditService.LogLoginAsync(
+                    result.UserId,
+                    result.UserName ?? result.UserId,
+                    ipAddress);
             }
 
             return LocalRedirect(returnUrl);

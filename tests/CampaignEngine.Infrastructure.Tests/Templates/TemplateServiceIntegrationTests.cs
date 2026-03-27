@@ -2,6 +2,8 @@ using CampaignEngine.Application.DTOs.Templates;
 using CampaignEngine.Application.Interfaces;
 using CampaignEngine.Domain.Enums;
 using CampaignEngine.Domain.Exceptions;
+using CampaignEngine.Infrastructure.Persistence;
+using CampaignEngine.Infrastructure.Persistence.Repositories;
 using CampaignEngine.Infrastructure.Templates;
 using CampaignEngine.Infrastructure.Tests.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -22,7 +24,10 @@ public class TemplateServiceIntegrationTests : DbContextTestBase
         var logger = new Mock<IAppLogger<TemplateService>>();
         var manifestService = new Mock<IPlaceholderManifestService>();
         var parserService = new Mock<IPlaceholderParserService>();
-        _service = new TemplateService(Context, logger.Object, manifestService.Object, parserService.Object);
+        var templateRepository = new TemplateRepository(Context);
+        var unitOfWork = new UnitOfWork(Context);
+        _service = new TemplateService(
+            templateRepository, unitOfWork, logger.Object, manifestService.Object, parserService.Object);
     }
 
     // ----------------------------------------------------------------

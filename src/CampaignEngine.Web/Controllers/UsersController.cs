@@ -1,9 +1,8 @@
 using CampaignEngine.Application.DependencyInjection;
+using CampaignEngine.Application.DTOs.Identity;
 using CampaignEngine.Application.Interfaces;
 using CampaignEngine.Domain.Enums;
-using CampaignEngine.Infrastructure.Identity;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CampaignEngine.Web.Controllers;
@@ -18,16 +17,16 @@ namespace CampaignEngine.Web.Controllers;
 [Produces("application/json")]
 public class UsersController : ControllerBase
 {
-    private readonly UserManager<ApplicationUser> _userManager;
+    private readonly IIdentityService _identityService;
     private readonly IAuthAuditService _auditService;
     private readonly ICurrentUserService _currentUserService;
 
     public UsersController(
-        UserManager<ApplicationUser> userManager,
+        IIdentityService identityService,
         IAuthAuditService auditService,
         ICurrentUserService currentUserService)
     {
-        _userManager = userManager;
+        _identityService = identityService;
         _auditService = auditService;
         _currentUserService = currentUserService;
     }
@@ -42,26 +41,8 @@ public class UsersController : ControllerBase
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<ActionResult<IEnumerable<UserDto>>> GetUsers()
     {
-        var users = _userManager.Users.ToList();
-        var result = new List<UserDto>();
-
-        foreach (var user in users)
-        {
-            var roles = await _userManager.GetRolesAsync(user);
-            result.Add(new UserDto
-            {
-                Id = user.Id,
-                UserName = user.UserName ?? string.Empty,
-                Email = user.Email ?? string.Empty,
-                DisplayName = user.DisplayName,
-                IsActive = user.IsActive,
-                CreatedAt = user.CreatedAt,
-                LastLoginAt = user.LastLoginAt,
-                Roles = roles.ToList()
-            });
-        }
-
-        return Ok(result);
+        var users = await _identityService.GetAllUsersAsync();
+        return Ok(users);
     }
 
     /// <summary>
@@ -75,21 +56,10 @@ public class UsersController : ControllerBase
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<ActionResult<UserDto>> GetUser(string id)
     {
-        var user = await _userManager.FindByIdAsync(id);
+        var user = await _identityService.GetUserByIdAsync(id);
         if (user == null) return NotFound();
 
-        var roles = await _userManager.GetRolesAsync(user);
-        return Ok(new UserDto
-        {
-            Id = user.Id,
-            UserName = user.UserName ?? string.Empty,
-            Email = user.Email ?? string.Empty,
-            DisplayName = user.DisplayName,
-            IsActive = user.IsActive,
-            CreatedAt = user.CreatedAt,
-            LastLoginAt = user.LastLoginAt,
-            Roles = roles.ToList()
-        });
+        return Ok(user);
     }
 
     /// <summary>
@@ -108,55 +78,28 @@ public class UsersController : ControllerBase
         if (!UserRole.All.Contains(request.Role))
             return BadRequest($"Invalid role. Must be one of: {string.Join(", ", UserRole.All)}");
 
-        var user = await _userManager.FindByIdAsync(id);
-        if (user == null) return NotFound();
+        // Get current roles before assignment for audit logging
+        var existingUser = await _identityService.GetUserByIdAsync(id);
+        if (existingUser == null) return NotFound();
 
-        var existingRoles = await _userManager.GetRolesAsync(user);
-        foreach (var existingRole in existingRoles)
+        var previousRoles = existingUser.Roles;
+
+        var result = await _identityService.AssignRoleAsync(id, request.Role);
+        if (result == null) return NotFound();
+
+        var (userId, userName) = result.Value;
+        var adminUserId = _currentUserService.UserId ?? "system";
+        var adminUserName = _currentUserService.UserName ?? "system";
+
+        foreach (var existingRole in previousRoles)
         {
-            await _userManager.RemoveFromRoleAsync(user, existingRole);
             await _auditService.LogRoleRemovedAsync(
-                _currentUserService.UserId ?? "system",
-                _currentUserService.UserName ?? "system",
-                user.Id,
-                user.UserName ?? user.Id,
-                existingRole);
+                adminUserId, adminUserName, userId, userName, existingRole);
         }
 
-        await _userManager.AddToRoleAsync(user, request.Role);
         await _auditService.LogRoleAssignedAsync(
-            _currentUserService.UserId ?? "system",
-            _currentUserService.UserName ?? "system",
-            user.Id,
-            user.UserName ?? user.Id,
-            request.Role);
+            adminUserId, adminUserName, userId, userName, request.Role);
 
         return NoContent();
     }
-}
-
-/// <summary>
-/// DTO representing a user with their assigned roles.
-/// </summary>
-public record UserDto
-{
-    public string Id { get; init; } = string.Empty;
-    public string UserName { get; init; } = string.Empty;
-    public string Email { get; init; } = string.Empty;
-    public string? DisplayName { get; init; }
-    public bool IsActive { get; init; }
-    public DateTime CreatedAt { get; init; }
-    public DateTime? LastLoginAt { get; init; }
-    public IReadOnlyList<string> Roles { get; init; } = Array.Empty<string>();
-}
-
-/// <summary>
-/// Request body for role assignment.
-/// </summary>
-public record AssignRoleRequest
-{
-    /// <summary>
-    /// Role to assign: Admin, Designer, or Operator.
-    /// </summary>
-    public string Role { get; init; } = string.Empty;
 }

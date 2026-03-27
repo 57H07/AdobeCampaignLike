@@ -4,7 +4,7 @@ using CampaignEngine.Domain.Enums;
 using CampaignEngine.Infrastructure.Campaigns;
 using CampaignEngine.Infrastructure.Configuration;
 using CampaignEngine.Infrastructure.Persistence;
-using CampaignEngine.Infrastructure.Persistence.Security;
+using CampaignEngine.Infrastructure.Persistence.Repositories;
 using Hangfire;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -122,16 +122,22 @@ public class ChunkCoordinatorServiceTests : IDisposable
         var connectorMock = new Mock<IDataSourceConnector>();
         var encryptorMock = new Mock<IConnectionStringEncryptor>();
         var loggerMock = new Mock<IAppLogger<ChunkCoordinatorService>>();
+        var campaignRepository = new CampaignRepository(_context);
+        var chunkRepository = new CampaignChunkRepository(_context);
+        var unitOfWork = new UnitOfWork(_context);
 
         return new ChunkCoordinatorService(
-            _context,
+            campaignRepository,
+            chunkRepository,
+            unitOfWork,
             chunkingService,
             connectorMock.Object,
             encryptorMock.Object,
             _completionServiceMock.Object,
             _jobClientMock.Object,
             BuildOptions(),
-            loggerMock.Object);
+            loggerMock.Object,
+            _context);
     }
 
     // ------------------------------------------------------------------
