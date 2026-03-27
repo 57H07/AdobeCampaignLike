@@ -21,19 +21,35 @@ Web → Application → Domain
 Web → Infrastructure → Application → Domain
 ```
 
-- **Domain** — entities, enums, exceptions, filter models. No external deps.
-- **Application** — interfaces, DTOs, services, Mapster mappings. Depends only on Domain.
-- **Infrastructure** — EF Core, dispatchers, connectors, Hangfire jobs. Implements Application interfaces.
+- **Domain** — entities (with business behaviour), enums, exceptions, filter models. No external deps.
+- **Application** — interfaces (incl. `IUnitOfWork`, `IRepository<T>`, `IIdentityService`), DTOs, Mapster mappings. Depends only on Domain.
+- **Infrastructure** — EF Core, repositories, dispatchers, connectors, Hangfire jobs. Implements Application interfaces.
 - **Web** — Razor Pages + REST controllers, middleware, DI bootstrap.
 
 DI registration: each layer has an extension method (`AddApplication()`, `AddInfrastructure()`) called from `Program.cs`.
 
 ## Key Patterns
 
+**Repository + Unit of Work**
+- Repository interfaces in `Application/Interfaces/Repositories/` (`IRepository<T>`, `ICampaignRepository`, etc.).
+- Implementations in `Infrastructure/Persistence/Repositories/`.
+- `IUnitOfWork` (with `CommitAsync` / `BeginTransactionAsync` / `RollbackTransactionAsync` / `IAsyncDisposable`) wraps `DbContext.SaveChangesAsync` and explicit transactions.
+- Services inject repositories + `IUnitOfWork` — never `CampaignEngineDbContext` directly.
+
+**Domain Behaviour (not anemic)**
+- `Campaign.Schedule()` — enforces Draft status, ScheduledAt set, ≥5 min ahead; transitions to Scheduled.
+- `Campaign.AddStep()` — enforces 10-step maximum.
+- `Template.Publish()` / `Template.Archive()` — state-machine guards.
+- Throw `DomainException` for invariant violations.
+
 **Strategy (runtime dispatch)**
-- Channel dispatchers: `IChannelDispatcher` → `SmtpEmailDispatcher`, `SmsApiDispatcher`, `PdfLetterDispatcher`
-- Data connectors: `IDataSourceConnector` → `SqlServerConnector`, `RestApiConnector`
+- Channel dispatchers: `IChannelDispatcher` → `EmailDispatcher`, `SmsDispatcher`, `LetterDispatcher`
+- Data connectors: `IDataSourceConnector` → `SqlServerConnector`
 - Resolved via DI keyed services by `ChannelType` / connector type.
+
+**Identity abstraction**
+- `IIdentityService` in Application wraps ASP.NET Core Identity managers.
+- Web layer only injects `IIdentityService` — never `UserManager<ApplicationUser>` or `SignInManager<ApplicationUser>`.
 
 **Chunk Coordinator** (batch campaigns)
 - `RecipientChunkingService` splits recipients into 500-per-chunk.
@@ -47,10 +63,11 @@ DI registration: each layer has an extension method (`AddApplication()`, `AddInf
 ## Conventions
 
 - Base entities: `AuditableEntity` (created/modified), `SoftDeletableEntity` (+ IsDeleted).
-- Exceptions: `DomainException`, `NotFoundException`, `ValidationException` — caught by `GlobalExceptionMiddleware`.
+- Exceptions: `DomainException` (entity invariants, 422), `ValidationException` (input/state, 400), `NotFoundException` (404) — caught by `GlobalExceptionMiddleware`.
 - Logging: inject `IAppLogger<T>` (not `ILogger<T>`) — wraps Serilog with correlation ID.
-- Auth: cookie-based Identity for Razor Pages; `X-Api-Key` header for REST API endpoints.
-- Mapping: Mapster (not AutoMapper). Config in `Application/Mappings/`.
+- Auth: cookie-based Identity for Razor Pages (via `IIdentityService`); `X-Api-Key` header for REST API endpoints.
+- Mapping: Mapster (not AutoMapper). Config in `Application/Mappings/` (one file per domain aggregate + `MappingConfig.cs`). Use `.Adapt<TDto>()` in services.
+- JSON serialization of filter ASTs: use `FilterExpressionJsonConverter` from `Infrastructure/Serialization/` — never put JSON attributes on Domain classes.
 
 ## Testing
 
