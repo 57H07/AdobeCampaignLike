@@ -2,6 +2,8 @@ using CampaignEngine.Application.DTOs.DataSources;
 using CampaignEngine.Domain.Enums;
 using CampaignEngine.Domain.Filters;
 using CampaignEngine.Infrastructure.DataSources;
+using CampaignEngine.Infrastructure.Serialization;
+using System.Text.Json;
 
 namespace CampaignEngine.Application.Tests.DataSources;
 
@@ -396,8 +398,9 @@ public class FilterAstTranslatorTests
             )
         );
 
-        var json = original.ToJson();
-        var restored = FilterExpression.FromJson(json);
+        var serializerOptions = new JsonSerializerOptions { Converters = { new FilterExpressionJsonConverter() } };
+        var json = JsonSerializer.Serialize(original, serializerOptions);
+        var restored = JsonSerializer.Deserialize<FilterExpression>(json, serializerOptions)!;
 
         var composite = restored.Should().BeOfType<CompositeFilterExpression>().Subject;
         composite.LogicalOperator.Should().Be(LogicalOperator.And);
@@ -418,8 +421,9 @@ public class FilterAstTranslatorTests
             Value = "%@example.com"
         };
 
-        var json = leaf.ToJson();
-        var restored = FilterExpression.FromJson(json);
+        var serializerOptions = new JsonSerializerOptions { Converters = { new FilterExpressionJsonConverter() } };
+        var json = JsonSerializer.Serialize<FilterExpression>(leaf, serializerOptions);
+        var restored = JsonSerializer.Deserialize<FilterExpression>(json, serializerOptions)!;
 
         var restoredLeaf = restored.Should().BeOfType<LeafFilterExpression>().Subject;
         restoredLeaf.FieldName.Should().Be("Email");
