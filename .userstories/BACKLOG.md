@@ -815,8 +815,9 @@
 ---
 
 #### [US-017] - REST API data connector (Phase 2)
-**Status:** ðŸ”µ IN PROGRESS
+**Status:** ✅ DONE
 **Start date:** 2026-03-28
+**End date:** 2026-03-28
 **Priority:** ðŸŸ  Medium
 **Complexity:** M
 **Epic:** Data Source Connector
@@ -829,19 +830,19 @@
 > Additional data source connectors (REST API, CSV import). Open Question Q8: existing REST APIs vs SQL only.
 
 **Acceptance criteria:**
-- [ ] RestApiConnector implementation of IDataSourceConnector
-- [ ] Support for GET endpoints with query parameters
-- [ ] JSON response parsing to data rows
-- [ ] Authentication support (API key, OAuth2)
-- [ ] Pagination handling for large datasets
+- [x] RestApiConnector implementation of IDataSourceConnector ✅
+- [x] Support for GET endpoints with query parameters ✅
+- [x] JSON response parsing to data rows ✅
+- [x] Authentication support (API key, OAuth2) ✅
+- [x] Pagination handling for large datasets ✅
 
 **Technical tasks:**
-- [ ] `TASK-017-01` - **[Service]** Implement RestApiConnector
-- [ ] `TASK-017-02` - **[Service]** JSON to data row mapping
-- [ ] `TASK-017-03` - **[Service]** Authentication handler (API key, OAuth2)
-- [ ] `TASK-017-04` - **[Service]** Pagination strategy (link header, page param)
-- [ ] `TASK-017-05` - **[Test]** Integration tests with mock API
-- [ ] `TASK-017-06` - **[Doc]** REST API connector guide
+- [x] `TASK-017-01` - **[Service]** Implement RestApiConnector ✅ 2026-03-28
+- [x] `TASK-017-02` - **[Service]** JSON to data row mapping ✅ 2026-03-28
+- [x] `TASK-017-03` - **[Service]** Authentication handler (API key, OAuth2) ✅ 2026-03-28
+- [x] `TASK-017-04` - **[Service]** Pagination strategy (link header, page param) ✅ 2026-03-28
+- [x] `TASK-017-05` - **[Test]** Integration tests with mock API ✅ 2026-03-28
+- [x] `TASK-017-06` - **[Doc]** REST API connector guide ✅ 2026-03-28
 
 **Business rules:**
 1. API timeout: 60 seconds
