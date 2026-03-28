@@ -32,7 +32,7 @@ public sealed class ChunkCoordinatorService : IChunkCoordinatorService
     private readonly ICampaignChunkRepository _chunkRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IRecipientChunkingService _chunkingService;
-    private readonly IDataSourceConnector _connector;
+    private readonly IDataSourceConnectorRegistry _connectorRegistry;
     private readonly IConnectionStringEncryptor _encryptor;
     private readonly ICampaignCompletionService _completionService;
     private readonly IBackgroundJobClient _jobClient;
@@ -52,7 +52,7 @@ public sealed class ChunkCoordinatorService : IChunkCoordinatorService
         ICampaignChunkRepository chunkRepository,
         IUnitOfWork unitOfWork,
         IRecipientChunkingService chunkingService,
-        IDataSourceConnector connector,
+        IDataSourceConnectorRegistry connectorRegistry,
         IConnectionStringEncryptor encryptor,
         ICampaignCompletionService completionService,
         IBackgroundJobClient jobClient,
@@ -64,7 +64,7 @@ public sealed class ChunkCoordinatorService : IChunkCoordinatorService
         _chunkRepository = chunkRepository;
         _unitOfWork = unitOfWork;
         _chunkingService = chunkingService;
-        _connector = connector;
+        _connectorRegistry = connectorRegistry;
         _encryptor = encryptor;
         _completionService = completionService;
         _jobClient = jobClient;
@@ -130,7 +130,8 @@ public sealed class ChunkCoordinatorService : IChunkCoordinatorService
                 Fields = fieldDtos
             };
 
-            recipients = await _connector.QueryAsync(definition, null, cancellationToken);
+            var connector = _connectorRegistry.GetConnector(campaign.DataSource.Type);
+            recipients = await connector.QueryAsync(definition, null, cancellationToken);
         }
 
         // ----------------------------------------------------------------

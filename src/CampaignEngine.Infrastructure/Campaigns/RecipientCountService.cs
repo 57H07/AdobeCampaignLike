@@ -19,20 +19,20 @@ public sealed class RecipientCountService : IRecipientCountService
 {
     private readonly CampaignEngineDbContext _dbContext;
     private readonly IConnectionStringEncryptor _encryptor;
-    private readonly IDataSourceConnector _connector;
+    private readonly IDataSourceConnectorRegistry _connectorRegistry;
     private readonly IFilterExpressionValidator _validator;
     private readonly IAppLogger<RecipientCountService> _logger;
 
     public RecipientCountService(
         CampaignEngineDbContext dbContext,
         IConnectionStringEncryptor encryptor,
-        IDataSourceConnector connector,
+        IDataSourceConnectorRegistry connectorRegistry,
         IFilterExpressionValidator validator,
         IAppLogger<RecipientCountService> logger)
     {
         _dbContext = dbContext;
         _encryptor = encryptor;
-        _connector = connector;
+        _connectorRegistry = connectorRegistry;
         _validator = validator;
         _logger = logger;
     }
@@ -127,7 +127,8 @@ public sealed class RecipientCountService : IRecipientCountService
                 ? filters.Select(MapToFilterDto).ToList()
                 : null;
 
-            var rows = await _connector.QueryAsync(definition, filterDtos, cancellationToken);
+            var connector = _connectorRegistry.GetConnector(dataSource.Type);
+            var rows = await connector.QueryAsync(definition, filterDtos, cancellationToken);
 
             _logger.LogInformation(
                 "RecipientCountService: estimated {Count} recipients for DataSource {DataSourceId}",

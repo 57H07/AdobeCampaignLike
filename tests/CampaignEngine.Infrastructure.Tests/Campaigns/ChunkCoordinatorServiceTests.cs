@@ -120,6 +120,10 @@ public class ChunkCoordinatorServiceTests : IDisposable
     {
         var chunkingService = new RecipientChunkingService(BuildOptions());
         var connectorMock = new Mock<IDataSourceConnector>();
+        var connectorRegistryMock = new Mock<IDataSourceConnectorRegistry>();
+        connectorRegistryMock
+            .Setup(r => r.GetConnector(It.IsAny<CampaignEngine.Domain.Enums.DataSourceType>()))
+            .Returns(connectorMock.Object);
         var encryptorMock = new Mock<IConnectionStringEncryptor>();
         var loggerMock = new Mock<IAppLogger<ChunkCoordinatorService>>();
         var campaignRepository = new CampaignRepository(_context);
@@ -131,7 +135,7 @@ public class ChunkCoordinatorServiceTests : IDisposable
             chunkRepository,
             unitOfWork,
             chunkingService,
-            connectorMock.Object,
+            connectorRegistryMock.Object,
             encryptorMock.Object,
             _completionServiceMock.Object,
             _jobClientMock.Object,

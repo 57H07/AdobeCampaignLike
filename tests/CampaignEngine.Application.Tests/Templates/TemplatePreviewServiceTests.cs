@@ -21,6 +21,7 @@ public class TemplatePreviewServiceTests : IDisposable
     private readonly CampaignEngineDbContext _context;
     private readonly Mock<IConnectionStringEncryptor> _encryptorMock;
     private readonly Mock<IDataSourceConnector> _connectorMock;
+    private readonly Mock<IDataSourceConnectorRegistry> _connectorRegistryMock;
     private readonly Mock<ISubTemplateResolverService> _subTemplateResolverMock;
     private readonly Mock<ITemplateRenderer> _rendererMock;
     private readonly Mock<IPlaceholderParserService> _parserMock;
@@ -38,6 +39,10 @@ public class TemplatePreviewServiceTests : IDisposable
         _context = new CampaignEngineDbContext(options);
         _encryptorMock = new Mock<IConnectionStringEncryptor>();
         _connectorMock = new Mock<IDataSourceConnector>();
+        _connectorRegistryMock = new Mock<IDataSourceConnectorRegistry>();
+        _connectorRegistryMock
+            .Setup(r => r.GetConnector(It.IsAny<CampaignEngine.Domain.Enums.DataSourceType>()))
+            .Returns(_connectorMock.Object);
         _subTemplateResolverMock = new Mock<ISubTemplateResolverService>();
         _rendererMock = new Mock<ITemplateRenderer>();
         _parserMock = new Mock<IPlaceholderParserService>();
@@ -48,7 +53,7 @@ public class TemplatePreviewServiceTests : IDisposable
         _service = new TemplatePreviewService(
             _context,
             _encryptorMock.Object,
-            _connectorMock.Object,
+            _connectorRegistryMock.Object,
             _subTemplateResolverMock.Object,
             _rendererMock.Object,
             _parserMock.Object,

@@ -24,7 +24,7 @@ public sealed class DataSourcePreviewService : IDataSourcePreviewService
 
     private readonly CampaignEngineDbContext _dbContext;
     private readonly IConnectionStringEncryptor _encryptor;
-    private readonly IDataSourceConnector _connector;
+    private readonly IDataSourceConnectorRegistry _connectorRegistry;
     private readonly IFilterExpressionValidator _validator;
     private readonly IFilterAstTranslator _translator;
     private readonly IAppLogger<DataSourcePreviewService> _logger;
@@ -32,14 +32,14 @@ public sealed class DataSourcePreviewService : IDataSourcePreviewService
     public DataSourcePreviewService(
         CampaignEngineDbContext dbContext,
         IConnectionStringEncryptor encryptor,
-        IDataSourceConnector connector,
+        IDataSourceConnectorRegistry connectorRegistry,
         IFilterExpressionValidator validator,
         IFilterAstTranslator translator,
         IAppLogger<DataSourcePreviewService> logger)
     {
         _dbContext = dbContext;
         _encryptor = encryptor;
-        _connector = connector;
+        _connectorRegistry = connectorRegistry;
         _validator = validator;
         _translator = translator;
         _logger = logger;
@@ -133,7 +133,8 @@ public sealed class DataSourcePreviewService : IDataSourcePreviewService
         IReadOnlyList<IDictionary<string, object?>> rows;
         try
         {
-            rows = await _connector.QueryAsync(definition, filterDtos, cancellationToken);
+            var connector = _connectorRegistry.GetConnector(dataSource.Type);
+            rows = await connector.QueryAsync(definition, filterDtos, cancellationToken);
         }
         catch (Exception ex)
         {

@@ -200,7 +200,8 @@ public static class ServiceCollectionExtensions
         // ----------------------------------------------------------------
         // Data source connectors (strategy pattern keyed by DataSourceType)
         // SqlServerConnector: Dapper-based, parameterized SQL, read-only.
-        // Registered as Scoped — opens/closes SqlConnection per call (ADO.NET pools handles reuse).
+        // RestApiConnector: HttpClient-based, JSON parsing, auth + pagination.
+        // Resolved at runtime by DataSourceConnectorRegistry keyed on DataSourceType.
         // ----------------------------------------------------------------
         services.Configure<SqlServerConnectorOptions>(
             configuration.GetSection(SqlServerConnectorOptions.SectionName));
@@ -216,6 +217,31 @@ public static class ServiceCollectionExtensions
         // When multiple connector implementations exist, resolve by DataSourceType via a registry.
         services.AddScoped<IDataSourceConnector, SqlServerConnector>(sp =>
             sp.GetRequiredService<SqlServerConnector>());
+
+        // RestApiConnector: HTTP-based connector for REST API data sources (US-017).
+        // OAuth2TokenCache is Singleton: token lifetime outlasts scoped connector instances.
+        services.Configure<RestApiConnectorOptions>(
+            configuration.GetSection(RestApiConnectorOptions.SectionName));
+
+        services.AddHttpClient("RestApiConnector");
+
+        services.AddSingleton<RestApiOAuth2TokenCache>(sp =>
+        {
+            var factory = sp.GetRequiredService<IHttpClientFactory>();
+            return new RestApiOAuth2TokenCache(factory);
+        });
+
+        services.AddScoped<RestApiConnector>(sp =>
+        {
+            var opts = sp.GetRequiredService<IOptions<RestApiConnectorOptions>>().Value;
+            var factory = sp.GetRequiredService<IHttpClientFactory>();
+            var oauth2Cache = sp.GetRequiredService<RestApiOAuth2TokenCache>();
+            var logger = sp.GetRequiredService<IAppLogger<RestApiConnector>>();
+            return new RestApiConnector(opts, factory, oauth2Cache, logger);
+        });
+
+        // Connector registry: resolves IDataSourceConnector by DataSourceType at runtime.
+        services.AddScoped<IDataSourceConnectorRegistry, DataSourceConnectorRegistry>();
 
         // ----------------------------------------------------------------
         // Filter expression services (US-016)

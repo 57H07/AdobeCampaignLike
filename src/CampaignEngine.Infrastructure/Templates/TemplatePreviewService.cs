@@ -31,7 +31,7 @@ public sealed class TemplatePreviewService : ITemplatePreviewService
 
     private readonly CampaignEngineDbContext _dbContext;
     private readonly IConnectionStringEncryptor _encryptor;
-    private readonly IDataSourceConnector _connector;
+    private readonly IDataSourceConnectorRegistry _connectorRegistry;
     private readonly ISubTemplateResolverService _subTemplateResolver;
     private readonly ITemplateRenderer _renderer;
     private readonly IPlaceholderParserService _parserService;
@@ -41,7 +41,7 @@ public sealed class TemplatePreviewService : ITemplatePreviewService
     public TemplatePreviewService(
         CampaignEngineDbContext dbContext,
         IConnectionStringEncryptor encryptor,
-        IDataSourceConnector connector,
+        IDataSourceConnectorRegistry connectorRegistry,
         ISubTemplateResolverService subTemplateResolver,
         ITemplateRenderer renderer,
         IPlaceholderParserService parserService,
@@ -50,7 +50,7 @@ public sealed class TemplatePreviewService : ITemplatePreviewService
     {
         _dbContext = dbContext;
         _encryptor = encryptor;
-        _connector = connector;
+        _connectorRegistry = connectorRegistry;
         _subTemplateResolver = subTemplateResolver;
         _renderer = renderer;
         _parserService = parserService;
@@ -124,7 +124,8 @@ public sealed class TemplatePreviewService : ITemplatePreviewService
         IReadOnlyList<IDictionary<string, object?>> sampleRows;
         try
         {
-            var allRows = await _connector.QueryAsync(definition, filters: null, cancellationToken);
+            var connector = _connectorRegistry.GetConnector(dataSource.Type);
+            var allRows = await connector.QueryAsync(definition, filters: null, cancellationToken);
             sampleRows = allRows.Take(clampedRowCount).ToList();
         }
         catch (Exception ex)

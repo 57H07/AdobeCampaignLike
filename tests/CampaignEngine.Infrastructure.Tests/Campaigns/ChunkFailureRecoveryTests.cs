@@ -65,12 +65,16 @@ public class ChunkFailureRecoveryTests : IDisposable
         var campaignRepository = new CampaignRepository(_context);
         var chunkRepository = new CampaignChunkRepository(_context);
         var unitOfWork = new UnitOfWork(_context);
+        var connectorRegistryMock = new Mock<IDataSourceConnectorRegistry>();
+        connectorRegistryMock
+            .Setup(r => r.GetConnector(It.IsAny<CampaignEngine.Domain.Enums.DataSourceType>()))
+            .Returns(new Mock<IDataSourceConnector>().Object);
         return new ChunkCoordinatorService(
             campaignRepository,
             chunkRepository,
             unitOfWork,
             chunkingService,
-            new Mock<IDataSourceConnector>().Object,
+            connectorRegistryMock.Object,
             new Mock<IConnectionStringEncryptor>().Object,
             _completionServiceMock.Object,
             new Mock<IBackgroundJobClient>().Object,
