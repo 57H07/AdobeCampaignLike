@@ -1339,7 +1339,8 @@
 ---
 
 #### [US-028] - Static and dynamic attachment management
-**Status:** ðŸŸ¡ TODO
+**Status:** 🔵 IN PROGRESS
+**Start date:** 2026-03-28
 **Priority:** ðŸŸ  Medium
 **Complexity:** M
 **Epic:** Campaign Orchestrator
