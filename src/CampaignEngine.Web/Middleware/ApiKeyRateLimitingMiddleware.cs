@@ -1,5 +1,4 @@
-using System.Collections.Concurrent;
-using System.Threading.RateLimiting;
+using CampaignEngine.Application.Interfaces;
 
 namespace CampaignEngine.Web.Middleware;
 
@@ -8,24 +7,28 @@ namespace CampaignEngine.Web.Middleware;
 /// Must run AFTER ApiKeyAuthenticationMiddleware so that the ApiKeyId context item
 /// and ApiKeyRateLimitPerMinute context item are already populated.
 ///
-/// Algorithm: Fixed window — resets every 60 seconds.
-/// Limit stored per API key ID in a ConcurrentDictionary of FixedWindowRateLimiters.
-/// Limiters are reused across requests for the same key (not re-created per request).
+/// Algorithm: Sliding 1-minute window via <see cref="IApiKeyRateLimiter"/>.
+/// Limit stored per API key ID; window state is maintained across requests.
 ///
 /// Behaviour:
 ///   - Requests without an API key (UI routes) are NOT rate-limited.
+///   - All API-key-authenticated responses include X-RateLimit-* headers:
+///       X-RateLimit-Limit     — the configured limit for this key (requests/minute).
+///       X-RateLimit-Remaining — remaining requests in the current window.
+///       X-RateLimit-Reset     — Unix timestamp (seconds) when the window resets.
 ///   - Requests exceeding the per-key limit return 429 Too Many Requests.
 ///   - Retry-After header is set to the seconds until the window resets.
+///
+/// US-033 business rules:
+///   BR-1: Default 1000 req/min (from ApiKeyAuthenticationDefaults.DefaultRateLimitPerMinute).
+///   BR-2: Sliding 1-minute window.
+///   BR-3: Headers: X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset.
+///   BR-4: 429 + Retry-After when limit exceeded.
 /// </summary>
 public class ApiKeyRateLimitingMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly ILogger<ApiKeyRateLimitingMiddleware> _logger;
-
-    // One limiter per API key ID.  ConcurrentDictionary ensures thread-safe access.
-    // Limiters are never removed (API keys are never deleted, only revoked).
-    // For a production deployment with thousands of keys, consider a bounded cache with eviction.
-    private readonly ConcurrentDictionary<Guid, FixedWindowRateLimiter> _limiters = new();
 
     public ApiKeyRateLimitingMiddleware(
         RequestDelegate next,
@@ -51,29 +54,32 @@ public class ApiKeyRateLimitingMiddleware
             ? limit
             : ApiKeyAuthenticationDefaults.DefaultRateLimitPerMinute;
 
-        // Get or create a FixedWindowRateLimiter for this API key.
-        var limiter = _limiters.GetOrAdd(apiKeyId, _ => CreateLimiter(rateLimitPerMinute));
+        // Resolve rate limiter from DI (singleton — safe across requests).
+        var rateLimiter = context.RequestServices.GetRequiredService<IApiKeyRateLimiter>();
 
-        using var lease = await limiter.AcquireAsync(permitCount: 1, context.RequestAborted);
+        var result = await rateLimiter.TryAcquireAsync(apiKeyId, rateLimitPerMinute, context.RequestAborted);
 
-        if (lease.IsAcquired)
+        // Always add X-RateLimit headers (BR-3), even on rejected requests.
+        var resetUnixSeconds = new DateTimeOffset(result.ResetAt).ToUnixTimeSeconds();
+        context.Response.Headers["X-RateLimit-Limit"] = result.Limit.ToString();
+        context.Response.Headers["X-RateLimit-Remaining"] = result.Remaining.ToString();
+        context.Response.Headers["X-RateLimit-Reset"] = resetUnixSeconds.ToString();
+
+        if (result.IsAllowed)
         {
             await _next(context);
             return;
         }
 
-        // Rate limit exceeded — return 429.
+        // Rate limit exceeded — return 429 (BR-4).
         _logger.LogWarning(
             "Rate limit exceeded for API key {ApiKeyId}. Limit={LimitPerMinute}/min Path={Path}",
             apiKeyId, rateLimitPerMinute, context.Request.Path);
 
-        // Calculate retry window seconds remaining (fixed window = 60 s)
-        var retryAfterSeconds = 60;
-        if (lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter))
-            retryAfterSeconds = (int)retryAfter.TotalSeconds;
-
+        var retryAfterSeconds = result.RetryAfterSeconds;
         context.Response.StatusCode = StatusCodes.Status429TooManyRequests;
         context.Response.Headers["Retry-After"] = retryAfterSeconds.ToString();
+
         await context.Response.WriteAsJsonAsync(new
         {
             status = 429,
@@ -82,13 +88,4 @@ public class ApiKeyRateLimitingMiddleware
             retryAfterSeconds
         });
     }
-
-    private static FixedWindowRateLimiter CreateLimiter(int permitCountPerMinute) =>
-        new(new FixedWindowRateLimiterOptions
-        {
-            PermitLimit = permitCountPerMinute,
-            Window = TimeSpan.FromMinutes(1),
-            QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
-            QueueLimit = 0   // No queue — reject immediately when limit exceeded
-        });
 }

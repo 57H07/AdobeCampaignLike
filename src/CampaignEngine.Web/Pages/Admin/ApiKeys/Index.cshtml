@@ -98,6 +98,9 @@
                 <td>
                     @if (key.IsActive)
                     {
+                        <a asp-page="EditRateLimit" asp-route-id="@key.Id" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-speedometer2"></i> Rate Limit
+                        </a>
                         <form method="post" asp-page-handler="Revoke" asp-route-id="@key.Id" style="display:inline;">
                             <button type="submit" class="btn btn-sm btn-outline-danger"
                                     onclick="return confirm('Revoke API key \'@key.Name\'? This cannot be undone.')">

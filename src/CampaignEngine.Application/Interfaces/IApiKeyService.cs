@@ -46,6 +46,12 @@ public interface IApiKeyService
     /// </summary>
     Task<ApiKeyCreatedResponse> RotateAsync(Guid id, string rotatedByUserName, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Updates the rate limit for an existing API key.
+    /// Pass null for RateLimitPerMinute to reset to the system default.
+    /// </summary>
+    Task<ApiKeyDto> UpdateRateLimitAsync(Guid id, UpdateApiKeyRateLimitRequest request, CancellationToken cancellationToken = default);
+
     // ----------------------------------------------------------------
     // Authentication
     // ----------------------------------------------------------------

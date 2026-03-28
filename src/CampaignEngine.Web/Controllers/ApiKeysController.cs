@@ -5,6 +5,7 @@ using CampaignEngine.Web.OpenApi.Examples;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Filters;
+using System.ComponentModel.DataAnnotations;
 
 namespace CampaignEngine.Web.Controllers;
 
@@ -26,13 +27,16 @@ public class ApiKeysController : ControllerBase
 {
     private readonly IApiKeyService _apiKeyService;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IApiKeyRateLimiter _rateLimiter;
 
     public ApiKeysController(
         IApiKeyService apiKeyService,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        IApiKeyRateLimiter rateLimiter)
     {
         _apiKeyService = apiKeyService;
         _currentUserService = currentUserService;
+        _rateLimiter = rateLimiter;
     }
 
     // ----------------------------------------------------------------
@@ -147,4 +151,79 @@ public class ApiKeysController : ControllerBase
             new { id = response.Key.Id },
             response);
     }
+
+    // ----------------------------------------------------------------
+    // PATCH /api/apikeys/{id}/rate-limit
+    // ----------------------------------------------------------------
+
+    /// <summary>
+    /// Updates the rate limit for an existing API key.
+    /// Pass null for RateLimitPerMinute to reset to the system default (1000 req/min).
+    /// The new limit takes effect immediately on the next request.
+    /// </summary>
+    [HttpPatch("{id:guid}/rate-limit")]
+    [ProducesResponseType(typeof(ApiKeyDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ApiKeyDto>> UpdateRateLimit(
+        Guid id,
+        [FromBody] UpdateApiKeyRateLimitRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var dto = await _apiKeyService.UpdateRateLimitAsync(id, request, cancellationToken);
+        return Ok(dto);
+    }
+
+    // ----------------------------------------------------------------
+    // GET /api/apikeys/rate-limit-stats
+    // ----------------------------------------------------------------
+
+    /// <summary>
+    /// Returns per-key rate limiting statistics for monitoring and alerting.
+    /// Shows current window usage, total requests, and rejection counts for all keys
+    /// that have made at least one request since the service started.
+    /// </summary>
+    [HttpGet("rate-limit-stats")]
+    [ProducesResponseType(typeof(IReadOnlyList<ApiKeyRateLimitStatsDto>), StatusCodes.Status200OK)]
+    public IActionResult GetRateLimitStats()
+    {
+        var stats = _rateLimiter.GetAllStats();
+        var dtos = stats.Select(s => new ApiKeyRateLimitStatsDto
+        {
+            ApiKeyId = s.ApiKeyId,
+            LimitPerMinute = s.LimitPerMinute,
+            TotalRequests = s.TotalRequests,
+            TotalRejected = s.TotalRejected,
+            RequestsInCurrentWindow = s.RequestsInCurrentWindow,
+            RemainingInCurrentWindow = s.RemainingInCurrentWindow,
+            CurrentWindowResetAt = s.CurrentWindowResetAt
+        }).ToList();
+
+        return Ok(dtos);
+    }
+}
+
+/// <summary>Response DTO for per-key rate limit statistics (monitoring endpoint).</summary>
+public sealed class ApiKeyRateLimitStatsDto
+{
+    /// <summary>The API key ID.</summary>
+    public Guid ApiKeyId { get; init; }
+
+    /// <summary>The configured rate limit for this key (requests/minute).</summary>
+    public int LimitPerMinute { get; init; }
+
+    /// <summary>Total requests processed since service start.</summary>
+    public long TotalRequests { get; init; }
+
+    /// <summary>Total requests rejected (rate limit exceeded) since service start.</summary>
+    public long TotalRejected { get; init; }
+
+    /// <summary>Requests counted in the current sliding window (last 60 seconds).</summary>
+    public int RequestsInCurrentWindow { get; init; }
+
+    /// <summary>Remaining quota in the current window.</summary>
+    public int RemainingInCurrentWindow { get; init; }
+
+    /// <summary>UTC time when the current window resets.</summary>
+    public DateTime CurrentWindowResetAt { get; init; }
 }

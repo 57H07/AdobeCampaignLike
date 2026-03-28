@@ -415,6 +415,14 @@ public static class ServiceCollectionExtensions
             configuration.GetSection(ApiKeyOptions.SectionName));
         services.AddScoped<IApiKeyService, ApiKeyService>();
 
+        // ----------------------------------------------------------------
+        // API key rate limiting (US-033)
+        // ApiKeyRateLimiter: in-memory sliding-window per-key rate limiter.
+        // Registered as Singleton: rate-limit state (timestamps queue per key) must
+        // persist across requests. The implementation is thread-safe (per-key locking).
+        // ----------------------------------------------------------------
+        services.AddSingleton<IApiKeyRateLimiter, ApiKeyRateLimiter>();
+
         return services;
     }
 }

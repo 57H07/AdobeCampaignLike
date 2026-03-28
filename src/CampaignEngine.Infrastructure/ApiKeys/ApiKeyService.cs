@@ -188,6 +188,32 @@ public sealed class ApiKeyService : IApiKeyService
         return null;
     }
 
+    /// <inheritdoc />
+    public async Task<ApiKeyDto> UpdateRateLimitAsync(
+        Guid id,
+        UpdateApiKeyRateLimitRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var entity = await _apiKeyRepository.GetByIdAsync(id, cancellationToken)
+            ?? throw new NotFoundException("ApiKey", id);
+
+        if (!entity.IsActive)
+            throw new ValidationException($"API key '{entity.Name}' is revoked and cannot be updated.");
+
+        var previous = entity.RateLimitPerMinute;
+        entity.RateLimitPerMinute = request.RateLimitPerMinute; // null = system default
+
+        await _unitOfWork.CommitAsync(cancellationToken);
+
+        _logger.LogInformation(
+            "API key rate limit updated — Id={KeyId} Name={KeyName} Previous={Previous}/min New={New}/min",
+            entity.Id, entity.Name,
+            previous.HasValue ? previous.Value.ToString() : "default",
+            request.RateLimitPerMinute.HasValue ? request.RateLimitPerMinute.Value.ToString() : "default");
+
+        return entity.Adapt<ApiKeyDto>();
+    }
+
     // ----------------------------------------------------------------
     // Private helpers
     // ----------------------------------------------------------------
