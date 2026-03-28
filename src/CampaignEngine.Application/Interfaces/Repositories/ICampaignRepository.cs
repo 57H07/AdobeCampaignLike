@@ -45,6 +45,18 @@ public interface ICampaignRepository : IRepository<Campaign>
 
     /// <summary>Returns true if a DataSource with the given ID exists.</summary>
     Task<bool> DataSourceExistsAsync(Guid dataSourceId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Returns campaigns matching the given statuses with their Steps loaded.
+    /// Used by the dashboard service (US-036).
+    /// Results ordered by StartedAt descending, then CreatedAt descending.
+    /// </summary>
+    Task<IReadOnlyList<Campaign>> GetActiveForDashboardAsync(
+        IReadOnlyList<CampaignEngine.Domain.Enums.CampaignStatus> statuses,
+        DateTime? startedFrom,
+        DateTime? startedTo,
+        string? createdBy,
+        CancellationToken cancellationToken = default);
 }
 
 /// <summary>Lightweight projection used only for validation queries in CampaignService.</summary>

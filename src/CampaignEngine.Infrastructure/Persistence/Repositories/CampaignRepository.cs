@@ -96,4 +96,33 @@ public sealed class CampaignRepository : RepositoryBase<Campaign>, ICampaignRepo
     /// <inheritdoc />
     public async Task<bool> DataSourceExistsAsync(Guid dataSourceId, CancellationToken cancellationToken = default)
         => await DbContext.DataSources.AnyAsync(d => d.Id == dataSourceId, cancellationToken);
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<Campaign>> GetActiveForDashboardAsync(
+        IReadOnlyList<CampaignStatus> statuses,
+        DateTime? startedFrom,
+        DateTime? startedTo,
+        string? createdBy,
+        CancellationToken cancellationToken = default)
+    {
+        var query = DbContext.Campaigns
+            .AsNoTracking()
+            .Include(c => c.Steps)
+            .Where(c => statuses.Contains(c.Status));
+
+        if (startedFrom.HasValue)
+            query = query.Where(c => c.StartedAt >= startedFrom.Value);
+
+        if (startedTo.HasValue)
+            query = query.Where(c => c.StartedAt <= startedTo.Value);
+
+        if (!string.IsNullOrWhiteSpace(createdBy))
+            query = query.Where(c => c.CreatedBy == createdBy);
+
+        var results = await query
+            .OrderByDescending(c => c.StartedAt ?? c.CreatedAt)
+            .ToListAsync(cancellationToken);
+
+        return results.AsReadOnly();
+    }
 }

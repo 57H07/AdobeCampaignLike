@@ -321,6 +321,7 @@ public static class ServiceCollectionExtensions
         // ----------------------------------------------------------------
         services.AddScoped<ICampaignService, CampaignService>();
         services.AddScoped<ICampaignStatusService, CampaignStatusService>();
+        services.AddScoped<ICampaignDashboardService, CampaignDashboardService>();
         services.AddScoped<IRecipientCountService, RecipientCountService>();
         services.AddScoped<ICampaignStepValidationService, CampaignStepValidationService>();
         services.AddSingleton<ICampaignStepSchedulingService, CampaignStepSchedulingService>();
