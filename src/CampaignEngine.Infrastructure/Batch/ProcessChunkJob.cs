@@ -162,15 +162,31 @@ public sealed class ProcessChunkJob : IProcessChunkJob
                     CampaignStepId = chunk.CampaignStepId
                 };
 
-                // Apply CC/BCC from campaign if Email channel
+                // Apply CC/BCC from campaign if Email channel (US-029)
                 if (step.Channel == ChannelType.Email && chunk.Campaign is not null)
                 {
+                    // Static CC: comma-separated list from campaign configuration
+                    var ccAddresses = new List<string>();
                     if (!string.IsNullOrWhiteSpace(chunk.Campaign.StaticCcAddresses))
                     {
-                        dispatchRequest.CcAddresses = chunk.Campaign.StaticCcAddresses
-                            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                            .ToList();
+                        ccAddresses.AddRange(chunk.Campaign.StaticCcAddresses
+                            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
                     }
+
+                    // Dynamic CC: per-recipient field value (semicolon or comma separated)
+                    if (!string.IsNullOrWhiteSpace(chunk.Campaign.DynamicCcField)
+                        && recipient.TryGetValue(chunk.Campaign.DynamicCcField, out var dynCcValue)
+                        && dynCcValue is not null)
+                    {
+                        var dynCcStr = dynCcValue.ToString() ?? string.Empty;
+                        ccAddresses.AddRange(dynCcStr
+                            .Split([',', ';'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+                    }
+
+                    if (ccAddresses.Count > 0)
+                        dispatchRequest.CcAddresses = ccAddresses;
+
+                    // Static BCC: comma-separated list from campaign configuration
                     if (!string.IsNullOrWhiteSpace(chunk.Campaign.StaticBccAddresses))
                     {
                         dispatchRequest.BccAddresses = chunk.Campaign.StaticBccAddresses

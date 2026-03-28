@@ -123,7 +123,14 @@ public sealed class CampaignService : ICampaignService
             FilterExpression = request.FilterExpression,
             FreeFieldValues = request.FreeFieldValues,
             ScheduledAt = request.ScheduledAt,
-            CreatedBy = createdBy
+            CreatedBy = createdBy,
+            // CC/BCC configuration (US-029)
+            StaticCcAddresses = string.IsNullOrWhiteSpace(request.StaticCcAddresses)
+                ? null : request.StaticCcAddresses.Trim(),
+            DynamicCcField = string.IsNullOrWhiteSpace(request.DynamicCcField)
+                ? null : request.DynamicCcField.Trim(),
+            StaticBccAddresses = string.IsNullOrWhiteSpace(request.StaticBccAddresses)
+                ? null : request.StaticBccAddresses.Trim()
         };
 
         // Add ordered steps — Campaign.AddStep enforces the 10-step maximum

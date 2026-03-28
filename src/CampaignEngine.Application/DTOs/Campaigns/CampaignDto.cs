@@ -52,6 +52,19 @@ public class CampaignDto
     /// <summary>Username of the operator who created the campaign.</summary>
     public string? CreatedBy { get; init; }
 
+    // ----------------------------------------------------------------
+    // CC/BCC configuration (US-029)
+    // ----------------------------------------------------------------
+
+    /// <summary>Static CC addresses: comma-separated email list.</summary>
+    public string? StaticCcAddresses { get; init; }
+
+    /// <summary>Data source field name for dynamic CC address per recipient.</summary>
+    public string? DynamicCcField { get; init; }
+
+    /// <summary>Static BCC addresses: comma-separated email list.</summary>
+    public string? StaticBccAddresses { get; init; }
+
     /// <summary>Campaign steps in order.</summary>
     public IReadOnlyList<CampaignStepDto> Steps { get; init; } = Array.Empty<CampaignStepDto>();
 

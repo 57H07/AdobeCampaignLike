@@ -48,4 +48,32 @@ public class CreateCampaignRequest
     [MinLength(1, ErrorMessage = "At least one step is required.")]
     [MaxLength(10, ErrorMessage = "A campaign may have at most 10 steps.")]
     public List<CreateCampaignStepRequest> Steps { get; set; } = new();
+
+    // ----------------------------------------------------------------
+    // CC/BCC configuration (US-029)
+    // ----------------------------------------------------------------
+
+    /// <summary>
+    /// Static CC addresses: comma-separated list of email addresses.
+    /// All recipients of each send will receive a CC to these addresses.
+    /// Business rule: comma-separated, max 10 CC recipients per send (enforced at dispatch time).
+    /// </summary>
+    [MaxLength(2000)]
+    public string? StaticCcAddresses { get; set; }
+
+    /// <summary>
+    /// Data source field name containing the dynamic CC address(es) per recipient.
+    /// The field value may contain a single email or a semicolon-separated list.
+    /// Business rule: field value is extracted per-recipient from the data source row.
+    /// </summary>
+    [MaxLength(200)]
+    public string? DynamicCcField { get; set; }
+
+    /// <summary>
+    /// Static BCC addresses: comma-separated list of email addresses.
+    /// Hidden copies — BCC recipients are not visible to the To or CC recipients.
+    /// Business rule: comma-separated, validated, deduplicated.
+    /// </summary>
+    [MaxLength(2000)]
+    public string? StaticBccAddresses { get; set; }
 }
