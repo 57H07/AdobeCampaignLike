@@ -10,20 +10,24 @@ namespace CampaignEngine.Web.Pages.Campaigns;
 /// <summary>
 /// Campaign detail page — accessible to all authenticated users.
 /// Displays campaign summary, steps, template snapshots (US-025),
-/// live progress bar and status transition history (US-027).
+/// live progress bar and status transition history (US-027),
+/// and attachment management UI (US-028).
 /// </summary>
 [Authorize(Policy = AuthorizationPolicies.RequireAuthenticated)]
 public class CampaignDetailModel : PageModel
 {
     private readonly ICampaignService _campaignService;
     private readonly ITemplateSnapshotService _snapshotService;
+    private readonly IAttachmentService _attachmentService;
 
     public CampaignDetailModel(
         ICampaignService campaignService,
-        ITemplateSnapshotService snapshotService)
+        ITemplateSnapshotService snapshotService,
+        IAttachmentService attachmentService)
     {
         _campaignService = campaignService;
         _snapshotService = snapshotService;
+        _attachmentService = attachmentService;
     }
 
     public CampaignDto? Campaign { get; set; }
@@ -41,6 +45,11 @@ public class CampaignDetailModel : PageModel
     public CampaignStatusDto? StatusSnapshot { get; set; }
 
     /// <summary>
+    /// Attachments (static and dynamic) for this campaign (US-028).
+    /// </summary>
+    public IReadOnlyList<CampaignAttachmentDto> Attachments { get; set; } = Array.Empty<CampaignAttachmentDto>();
+
+    /// <summary>
     /// True if the campaign is currently active (running/processing) and the
     /// page should auto-refresh the progress bar.
     /// </summary>
@@ -54,6 +63,7 @@ public class CampaignDetailModel : PageModel
 
         Snapshots = await _snapshotService.GetSnapshotsForCampaignAsync(id);
         StatusSnapshot = await _campaignService.GetStatusAsync(id);
+        Attachments = await _attachmentService.GetByCampaignAsync(id);
 
         return Page();
     }

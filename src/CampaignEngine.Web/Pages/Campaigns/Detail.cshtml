@@ -196,6 +196,117 @@
                 </div>
             </div>
         }
+
+        <!-- Attachment management (US-028) -->
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <a class="text-decoration-none text-body d-flex justify-content-between w-100"
+                   data-bs-toggle="collapse" href="#attachmentPanel" role="button">
+                    <span><i class="bi bi-paperclip"></i> Attachments (@Model.Attachments.Count)</span>
+                    <i class="bi bi-chevron-down"></i>
+                </a>
+            </div>
+            <div class="collapse show" id="attachmentPanel">
+                <div class="card-body">
+
+                    @* Static attachment list *@
+                    @if (Model.Attachments.Any())
+                    {
+                        <table class="table table-sm mb-3">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>File</th>
+                                    <th>Type</th>
+                                    <th>Size</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var att in Model.Attachments)
+                                {
+                                    <tr>
+                                        <td>
+                                            @if (att.IsDynamic)
+                                            {
+                                                <span class="badge bg-info text-dark me-1">Dynamic</span>
+                                                <small class="font-monospace">@att.DynamicFieldName</small>
+                                            }
+                                            else
+                                            {
+                                                <i class="bi bi-file-earmark-fill text-secondary me-1"></i>
+                                                <small>@att.FileName</small>
+                                            }
+                                        </td>
+                                        <td><small class="text-muted">@att.ContentType</small></td>
+                                        <td>
+                                            @if (!att.IsDynamic)
+                                            {
+                                                <small class="text-muted">@((att.FileSizeBytes / 1024.0).ToString("0.0")) KB</small>
+                                            }
+                                            else
+                                            {
+                                                <small class="text-muted">—</small>
+                                            }
+                                        </td>
+                                        <td class="text-end">
+                                            @if (Model.Campaign!.Status == "Draft")
+                                            {
+                                                <button class="btn btn-sm btn-outline-danger"
+                                                        onclick="deleteAttachment('@att.Id', '@Model.Campaign.Id')"
+                                                        title="Remove attachment">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                    else
+                    {
+                        <p class="text-muted small mb-3">No attachments added yet.</p>
+                    }
+
+                    @* Static attachment uploader (TASK-028-06) — Draft campaigns only *@
+                    @if (Model.Campaign!.Status == "Draft")
+                    {
+                        <hr class="my-2"/>
+                        <h6 class="small fw-semibold mb-2">Upload Static Attachment</h6>
+                        <div id="staticUploadAlert" class="alert d-none mb-2" role="alert"></div>
+                        <div class="input-group input-group-sm mb-2">
+                            <input type="file" class="form-control form-control-sm" id="staticFileInput"
+                                   accept=".pdf,.docx,.xlsx,.png,.jpg,.jpeg"
+                                   aria-label="Choose file to upload"/>
+                            <button class="btn btn-sm btn-primary" type="button" onclick="uploadStaticAttachment('@Model.Campaign.Id')">
+                                <i class="bi bi-upload me-1"></i>Upload
+                            </button>
+                        </div>
+                        <small class="text-muted d-block mb-3">
+                            Allowed: PDF, DOCX, XLSX, PNG, JPG &bull; Max 10 MB per file &bull; 25 MB total
+                        </small>
+
+                        @* Dynamic attachment field mapper (TASK-028-07) *@
+                        <h6 class="small fw-semibold mb-2">Map Dynamic Attachment Field</h6>
+                        <div id="dynamicMapAlert" class="alert d-none mb-2" role="alert"></div>
+                        <div class="input-group input-group-sm mb-1">
+                            <span class="input-group-text"><i class="bi bi-database"></i></span>
+                            <input type="text" class="form-control form-control-sm" id="dynamicFieldInput"
+                                   placeholder="Data source field name (e.g. attachment_path)"
+                                   maxlength="200"
+                                   aria-label="Dynamic attachment field name"/>
+                            <button class="btn btn-sm btn-outline-secondary" type="button" onclick="mapDynamicField('@Model.Campaign.Id')">
+                                <i class="bi bi-link-45deg me-1"></i>Map Field
+                            </button>
+                        </div>
+                        <small class="text-muted d-block">
+                            The field must contain an absolute file path per recipient.
+                            Missing files are skipped with a warning — the send is not blocked.
+                        </small>
+                    }
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Campaign steps -->
@@ -391,6 +502,104 @@
         }
     </div>
 </div>
+
+@* ------------------------------------------------------------------ *@
+@* Attachment management JS (US-028) — Draft campaigns only           *@
+@* ------------------------------------------------------------------ *@
+@if (Model.Campaign?.Status == "Draft")
+{
+    <script>
+        // US-028 TASK-028-06: Static attachment uploader
+        function uploadStaticAttachment(campaignId) {
+            var input = document.getElementById('staticFileInput');
+            var alertEl = document.getElementById('staticUploadAlert');
+
+            if (!input.files || input.files.length === 0) {
+                showAlert(alertEl, 'danger', 'Please select a file to upload.');
+                return;
+            }
+
+            var file = input.files[0];
+            var formData = new FormData();
+            formData.append('file', file);
+
+            showAlert(alertEl, 'info', 'Uploading...');
+
+            fetch('/api/campaigns/' + campaignId + '/attachments', {
+                method: 'POST',
+                body: formData,
+                credentials: 'same-origin'
+            })
+            .then(function (res) {
+                if (res.ok) {
+                    showAlert(alertEl, 'success', 'Attachment uploaded successfully. Refreshing...');
+                    setTimeout(function () { window.location.reload(); }, 1000);
+                } else {
+                    return res.json().then(function (err) {
+                        var msg = err && err.errors
+                            ? Object.values(err.errors).flat().join(' ')
+                            : (err && err.error ? err.error : 'Upload failed.');
+                        showAlert(alertEl, 'danger', msg);
+                    });
+                }
+            })
+            .catch(function () { showAlert(alertEl, 'danger', 'Network error during upload.'); });
+        }
+
+        // US-028 TASK-028-07: Dynamic attachment field mapper
+        function mapDynamicField(campaignId) {
+            var input = document.getElementById('dynamicFieldInput');
+            var alertEl = document.getElementById('dynamicMapAlert');
+            var fieldName = input.value.trim();
+
+            if (!fieldName) {
+                showAlert(alertEl, 'danger', 'Please enter a data source field name.');
+                return;
+            }
+
+            fetch('/api/campaigns/' + campaignId + '/attachments/dynamic', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify({ dynamicFieldName: fieldName })
+            })
+            .then(function (res) {
+                if (res.ok) {
+                    showAlert(alertEl, 'success', 'Dynamic attachment field mapped. Refreshing...');
+                    setTimeout(function () { window.location.reload(); }, 1000);
+                } else {
+                    return res.json().then(function (err) {
+                        var msg = err && err.errors
+                            ? Object.values(err.errors).flat().join(' ')
+                            : (err && err.error ? err.error : 'Mapping failed.');
+                        showAlert(alertEl, 'danger', msg);
+                    });
+                }
+            })
+            .catch(function () { showAlert(alertEl, 'danger', 'Network error while mapping field.'); });
+        }
+
+        // Delete an attachment
+        function deleteAttachment(attachmentId, campaignId) {
+            if (!confirm('Remove this attachment?')) return;
+
+            fetch('/api/campaigns/' + campaignId + '/attachments/' + attachmentId, {
+                method: 'DELETE',
+                credentials: 'same-origin'
+            })
+            .then(function (res) {
+                if (res.ok) { window.location.reload(); }
+                else { alert('Could not delete attachment.'); }
+            })
+            .catch(function () { alert('Network error.'); });
+        }
+
+        function showAlert(el, type, msg) {
+            el.className = 'alert alert-' + type;
+            el.textContent = msg;
+        }
+    </script>
+}
 
 @* ------------------------------------------------------------------ *@
 @* Live progress auto-refresh (US-027) — active campaigns only        *@
