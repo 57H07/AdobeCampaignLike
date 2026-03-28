@@ -1055,7 +1055,8 @@
 ---
 
 #### [US-022] - Channel throttling and rate limiting
-**Status:** ðŸŸ¡ TODO
+**Status:** ðµ IN PROGRESS
+**Start date:** 2026-03-28
 **Priority:** ðŸŸ  Medium
 **Complexity:** M
 **Epic:** Dispatch Engine
