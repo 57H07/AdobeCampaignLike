@@ -1522,8 +1522,9 @@
 ---
 
 #### [US-032] - OpenAPI/Swagger documentation
-**Status:** 🔵 IN PROGRESS
+**Status:** ✅ DONE
 **Start date:** 2026-03-28
+**End date:** 2026-03-28
 **Priority:** 🟠 Medium
 **Complexity:** S
 **Epic:** Generic Send API
@@ -1536,19 +1537,19 @@
 > Auto-generated Swagger/OpenAPI spec. Essential for developer experience.
 
 **Acceptance criteria:**
-- [ ] Swagger UI accessible at /swagger
-- [ ] All API endpoints documented with parameters and responses
-- [ ] Authentication documented (API key header)
-- [ ] Example requests and responses
-- [ ] Downloadable OpenAPI JSON/YAML spec
+- [x] Swagger UI accessible at /swagger ✅
+- [x] All API endpoints documented with parameters and responses ✅
+- [x] Authentication documented (API key header) ✅
+- [x] Example requests and responses ✅
+- [x] Downloadable OpenAPI JSON/YAML spec ✅
 
 **Technical tasks:**
-- [ ] `TASK-032-01` - **[Config]** Install and configure Swashbuckle.AspNetCore
-- [ ] `TASK-032-02` - **[API]** Add XML comments to controllers
-- [ ] `TASK-032-03` - **[API]** Add example attributes to DTOs
-- [ ] `TASK-032-04` - **[Config]** Configure Swagger UI theme
-- [ ] `TASK-032-05` - **[Test]** Verify OpenAPI spec validity
-- [ ] `TASK-032-06` - **[Doc]** Swagger usage guide
+- [x] `TASK-032-01` - **[Config]** Install and configure Swashbuckle.AspNetCore ✅ 2026-03-28
+- [x] `TASK-032-02` - **[API]** Add XML comments to controllers ✅ 2026-03-28
+- [x] `TASK-032-03` - **[API]** Add example attributes to DTOs ✅ 2026-03-28
+- [x] `TASK-032-04` - **[Config]** Configure Swagger UI theme ✅ 2026-03-28
+- [x] `TASK-032-05` - **[Test]** Verify OpenAPI spec validity ✅ 2026-03-28
+- [x] `TASK-032-06` - **[Doc]** Swagger usage guide ✅ 2026-03-28
 
 **Business rules:**
 1. Swagger UI accessible only in non-production environments (or with authentication)
