@@ -1947,7 +1947,9 @@
 ---
 
 #### [US-039] - Fix CS8604 null-reference warnings in IAppLogger calls
-**Status:** 🟡 TODO
+**Status:** ✅ DONE
+**Start date:** 2026-03-28
+**End date:** 2026-03-28
 **Priority:** 🟠 Medium
 **Complexity:** S
 **Epic:** Epic 10
@@ -1961,18 +1963,18 @@
 > CS8604 warnings reveal that potentially null variables are passed as `params object[] args` to `IAppLogger` methods in four locations (ApiKeyService.cs:85, CampaignService.cs:148, CampaignService.cs:197, LoggingDispatchOrchestrator.cs:110). These warnings were introduced after the US-037 pass which only covered SingleSendService.cs.
 
 **Acceptance criteria:**
-- [ ] CS8604 warning at ApiKeyService.cs:85 resolved with null-safe argument
-- [ ] CS8604 warnings at CampaignService.cs:148 and :197 resolved with null-safe arguments
-- [ ] CS8604 warning at LoggingDispatchOrchestrator.cs:110 resolved with null-safe argument
-- [ ] Full solution build emits zero CS8604 warnings
-- [ ] All existing unit and integration tests pass unchanged after the fix
+- [x] CS8604 warning at ApiKeyService.cs:85 resolved with null-safe argument ✅
+- [x] CS8604 warnings at CampaignService.cs:148 and :197 resolved with null-safe arguments ✅
+- [x] CS8604 warning at LoggingDispatchOrchestrator.cs:110 resolved with null-safe argument ✅
+- [x] Full solution build emits zero CS8604 warnings ✅
+- [x] All existing unit and integration tests pass unchanged after the fix ✅
 
 **Technical tasks:**
-- [ ] `TASK-039-01` - **[Debug]** Audit all four warning locations — identify the nullable variables being passed as logger args and the safest null-safe technique for each context
-- [ ] `TASK-039-02` - **[Fix]** Resolve CS8604 in ApiKeyService.cs:85 using null-coalescing operator or explicit `ToString()` call
-- [ ] `TASK-039-03` - **[Fix]** Resolve CS8604 in CampaignService.cs:148 and :197 using null-coalescing or null-conditional string conversion
-- [ ] `TASK-039-04` - **[Fix]** Resolve CS8604 in LoggingDispatchOrchestrator.cs:110 using null-coalescing or null-conditional string conversion
-- [ ] `TASK-039-05` - **[Test]** Verify build output is warning-free (`dotnet build` with no warnings) and all tests pass
+- [x] `TASK-039-01` - **[Debug]** Audit all four warning locations — identify the nullable variables being passed as logger args and the safest null-safe technique for each context ✅ 2026-03-28
+- [x] `TASK-039-02` - **[Fix]** Resolve CS8604 in ApiKeyService.cs:85 using null-coalescing operator or explicit `ToString()` call ✅ 2026-03-28
+- [x] `TASK-039-03` - **[Fix]** Resolve CS8604 in CampaignService.cs:148 and :197 using null-coalescing or null-conditional string conversion ✅ 2026-03-28
+- [x] `TASK-039-04` - **[Fix]** Resolve CS8604 in LoggingDispatchOrchestrator.cs:110 using null-coalescing or null-conditional string conversion ✅ 2026-03-28
+- [x] `TASK-039-05` - **[Test]** Verify build output is warning-free (`dotnet build` with no warnings) and all tests pass ✅ 2026-03-28
 
 **Dependencies:** None
 **Estimation:** 1-2 days

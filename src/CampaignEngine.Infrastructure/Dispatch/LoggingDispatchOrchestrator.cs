@@ -107,7 +107,7 @@ public class LoggingDispatchOrchestrator : ILoggingDispatchOrchestrator
                     "Transient dispatch failure — SendLogId={SendLogId} Attempt={Attempt}/{Max} " +
                     "RetryIn={DelaySeconds}s Error={Error}",
                     sendLogId, retryAttemptNumber, _retryPolicy.MaxAttempts,
-                    delay.TotalSeconds, failedResult.ErrorDetail);
+                    delay.TotalSeconds, failedResult.ErrorDetail ?? "unknown");
 
                 // Update SendLog with Retrying status and current retry count (TASK-035-04)
                 await _sendLogService.LogRetryingAsync(

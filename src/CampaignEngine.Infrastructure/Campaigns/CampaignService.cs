@@ -145,7 +145,7 @@ public sealed class CampaignService : ICampaignService
 
         _logger.LogInformation(
             "Campaign created. Id={CampaignId}, Name={Name}, Steps={StepCount}, CreatedBy={CreatedBy}",
-            campaign.Id, campaign.Name, campaign.Steps.Count, createdBy);
+            campaign.Id, campaign.Name, campaign.Steps.Count, createdBy ?? "unknown");
 
         // Reload with navigation properties for the DTO
         return await GetByIdAsync(campaign.Id, cancellationToken)
@@ -194,7 +194,7 @@ public sealed class CampaignService : ICampaignService
 
         _logger.LogInformation(
             "Campaign scheduled. Id={CampaignId}, ScheduledAt={ScheduledAt}",
-            campaign.Id, campaign.ScheduledAt);
+            campaign.Id, campaign.ScheduledAt?.ToString() ?? "unknown");
 
         return await GetByIdAsync(id, cancellationToken)
                ?? throw new InvalidOperationException("Campaign was scheduled but could not be retrieved.");

@@ -82,7 +82,7 @@ public sealed class ApiKeyService : IApiKeyService
 
         _logger.LogInformation(
             "API key created — Id={KeyId} Name={KeyName} CreatedBy={CreatedBy} ExpiresAt={ExpiresAt}",
-            entity.Id, entity.Name, createdByUserName, entity.ExpiresAt);
+            entity.Id, entity.Name, createdByUserName ?? "unknown", entity.ExpiresAt?.ToString() ?? "never");
 
         return new ApiKeyCreatedResponse
         {
