@@ -160,12 +160,30 @@ public static class ServiceCollectionExtensions
         // and automatic retry via IRetryPolicy.
         services.AddScoped<ILoggingDispatchOrchestrator, LoggingDispatchOrchestrator>();
 
+        // ----------------------------------------------------------------
+        // US-022: Channel rate limiting (token bucket)
+        // RateLimitOptions configures per-channel message-per-second limits.
+        // ChannelRateLimiterRegistry is Singleton: the token bucket state must
+        // persist across requests to correctly enforce sustained rate limits.
+        // RateLimitMetricsService is Singleton: thread-safe Interlocked counters.
+        // ----------------------------------------------------------------
+        services.Configure<RateLimitOptions>(
+            configuration.GetSection(RateLimitOptions.SectionName));
+        services.AddSingleton<IChannelRateLimiterRegistry, ChannelRateLimiterRegistry>();
+        services.AddSingleton<IRateLimitMetricsService, RateLimitMetricsService>();
+
         // Channel dispatchers registered as IChannelDispatcher implementations.
-        // Each dispatcher registers itself — the registry resolves by ChannelType at runtime.
-        // To add a new channel: services.AddScoped<IChannelDispatcher, YourNewDispatcher>()
+        // Each concrete dispatcher is registered under its own type AND wrapped with
+        // ThrottledChannelDispatcher for rate limiting before being exposed as IChannelDispatcher.
+        // The registry collects all IChannelDispatcher entries via IEnumerable<IChannelDispatcher>.
         //
         // US-019: EmailDispatcher using MailKit — handles ChannelType.Email sends via SMTP.
-        services.AddScoped<IChannelDispatcher, EmailDispatcher>();
+        services.AddScoped<EmailDispatcher>();
+        services.AddScoped<IChannelDispatcher>(sp => new ThrottledChannelDispatcher(
+            sp.GetRequiredService<EmailDispatcher>(),
+            sp.GetRequiredService<IChannelRateLimiterRegistry>(),
+            sp.GetRequiredService<IRateLimitMetricsService>(),
+            sp.GetRequiredService<IAppLogger<ThrottledChannelDispatcher>>()));
 
         // US-020: SmsDispatcher — handles ChannelType.Sms sends via configurable HTTP provider.
         // SmsProviderClient is registered separately (wraps IHttpClientFactory) so it can be
@@ -178,14 +196,26 @@ public static class ServiceCollectionExtensions
             var logger = sp.GetRequiredService<ILogger<SmsProviderClient>>();
             return new SmsProviderClient(opts, factory, logger);
         });
-        services.AddScoped<IChannelDispatcher, SmsDispatcher>();
+        services.AddScoped<SmsDispatcher>();
+        services.AddScoped<IChannelDispatcher>(sp => new ThrottledChannelDispatcher(
+            sp.GetRequiredService<SmsDispatcher>(),
+            sp.GetRequiredService<IChannelRateLimiterRegistry>(),
+            sp.GetRequiredService<IRateLimitMetricsService>(),
+            sp.GetRequiredService<IAppLogger<ThrottledChannelDispatcher>>()));
 
         // US-021: LetterDispatcher — handles ChannelType.Letter sends via PDF generation + file drop.
         // PrintProviderFileDropHandler is registered separately so it can be overridden in tests.
+        // Letter channel is unlimited (TokensPerSecond = 0) per BR-1, so ThrottledChannelDispatcher
+        // delegates to NoOpRateLimiter and adds zero overhead.
         services.Configure<LetterOptions>(
             configuration.GetSection(LetterOptions.SectionName));
         services.AddScoped<PrintProviderFileDropHandler>();
-        services.AddScoped<IChannelDispatcher, LetterDispatcher>();
+        services.AddScoped<LetterDispatcher>();
+        services.AddScoped<IChannelDispatcher>(sp => new ThrottledChannelDispatcher(
+            sp.GetRequiredService<LetterDispatcher>(),
+            sp.GetRequiredService<IChannelRateLimiterRegistry>(),
+            sp.GetRequiredService<IRateLimitMetricsService>(),
+            sp.GetRequiredService<IAppLogger<ThrottledChannelDispatcher>>()));
 
         // ----------------------------------------------------------------
         // Data source management — declaration, schema, and connection testing
