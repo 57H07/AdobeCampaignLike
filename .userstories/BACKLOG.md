@@ -1339,8 +1339,9 @@
 ---
 
 #### [US-028] - Static and dynamic attachment management
-**Status:** 🔵 IN PROGRESS
+**Status:** ✅ DONE
 **Start date:** 2026-03-28
+**End date:** 2026-03-28
 **Priority:** ðŸŸ  Medium
 **Complexity:** M
 **Epic:** Campaign Orchestrator
@@ -1353,23 +1354,23 @@
 > Static attachments: operator uploads common files attached to all sends. Dynamic attachments: per-recipient file path from data source field.
 
 **Acceptance criteria:**
-- [ ] Static attachments uploaded at campaign creation
-- [ ] Dynamic attachments specified via data source field mapping
-- [ ] Attachment validation (type whitelist, size limits)
-- [ ] Missing dynamic attachments logged but don't fail send
-- [ ] Attachments stored on file share with DB metadata
+- [x] Static attachments uploaded at campaign creation ✅
+- [x] Dynamic attachments specified via data source field mapping
+- [x] Attachment validation (type whitelist, size limits)
+- [x] Missing dynamic attachments logged but don't fail send
+- [x] Attachments stored on file share with DB metadata
 
 **Technical tasks:**
-- [ ] `TASK-028-01` - **[Model]** Create Attachment entity
-- [ ] `TASK-028-02` - **[Service]** File upload service (to UNC path)
-- [ ] `TASK-028-03` - **[Service]** Attachment validation (type, size)
-- [ ] `TASK-028-04` - **[Service]** Dynamic attachment resolver (from data field)
-- [ ] `TASK-028-05` - **[API]** POST /api/campaigns/{id}/attachments endpoint
-- [ ] `TASK-028-06` - **[Frontend]** Static attachment uploader component
-- [ ] `TASK-028-07` - **[Frontend]** Dynamic attachment field mapper
-- [ ] `TASK-028-08` - **[Test]** Attachment validation tests
-- [ ] `TASK-028-09` - **[Test]** Missing dynamic attachment handling tests
-- [ ] `TASK-028-10` - **[Doc]** Attachment management guide
+- [x] `TASK-028-01` - **[Model]** Create Attachment entity
+- [x] `TASK-028-02` - **[Service]** File upload service (to UNC path)
+- [x] `TASK-028-03` - **[Service]** Attachment validation (type, size)
+- [x] `TASK-028-04` - **[Service]** Dynamic attachment resolver (from data field)
+- [x] `TASK-028-05` - **[API]** POST /api/campaigns/{id}/attachments endpoint
+- [x] `TASK-028-06` - **[Frontend]** Static attachment uploader component
+- [x] `TASK-028-07` - **[Frontend]** Dynamic attachment field mapper
+- [x] `TASK-028-08` - **[Test]** Attachment validation tests
+- [x] `TASK-028-09` - **[Test]** Missing dynamic attachment handling tests
+- [x] `TASK-028-10` - **[Doc]** Attachment management guide
 
 **Business rules:**
 1. Whitelist: PDF, DOCX, XLSX, PNG, JPG
