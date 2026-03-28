@@ -187,9 +187,45 @@
 </div>
 
 @* ================================================================== *@
-@* STEP 5 — Schedule                                                    *@
+@* STEP 5 — CC/BCC &amp; Schedule                                           *@
 @* ================================================================== *@
 <div class="wizard-step d-none" data-step="5">
+    @* CC/BCC configuration (US-029) *@
+    <div class="card mb-3">
+        <div class="card-header"><h6 class="mb-0">CC / BCC Configuration <span class="badge bg-secondary fw-normal ms-1" style="font-size:0.75rem">Email channel only</span></h6></div>
+        <div class="card-body">
+            <p class="text-muted small mb-3">
+                Configure CC and BCC recipients for email sends.
+                Static addresses apply to every send. Dynamic CC reads an address from the recipient data row.
+                Invalid addresses are skipped (not fail the send). Maximum <strong>10 CC</strong> recipients per send.
+            </p>
+
+            <div class="mb-3" style="max-width:600px">
+                <label class="form-label fw-semibold" for="staticCcInput">Static CC Addresses</label>
+                <input type="text" class="form-control" id="staticCcInput"
+                       placeholder="cc1@example.com, cc2@example.com"
+                       maxlength="2000" />
+                <div class="form-text">Comma-separated list of email addresses. All recipients receive a CC to these addresses.</div>
+            </div>
+
+            <div class="mb-3" style="max-width:400px">
+                <label class="form-label fw-semibold" for="dynamicCcFieldInput">Dynamic CC Field</label>
+                <input type="text" class="form-control" id="dynamicCcFieldInput"
+                       placeholder="e.g. account_manager_email"
+                       maxlength="200" />
+                <div class="form-text">Data source field containing per-recipient CC address(es) (semicolon-separated).</div>
+            </div>
+
+            <div class="mb-3" style="max-width:600px">
+                <label class="form-label fw-semibold" for="staticBccInput">Static BCC Addresses</label>
+                <input type="text" class="form-control" id="staticBccInput"
+                       placeholder="audit@example.com"
+                       maxlength="2000" />
+                <div class="form-text">Comma-separated list. Hidden copies — not visible to To/CC recipients.</div>
+            </div>
+        </div>
+    </div>
+
     <div class="card">
         <div class="card-header"><h6 class="mb-0">Step 5 — Schedule</h6></div>
         <div class="card-body">
@@ -268,7 +304,11 @@ let state = {
     dataSourceId: null,
     filterConditions: [],   // [{type:'leaf', fieldName, operator, value}]
     freeFieldValues: {},    // {key: value}
-    scheduledAt: null       // ISO string or null
+    scheduledAt: null,      // ISO string or null
+    // CC/BCC configuration (US-029)
+    staticCcAddresses: '',
+    dynamicCcField: '',
+    staticBccAddresses: ''
 };
 
 let stepCounter = 0;
@@ -979,6 +1019,20 @@ async function loadFreeFields() {
 }
 
 // ============================================================
+// Step 5 — CC/BCC inputs (US-029)
+// ============================================================
+
+document.getElementById('staticCcInput').addEventListener('input', function() {
+    state.staticCcAddresses = this.value.trim();
+});
+document.getElementById('dynamicCcFieldInput').addEventListener('input', function() {
+    state.dynamicCcField = this.value.trim();
+});
+document.getElementById('staticBccInput').addEventListener('input', function() {
+    state.staticBccAddresses = this.value.trim();
+});
+
+// ============================================================
 // Step 5 — Schedule picker
 // ============================================================
 
@@ -1013,12 +1067,18 @@ function renderCampaignSummary() {
     const filterCount = state.filterConditions.length;
     const dsName = document.getElementById('dataSourceSelect').selectedOptions[0]?.text || '—';
 
+    const ccSummary = state.staticCcAddresses
+        ? escapeHtml(state.staticCcAddresses) + (state.dynamicCcField ? ` + field: ${escapeHtml(state.dynamicCcField)}` : '')
+        : (state.dynamicCcField ? `field: ${escapeHtml(state.dynamicCcField)}` : '—');
+
     el.innerHTML = `
         <dl class="row mb-0">
             <dt class="col-sm-4">Campaign Name</dt><dd class="col-sm-8">${escapeHtml(state.name)}</dd>
             <dt class="col-sm-4">Data Source</dt><dd class="col-sm-8">${escapeHtml(dsName)}</dd>
             <dt class="col-sm-4">Filter Conditions</dt><dd class="col-sm-8">${filterCount} condition(s)</dd>
             <dt class="col-sm-4">Free Fields</dt><dd class="col-sm-8">${freeFieldCount} value(s) provided</dd>
+            <dt class="col-sm-4">CC Addresses</dt><dd class="col-sm-8">${ccSummary}</dd>
+            <dt class="col-sm-4">BCC Addresses</dt><dd class="col-sm-8">${state.staticBccAddresses ? escapeHtml(state.staticBccAddresses) : '—'}</dd>
             <dt class="col-sm-4">Schedule</dt><dd class="col-sm-8">${state.scheduledAt ? state.scheduledAt : 'Immediate (manual trigger)'}</dd>
         </dl>
         <ul class="mt-2">${stepsHtml}</ul>
@@ -1050,6 +1110,10 @@ document.getElementById('submitBtn').addEventListener('click', async () => {
             ? JSON.stringify(state.freeFieldValues)
             : null,
         scheduledAt: state.scheduledAt || null,
+        // CC/BCC configuration (US-029)
+        staticCcAddresses: state.staticCcAddresses || null,
+        dynamicCcField: state.dynamicCcField || null,
+        staticBccAddresses: state.staticBccAddresses || null,
         steps: state.steps.map(s => ({
             stepOrder: s.stepOrder,
             channel: channelNameToEnum(s.channel),
