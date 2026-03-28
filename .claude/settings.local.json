@@ -5,7 +5,9 @@
       "Bash(git commit:*)",
       "Bash(dotnet build:*)",
       "Skill(list-userstories)",
-      "Skill(list-userstories:*)"
+      "Skill(list-userstories:*)",
+      "Bash(find f:/_Projets/AdobeCampaignLike/src/CampaignEngine.Application/Services -name *.cs)",
+      "Bash(xargs basename:*)"
     ]
   }
 }
