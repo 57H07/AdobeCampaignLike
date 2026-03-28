@@ -1699,7 +1699,8 @@
 > Monitoring and analytics for campaigns
 
 #### [US-036] - Campaign progress dashboard
-**Status:** 🟡 TODO
+**Status:** 🔵 IN PROGRESS
+**Start date:** 2026-03-28
 **Priority:** 🟠 Medium
 **Complexity:** M
 **Epic:** Reporting & Dashboards
