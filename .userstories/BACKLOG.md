@@ -1055,8 +1055,9 @@
 ---
 
 #### [US-022] - Channel throttling and rate limiting
-**Status:** ðµ IN PROGRESS
+**Status:** ✅ DONE
 **Start date:** 2026-03-28
+**End date:** 2026-03-28
 **Priority:** ðŸŸ  Medium
 **Complexity:** M
 **Epic:** Dispatch Engine
@@ -1069,20 +1070,20 @@
 > Configurable rate limiting per channel (e.g., 100 msgs/sec for SMTP). Respect server limits to avoid blacklisting.
 
 **Acceptance criteria:**
-- [ ] Rate limiting configuration per channel (messages/second)
-- [ ] Throttling applied at dispatcher level
-- [ ] Queue backpressure when limit reached
-- [ ] Monitoring metrics for send rate
-- [ ] Graceful handling of rate limit errors
+- [x] Rate limiting configuration per channel (messages/second)
+- [x] Throttling applied at dispatcher level
+- [x] Queue backpressure when limit reached
+- [x] Monitoring metrics for send rate
+- [x] Graceful handling of rate limit errors
 
 **Technical tasks:**
-- [ ] `TASK-022-01` - **[Service]** Implement rate limiter service (token bucket)
-- [ ] `TASK-022-02` - **[Config]** Per-channel rate limit configuration
-- [ ] `TASK-022-03` - **[Service]** Integrate throttling in dispatchers
-- [ ] `TASK-022-04` - **[Service]** Queue backpressure handling
-- [ ] `TASK-022-05` - **[Monitoring]** Rate limit metrics (Prometheus or AppMetrics)
-- [ ] `TASK-022-06` - **[Test]** Rate limiting tests
-- [ ] `TASK-022-07` - **[Doc]** Throttling configuration guide
+- [x] `TASK-022-01` - **[Service]** Implement rate limiter service (token bucket) ✅ 2026-03-28
+- [x] `TASK-022-02` - **[Config]** Per-channel rate limit configuration ✅ 2026-03-28
+- [x] `TASK-022-03` - **[Service]** Integrate throttling in dispatchers ✅ 2026-03-28
+- [x] `TASK-022-04` - **[Service]** Queue backpressure handling ✅ 2026-03-28
+- [x] `TASK-022-05` - **[Monitoring]** Rate limit metrics (Prometheus or AppMetrics) ✅ 2026-03-28
+- [x] `TASK-022-06` - **[Test]** Rate limiting tests ✅ 2026-03-28
+- [x] `TASK-022-07` - **[Doc]** Throttling configuration guide ✅ 2026-03-28
 
 **Business rules:**
 1. Default rates: SMTP 100/sec, SMS 10/sec, Letter no limit
