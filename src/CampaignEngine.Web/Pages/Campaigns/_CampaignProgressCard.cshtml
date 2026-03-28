@@ -1,0 +1,167 @@
+@model CampaignEngine.Application.DTOs.Campaigns.CampaignProgressDto
+@{
+    var statusBadge = Model.Status switch
+    {
+        "Draft"          => "bg-secondary",
+        "Scheduled"      => "bg-primary",
+        "Running"        => "bg-warning text-dark",
+        "StepInProgress" => "bg-warning text-dark",
+        "WaitingNext"    => "bg-info text-dark",
+        "Completed"      => "bg-success",
+        "PartialFailure" => "bg-danger",
+        "ManualReview"   => "bg-danger",
+        _                => "bg-secondary"
+    };
+
+    var barColor = Model.FailureCount > 0 && Model.TotalRecipients > 0
+        ? (Model.FailureRatePercent >= 10 ? "bg-danger"
+            : Model.FailureRatePercent >= 2 ? "bg-warning"
+            : "bg-success")
+        : "bg-success";
+}
+
+<div class="card mb-3" id="card-@Model.Id">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <div>
+            <a asp-page="Detail" asp-route-id="@Model.Id" class="fw-semibold text-decoration-none">@Model.Name</a>
+            @if (!string.IsNullOrEmpty(Model.CreatedBy))
+            {
+                <span class="text-muted small ms-2">by @Model.CreatedBy</span>
+            }
+        </div>
+        <span class="badge @statusBadge">@Model.Status</span>
+    </div>
+    <div class="card-body">
+
+        @* ------------------------------------------------------------------ *@
+        @* Metric counters row                                                  *@
+        @* ------------------------------------------------------------------ *@
+        <div class="row g-3 mb-3">
+            <div class="col-6 col-md-3 text-center">
+                <div class="fs-5 fw-bold">@Model.TotalRecipients.ToString("N0")</div>
+                <div class="small text-muted">Total</div>
+            </div>
+            <div class="col-6 col-md-3 text-center">
+                <div class="fs-5 fw-bold">@Model.ProcessedCount.ToString("N0")</div>
+                <div class="small text-muted">Processed</div>
+            </div>
+            <div class="col-6 col-md-3 text-center">
+                <div class="fs-5 fw-bold text-success">@Model.SuccessCount.ToString("N0")</div>
+                <div class="small text-muted">Sent</div>
+            </div>
+            <div class="col-6 col-md-3 text-center">
+                <div class="fs-5 fw-bold text-danger">@Model.FailureCount.ToString("N0")</div>
+                <div class="small text-muted">Failed</div>
+            </div>
+        </div>
+
+        @* ------------------------------------------------------------------ *@
+        @* Progress bar with ETA                                                *@
+        @* ------------------------------------------------------------------ *@
+        <div class="d-flex align-items-center justify-content-between mb-1">
+            <span class="small fw-semibold">@Model.ProgressPercent% processed</span>
+            @if (Model.EstimatedCompletionUtc.HasValue)
+            {
+                <span class="text-info small">
+                    <i class="bi bi-clock-history"></i>
+                    ETA: @Model.EstimatedCompletionUtc.Value.ToString("yyyy-MM-dd HH:mm") UTC
+                </span>
+            }
+        </div>
+        <div class="progress mb-3" style="height: 12px;">
+            <div class="progress-bar @barColor"
+                 role="progressbar"
+                 style="width: @Model.ProgressPercent%"
+                 aria-valuenow="@Model.ProgressPercent"
+                 aria-valuemin="0"
+                 aria-valuemax="100">
+            </div>
+        </div>
+
+        @* ------------------------------------------------------------------ *@
+        @* Multi-step timeline visualization (TASK-036-05)                      *@
+        @* ------------------------------------------------------------------ *@
+        @if (Model.Steps.Any())
+        {
+            <div class="mt-2">
+                <div class="small fw-semibold text-muted mb-2">Step Timeline</div>
+                <div class="d-flex flex-wrap gap-2 align-items-center">
+                    @for (int i = 0; i < Model.Steps.Count; i++)
+                    {
+                        var step = Model.Steps[i];
+                        var isLast = i == Model.Steps.Count - 1;
+
+                        var stepIcon = step.StepStatus switch
+                        {
+                            "Completed" => "bi-check-circle-fill text-success",
+                            "Active"    => "bi-play-circle-fill text-warning",
+                            "Waiting"   => "bi-hourglass-split text-info",
+                            _           => "bi-circle text-secondary"
+                        };
+
+                        var channelIcon = step.Channel switch
+                        {
+                            "Email"  => "bi-envelope",
+                            "Sms"    => "bi-phone",
+                            "Letter" => "bi-file-earmark-text",
+                            _        => "bi-question-circle"
+                        };
+
+                        <div class="d-flex align-items-center">
+                            @* Step bubble *@
+                            <div class="text-center" style="min-width: 64px;">
+                                <div><i class="bi @stepIcon"></i></div>
+                                <div class="small text-muted">
+                                    <i class="bi @channelIcon"></i> Step @step.StepOrder
+                                </div>
+                                @if (step.ExecutedAt.HasValue)
+                                {
+                                    <div class="text-muted" style="font-size: 0.7rem;">
+                                        @step.ExecutedAt.Value.ToString("MM-dd HH:mm")
+                                    </div>
+                                }
+                                else if (step.ScheduledAt.HasValue)
+                                {
+                                    <div class="text-muted" style="font-size: 0.7rem;">
+                                        ~@step.ScheduledAt.Value.ToString("MM-dd")
+                                    </div>
+                                }
+                            </div>
+
+                            @* Arrow connector between steps *@
+                            @if (!isLast)
+                            {
+                                <div class="text-muted mx-1 text-center" style="min-width: 28px;">
+                                    <i class="bi bi-arrow-right"></i>
+                                    @if (step.DelayDays > 0)
+                                    {
+                                        <div style="font-size: 0.65rem;">+@(step.DelayDays)d</div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+
+        @* ------------------------------------------------------------------ *@
+        @* Campaign metadata footer                                             *@
+        @* ------------------------------------------------------------------ *@
+        <div class="d-flex justify-content-between align-items-center mt-3 pt-2 border-top">
+            <div class="small text-muted">
+                @if (Model.StartedAt.HasValue)
+                {
+                    <span><i class="bi bi-play"></i> Started @Model.StartedAt.Value.ToString("yyyy-MM-dd HH:mm") UTC</span>
+                }
+                else if (Model.ScheduledAt.HasValue)
+                {
+                    <span><i class="bi bi-calendar3"></i> Scheduled @Model.ScheduledAt.Value.ToString("yyyy-MM-dd HH:mm") UTC</span>
+                }
+            </div>
+            <a asp-page="Detail" asp-route-id="@Model.Id" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-arrow-right-circle"></i> Details
+            </a>
+        </div>
+    </div>
+</div>

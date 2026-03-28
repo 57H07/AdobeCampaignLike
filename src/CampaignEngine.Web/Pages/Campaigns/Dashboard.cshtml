@@ -1,0 +1,361 @@
+@page
+@model CampaignEngine.Web.Pages.Campaigns.CampaignDashboardModel
+@{
+    ViewData["Title"] = "Campaign Progress Dashboard";
+}
+
+@* ------------------------------------------------------------------ *@
+@* Page header                                                          *@
+@* ------------------------------------------------------------------ *@
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h1 class="mb-1"><i class="bi bi-speedometer2"></i> Campaign Dashboard</h1>
+        <p class="text-muted mb-0">Real-time progress for active campaigns. Auto-refreshes every 10 seconds.</p>
+    </div>
+    <div>
+        <a asp-page="Index" class="btn btn-outline-secondary me-2">
+            <i class="bi bi-list-ul"></i> All Campaigns
+        </a>
+        <button id="refreshNowBtn" class="btn btn-outline-primary">
+            <i class="bi bi-arrow-clockwise"></i> Refresh Now
+        </button>
+    </div>
+</div>
+
+@* ------------------------------------------------------------------ *@
+@* Filter bar                                                           *@
+@* ------------------------------------------------------------------ *@
+<div class="card mb-4">
+    <div class="card-body py-2">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-sm-3">
+                <label class="form-label small mb-1">Status</label>
+                <select name="statusFilter" class="form-select form-select-sm">
+                    <option value="" selected="@(string.IsNullOrEmpty(Model.StatusFilter))">Running &amp; StepInProgress (default)</option>
+                    <option value="Running" selected="@(Model.StatusFilter == "Running")">Running only</option>
+                    <option value="StepInProgress" selected="@(Model.StatusFilter == "StepInProgress")">StepInProgress only</option>
+                    <option value="WaitingNext" selected="@(Model.StatusFilter == "WaitingNext")">WaitingNext</option>
+                    <option value="Running,StepInProgress,WaitingNext" selected="@(Model.StatusFilter == "Running,StepInProgress,WaitingNext")">All active</option>
+                </select>
+            </div>
+            <div class="col-sm-3">
+                <label class="form-label small mb-1">Started From (UTC)</label>
+                <input type="date" name="startedFrom" class="form-control form-control-sm"
+                       value="@(Model.StartedFrom.HasValue ? Model.StartedFrom.Value.ToString("yyyy-MM-dd") : "")" />
+            </div>
+            <div class="col-sm-3">
+                <label class="form-label small mb-1">Started To (UTC)</label>
+                <input type="date" name="startedTo" class="form-control form-control-sm"
+                       value="@(Model.StartedTo.HasValue ? Model.StartedTo.Value.ToString("yyyy-MM-dd") : "")" />
+            </div>
+            <div class="col-sm-2">
+                <label class="form-label small mb-1">Operator</label>
+                <input type="text" name="createdBy" class="form-control form-control-sm"
+                       placeholder="Username" value="@(Model.CreatedBy ?? "")" />
+            </div>
+            <div class="col-sm-1 d-flex gap-2">
+                <button type="submit" class="btn btn-sm btn-primary">
+                    <i class="bi bi-funnel"></i>
+                </button>
+                <a asp-page="Dashboard" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-x-circle"></i>
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@* ------------------------------------------------------------------ *@
+@* Summary bar                                                          *@
+@* ------------------------------------------------------------------ *@
+<div class="row g-3 mb-4" id="summaryBar">
+    <div class="col-6 col-md-3">
+        <div class="card border-warning h-100">
+            <div class="card-body text-center py-3">
+                <div class="fs-3 fw-bold text-warning" id="summaryActive">@Model.Dashboard.ActiveCampaignCount</div>
+                <div class="small text-muted">Active Campaigns</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-primary h-100">
+            <div class="card-body text-center py-3">
+                <div class="fs-3 fw-bold text-primary" id="summaryTotal">@Model.Dashboard.Campaigns.Sum(c => c.TotalRecipients)</div>
+                <div class="small text-muted">Total Recipients</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-success h-100">
+            <div class="card-body text-center py-3">
+                <div class="fs-3 fw-bold text-success" id="summarySuccess">@Model.Dashboard.Campaigns.Sum(c => c.SuccessCount)</div>
+                <div class="small text-muted">Sent Successfully</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-danger h-100">
+            <div class="card-body text-center py-3">
+                <div class="fs-3 fw-bold text-danger" id="summaryFailed">@Model.Dashboard.Campaigns.Sum(c => c.FailureCount)</div>
+                <div class="small text-muted">Failed Sends</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* ------------------------------------------------------------------ *@
+@* Campaign cards                                                       *@
+@* ------------------------------------------------------------------ *@
+@if (!Model.Dashboard.Campaigns.Any())
+{
+    <div class="alert alert-info" role="alert">
+        <i class="bi bi-info-circle"></i>
+        No active campaigns found. Active campaigns (Running or StepInProgress) will appear here automatically.
+        <a asp-page="Index" class="alert-link ms-1">View all campaigns</a>.
+    </div>
+}
+else
+{
+    <div id="campaignCards">
+        @foreach (var campaign in Model.Dashboard.Campaigns)
+        {
+            @await Html.PartialAsync("_CampaignProgressCard", campaign)
+        }
+    </div>
+}
+
+@* ------------------------------------------------------------------ *@
+@* Last refresh indicator                                               *@
+@* ------------------------------------------------------------------ *@
+<div class="text-end text-muted small mt-3">
+    <i class="bi bi-clock"></i>
+    Last refreshed: <span id="lastRefreshedAt">@Model.Dashboard.ComputedAtUtc.ToString("yyyy-MM-dd HH:mm:ss") UTC</span>
+    <span class="ms-2 badge bg-secondary" id="refreshCountdown">10s</span>
+</div>
+
+@* ------------------------------------------------------------------ *@
+@* Auto-refresh every 10 seconds — polls GET /api/campaigns/dashboard  *@
+@* ------------------------------------------------------------------ *@
+<script>
+(function () {
+    var intervalMs = 10000;
+    var countdown = intervalMs / 1000;
+
+    // Build query string from current filter values (preserve filter state)
+    function buildApiUrl() {
+        var params = new URLSearchParams();
+        var statusFilter = document.querySelector('select[name="statusFilter"]')?.value;
+        var startedFrom  = document.querySelector('input[name="startedFrom"]')?.value;
+        var startedTo    = document.querySelector('input[name="startedTo"]')?.value;
+        var createdBy    = document.querySelector('input[name="createdBy"]')?.value;
+
+        if (statusFilter) params.set('status', statusFilter);
+        if (startedFrom)  params.set('startedFrom', startedFrom);
+        if (startedTo)    params.set('startedTo', startedTo);
+        if (createdBy)    params.set('createdBy', createdBy);
+
+        var qs = params.toString();
+        return '/api/campaigns/dashboard' + (qs ? '?' + qs : '');
+    }
+
+    function formatNumber(n) {
+        return (n || 0).toLocaleString();
+    }
+
+    function pct(processed, total) {
+        return total > 0 ? Math.round(processed * 100 / total) : 0;
+    }
+
+    function barColor(failure, total) {
+        if (!failure || !total) return 'bg-success';
+        var rate = failure * 100 / total;
+        return rate >= 10 ? 'bg-danger' : rate >= 2 ? 'bg-warning' : 'bg-success';
+    }
+
+    function statusBadgeClass(status) {
+        var map = {
+            'Draft': 'bg-secondary',
+            'Scheduled': 'bg-primary',
+            'Running': 'bg-warning text-dark',
+            'StepInProgress': 'bg-warning text-dark',
+            'WaitingNext': 'bg-info text-dark',
+            'Completed': 'bg-success',
+            'PartialFailure': 'bg-danger',
+            'ManualReview': 'bg-danger'
+        };
+        return map[status] || 'bg-secondary';
+    }
+
+    function stepStatusIcon(stepStatus) {
+        switch (stepStatus) {
+            case 'Completed': return '<i class="bi bi-check-circle-fill text-success"></i>';
+            case 'Active':    return '<i class="bi bi-play-circle-fill text-warning"></i>';
+            case 'Waiting':   return '<i class="bi bi-hourglass-split text-info"></i>';
+            default:          return '<i class="bi bi-circle text-secondary"></i>';
+        }
+    }
+
+    function channelIcon(channel) {
+        switch (channel) {
+            case 'Email':  return '<i class="bi bi-envelope"></i>';
+            case 'Sms':    return '<i class="bi bi-phone"></i>';
+            case 'Letter': return '<i class="bi bi-file-earmark-text"></i>';
+            default:       return '<i class="bi bi-question-circle"></i>';
+        }
+    }
+
+    function renderStepTimeline(steps) {
+        if (!steps || steps.length === 0) return '';
+
+        var html = '<div class="mt-3">';
+        html += '<div class="small fw-semibold text-muted mb-2">Step Timeline</div>';
+        html += '<div class="d-flex flex-wrap gap-2 align-items-center">';
+
+        for (var i = 0; i < steps.length; i++) {
+            var step = steps[i];
+            var isLast = i === steps.length - 1;
+
+            html += '<div class="d-flex align-items-center">';
+            // Step bubble
+            html += '<div class="text-center" style="min-width:60px">';
+            html += '<div>' + stepStatusIcon(step.stepStatus) + '</div>';
+            html += '<div class="small text-muted">' + channelIcon(step.channel) + ' Step ' + step.stepOrder + '</div>';
+            if (step.executedAt) {
+                html += '<div class="text-muted" style="font-size:0.7rem">' + step.executedAt.substring(0, 10) + '</div>';
+            } else if (step.scheduledAt) {
+                html += '<div class="text-muted" style="font-size:0.7rem">' + step.scheduledAt.substring(0, 10) + '</div>';
+            }
+            html += '</div>';
+
+            // Arrow connector
+            if (!isLast) {
+                html += '<div class="text-muted mx-1"><i class="bi bi-arrow-right"></i>';
+                if (step.delayDays > 0) {
+                    html += '<div style="font-size:0.65rem;text-align:center">+' + step.delayDays + 'd</div>';
+                }
+                html += '</div>';
+            }
+            html += '</div>';
+        }
+
+        html += '</div></div>';
+        return html;
+    }
+
+    function renderCard(campaign) {
+        var total     = campaign.totalRecipients || 0;
+        var processed = campaign.processedCount || 0;
+        var success   = campaign.successCount || 0;
+        var failure   = campaign.failureCount || 0;
+        var p         = pct(processed, total);
+        var bc        = barColor(failure, total);
+        var badgeClass = statusBadgeClass(campaign.status);
+
+        var etaHtml = '';
+        if (campaign.estimatedCompletionUtc) {
+            var eta = new Date(campaign.estimatedCompletionUtc);
+            etaHtml = '<span class="text-info small ms-2"><i class="bi bi-clock-history"></i> ETA: ' + eta.toISOString().substring(0, 16).replace('T', ' ') + ' UTC</span>';
+        }
+
+        var timelineHtml = renderStepTimeline(campaign.steps);
+
+        return '<div class="card mb-3" id="card-' + campaign.id + '">' +
+            '<div class="card-header d-flex justify-content-between align-items-center">' +
+                '<div>' +
+                    '<a href="/Campaigns/Detail/' + campaign.id + '" class="fw-semibold text-decoration-none">' + escapeHtml(campaign.name) + '</a>' +
+                    (campaign.createdBy ? '<span class="text-muted small ms-2">by ' + escapeHtml(campaign.createdBy) + '</span>' : '') +
+                '</div>' +
+                '<span class="badge ' + badgeClass + '">' + campaign.status + '</span>' +
+            '</div>' +
+            '<div class="card-body">' +
+                '<div class="row g-3 mb-3">' +
+                    '<div class="col-6 col-md-3 text-center">' +
+                        '<div class="fs-5 fw-bold">' + formatNumber(total) + '</div>' +
+                        '<div class="small text-muted">Total</div>' +
+                    '</div>' +
+                    '<div class="col-6 col-md-3 text-center">' +
+                        '<div class="fs-5 fw-bold">' + formatNumber(processed) + '</div>' +
+                        '<div class="small text-muted">Processed</div>' +
+                    '</div>' +
+                    '<div class="col-6 col-md-3 text-center">' +
+                        '<div class="fs-5 fw-bold text-success">' + formatNumber(success) + '</div>' +
+                        '<div class="small text-muted">Sent</div>' +
+                    '</div>' +
+                    '<div class="col-6 col-md-3 text-center">' +
+                        '<div class="fs-5 fw-bold text-danger">' + formatNumber(failure) + '</div>' +
+                        '<div class="small text-muted">Failed</div>' +
+                    '</div>' +
+                '</div>' +
+                '<div class="d-flex align-items-center justify-content-between mb-1">' +
+                    '<span class="small fw-semibold">' + p + '% processed</span>' +
+                    etaHtml +
+                '</div>' +
+                '<div class="progress" style="height:12px">' +
+                    '<div class="progress-bar ' + bc + '" style="width:' + p + '%" aria-valuenow="' + p + '" aria-valuemin="0" aria-valuemax="100"></div>' +
+                '</div>' +
+                timelineHtml +
+            '</div>' +
+        '</div>';
+    }
+
+    function escapeHtml(str) {
+        var d = document.createElement('div');
+        d.appendChild(document.createTextNode(str || ''));
+        return d.innerHTML;
+    }
+
+    function refreshDashboard() {
+        fetch(buildApiUrl(), {
+            headers: { 'Accept': 'application/json' },
+            credentials: 'same-origin'
+        })
+        .then(function (res) { return res.ok ? res.json() : null; })
+        .then(function (data) {
+            if (!data) return;
+
+            // Update summary bar
+            var el = function (id) { return document.getElementById(id); };
+            if (el('summaryActive'))  el('summaryActive').textContent  = data.activeCampaignCount || 0;
+            if (el('summaryTotal'))   el('summaryTotal').textContent   = (data.campaigns || []).reduce(function (s, c) { return s + (c.totalRecipients || 0); }, 0).toLocaleString();
+            if (el('summarySuccess')) el('summarySuccess').textContent = (data.campaigns || []).reduce(function (s, c) { return s + (c.successCount || 0); }, 0).toLocaleString();
+            if (el('summaryFailed'))  el('summaryFailed').textContent  = (data.campaigns || []).reduce(function (s, c) { return s + (c.failureCount || 0); }, 0).toLocaleString();
+
+            // Re-render campaign cards
+            var container = el('campaignCards');
+            if (container) {
+                if (!data.campaigns || data.campaigns.length === 0) {
+                    container.innerHTML = '<div class="alert alert-info"><i class="bi bi-info-circle"></i> No active campaigns.</div>';
+                } else {
+                    container.innerHTML = data.campaigns.map(renderCard).join('');
+                }
+            }
+
+            // Update last refresh timestamp
+            if (el('lastRefreshedAt') && data.computedAtUtc) {
+                el('lastRefreshedAt').textContent = data.computedAtUtc.substring(0, 19).replace('T', ' ') + ' UTC';
+            }
+        })
+        .catch(function () { /* silent — keep polling */ });
+    }
+
+    // Countdown ticker
+    var timer = setInterval(function () {
+        countdown--;
+        var el = document.getElementById('refreshCountdown');
+        if (el) el.textContent = countdown + 's';
+        if (countdown <= 0) {
+            countdown = intervalMs / 1000;
+            refreshDashboard();
+        }
+    }, 1000);
+
+    // Manual refresh button
+    var refreshBtn = document.getElementById('refreshNowBtn');
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', function () {
+            countdown = intervalMs / 1000;
+            refreshDashboard();
+        });
+    }
+})();
+</script>
