@@ -20,6 +20,7 @@ public static class MappingConfig
         new CampaignMappings().Register(config);
         new DataSourceMappings().Register(config);
         new ApiKeyMappings().Register(config);
+        new AttachmentMappings().Register(config);
     }
 
     /// <summary>

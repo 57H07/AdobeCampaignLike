@@ -1,6 +1,7 @@
 using CampaignEngine.Application.Interfaces;
 using CampaignEngine.Application.Interfaces.Repositories;
 using CampaignEngine.Infrastructure.ApiKeys;
+using CampaignEngine.Infrastructure.Attachments;
 using CampaignEngine.Infrastructure.Batch;
 using CampaignEngine.Infrastructure.Campaigns;
 using CampaignEngine.Infrastructure.Configuration;
@@ -291,6 +292,23 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IFilterAstTranslator, FilterAstTranslator>();
         services.AddScoped<IFilterExpressionValidator, FilterExpressionValidator>();
         services.AddScoped<IDataSourcePreviewService, DataSourcePreviewService>();
+
+        // ----------------------------------------------------------------
+        // Attachment management (US-028)
+        // AttachmentStorageOptions: configures UNC/local file share base path and limits.
+        // AttachmentValidationService: extension whitelist + size limit enforcement.
+        // FileUploadService: writes files to the configured file share path.
+        // DynamicAttachmentResolver: resolves per-recipient file paths at send time.
+        // AttachmentService: orchestrates upload, validation, and DB persistence.
+        // AttachmentRepository: EF Core queries for CampaignAttachment entities.
+        // ----------------------------------------------------------------
+        services.Configure<AttachmentStorageOptions>(
+            configuration.GetSection(AttachmentStorageOptions.SectionName));
+        services.AddScoped<IAttachmentValidationService, AttachmentValidationService>();
+        services.AddScoped<IFileUploadService, FileUploadService>();
+        services.AddScoped<IDynamicAttachmentResolver, DynamicAttachmentResolver>();
+        services.AddScoped<IAttachmentService, AttachmentService>();
+        services.AddScoped<IAttachmentRepository, AttachmentRepository>();
 
         // ----------------------------------------------------------------
         // Campaign management (US-023, US-024, US-027)

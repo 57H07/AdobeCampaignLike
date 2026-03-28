@@ -23,17 +23,20 @@ public class CampaignsController : ControllerBase
     private readonly IRecipientCountService _recipientCountService;
     private readonly ICurrentUserService _currentUserService;
     private readonly ITemplateSnapshotService _snapshotService;
+    private readonly IAttachmentService _attachmentService;
 
     public CampaignsController(
         ICampaignService campaignService,
         IRecipientCountService recipientCountService,
         ICurrentUserService currentUserService,
-        ITemplateSnapshotService snapshotService)
+        ITemplateSnapshotService snapshotService,
+        IAttachmentService attachmentService)
     {
         _campaignService = campaignService;
         _recipientCountService = recipientCountService;
         _currentUserService = currentUserService;
         _snapshotService = snapshotService;
+        _attachmentService = attachmentService;
     }
 
     // ----------------------------------------------------------------
@@ -276,5 +279,180 @@ public class CampaignsController : ControllerBase
 
         var result = await _recipientCountService.EstimateAsync(request, cancellationToken);
         return Ok(result);
+    }
+
+    // ----------------------------------------------------------------
+    // GET /api/campaigns/{id}/attachments
+    // ----------------------------------------------------------------
+
+    /// <summary>
+    /// Returns all attachments (static and dynamic) registered for a campaign.
+    /// </summary>
+    /// <param name="id">Campaign GUID.</param>
+    [HttpGet("{id:guid}/attachments")]
+    [Authorize(Policy = AuthorizationPolicies.RequireAuthenticated)]
+    [ProducesResponseType(typeof(IReadOnlyList<CampaignAttachmentDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<IReadOnlyList<CampaignAttachmentDto>>> GetAttachments(
+        Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        // Verify campaign exists
+        var campaign = await _campaignService.GetByIdAsync(id, cancellationToken);
+        if (campaign is null) return NotFound();
+
+        var attachments = await _attachmentService.GetByCampaignAsync(id, cancellationToken);
+        return Ok(attachments);
+    }
+
+    // ----------------------------------------------------------------
+    // POST /api/campaigns/{id}/attachments (static — multipart upload)
+    // ----------------------------------------------------------------
+
+    /// <summary>
+    /// Uploads a static attachment file for a campaign.
+    /// The same file will be sent to all recipients.
+    /// </summary>
+    /// <remarks>
+    /// Business rules:
+    /// - Extension whitelist: PDF, DOCX, XLSX, PNG, JPG.
+    /// - Max 10 MB per file.
+    /// - Max 25 MB total across all campaign attachments.
+    /// - Campaign must exist.
+    /// </remarks>
+    /// <param name="id">Campaign GUID.</param>
+    /// <param name="file">File to upload (multipart/form-data).</param>
+    [HttpPost("{id:guid}/attachments")]
+    [Authorize(Policy = AuthorizationPolicies.RequireOperatorOrAdmin)]
+    [Consumes("multipart/form-data")]
+    [RequestSizeLimit(11 * 1024 * 1024)] // 11 MB limit at transport layer
+    [ProducesResponseType(typeof(CampaignAttachmentDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult<CampaignAttachmentDto>> UploadStaticAttachment(
+        Guid id,
+        IFormFile file,
+        CancellationToken cancellationToken = default)
+    {
+        if (file is null || file.Length == 0)
+            return BadRequest(new { error = "A non-empty file is required." });
+
+        try
+        {
+            using var ms = new MemoryStream();
+            await file.CopyToAsync(ms, cancellationToken);
+            var content = ms.ToArray();
+
+            var dto = await _attachmentService.UploadStaticAsync(
+                id,
+                file.FileName,
+                content,
+                cancellationToken);
+
+            return CreatedAtAction(nameof(GetAttachments), new { id }, dto);
+        }
+        catch (NotFoundException)
+        {
+            return NotFound();
+        }
+        catch (ValidationException ex)
+        {
+            foreach (var (field, errors) in ex.Errors)
+            {
+                foreach (var error in errors)
+                    ModelState.AddModelError(field, error);
+            }
+            return ValidationProblem(ModelState);
+        }
+    }
+
+    // ----------------------------------------------------------------
+    // POST /api/campaigns/{id}/attachments/dynamic
+    // ----------------------------------------------------------------
+
+    /// <summary>
+    /// Registers a dynamic attachment configuration for a campaign.
+    /// The per-recipient file path is resolved at send time from the specified data source field.
+    /// </summary>
+    /// <remarks>
+    /// Business rules:
+    /// - DynamicFieldName must match a field in the campaign's data source.
+    /// - No file is uploaded — only the field mapping is stored.
+    /// - Missing files at send time are logged as warnings (send is not blocked).
+    /// </remarks>
+    /// <param name="id">Campaign GUID.</param>
+    /// <param name="request">Dynamic field mapping configuration.</param>
+    [HttpPost("{id:guid}/attachments/dynamic")]
+    [Authorize(Policy = AuthorizationPolicies.RequireOperatorOrAdmin)]
+    [ProducesResponseType(typeof(CampaignAttachmentDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult<CampaignAttachmentDto>> RegisterDynamicAttachment(
+        Guid id,
+        [FromBody] AddDynamicAttachmentRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        if (!ModelState.IsValid)
+            return ValidationProblem(ModelState);
+
+        try
+        {
+            var dto = await _attachmentService.RegisterDynamicAsync(
+                id,
+                request.DynamicFieldName,
+                cancellationToken);
+
+            return CreatedAtAction(nameof(GetAttachments), new { id }, dto);
+        }
+        catch (NotFoundException)
+        {
+            return NotFound();
+        }
+        catch (ValidationException ex)
+        {
+            foreach (var (field, errors) in ex.Errors)
+            {
+                foreach (var error in errors)
+                    ModelState.AddModelError(field, error);
+            }
+            return ValidationProblem(ModelState);
+        }
+    }
+
+    // ----------------------------------------------------------------
+    // DELETE /api/campaigns/{id}/attachments/{attachmentId}
+    // ----------------------------------------------------------------
+
+    /// <summary>
+    /// Deletes a campaign attachment (static or dynamic).
+    /// For static attachments, the file is also removed from the file share.
+    /// </summary>
+    /// <param name="id">Campaign GUID.</param>
+    /// <param name="attachmentId">Attachment GUID.</param>
+    [HttpDelete("{id:guid}/attachments/{attachmentId:guid}")]
+    [Authorize(Policy = AuthorizationPolicies.RequireOperatorOrAdmin)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> DeleteAttachment(
+        Guid id,
+        Guid attachmentId,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            await _attachmentService.DeleteAsync(attachmentId, cancellationToken);
+            return NoContent();
+        }
+        catch (NotFoundException)
+        {
+            return NotFound();
+        }
     }
 }
