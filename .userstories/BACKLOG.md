@@ -13,9 +13,9 @@
 **Overall status:** ðŸŸ¡ Planning
 
 ### Statistics by Priority
-- ðŸ”´ High priority (MVP): 25 stories
-- ðŸŸ  Medium priority (Phase 2): 9 stories
-- ðŸŸ¢ Low priority (Phase 3): 1 story
+- 🔴 High priority (MVP): 25 stories
+- 🟠 Medium priority (Phase 2): 9 stories
+- 🟢 Low priority (Phase 3): 1 story
 
 ### Statistics by Complexity
 - **S (Small)**: 8 stories
@@ -96,7 +96,7 @@
 **Status:** ✅ DONE
 **Start date:** 2026-03-19
 **End date:** 2026-03-19
-**Priority:** ðŸ”´ High
+**Priority:** 🔴 High
 **Complexity:** M
 **Epic:** Foundation & Infrastructure
 
@@ -136,7 +136,7 @@
 **Status:** ✅ DONE
 **Start date:** 2026-03-19
 **End date:** 2026-03-19
-**Priority:** ðŸ”´ High
+**Priority:** 🔴 High
 **Complexity:** M
 **Epic:** Foundation & Infrastructure
 
@@ -176,7 +176,7 @@
 **Status:** ✅ DONE
 **Start date:** 2026-03-19
 **End date:** 2026-03-19
-**Priority:** ðŸ”´ High
+**Priority:** 🔴 High
 **Complexity:** M
 **Epic:** Foundation & Infrastructure
 
@@ -222,7 +222,7 @@
 **Status:** ✅ DONE
 **Start date:** 2026-03-19
 **End date:** 2026-03-19
-**Priority:** ðŸ”´ High
+**Priority:** 🔴 High
 **Complexity:** S
 **Epic:** Foundation & Infrastructure
 
@@ -267,7 +267,7 @@
 **Status:** ✅ DONE
 **Start date:** 2026-03-20 00:00:00
 **End date:** 2026-03-20
-**Priority:** ðŸ”´ High
+**Priority:** 🔴 High
 **Complexity:** M
 **Epic:** Template Management
 
@@ -312,7 +312,7 @@
 **Status:** ✅ DONE
 **Start date:** 2026-03-20
 **End date:** 2026-03-20
-**Priority:** ðŸ”´ High
+**Priority:** 🔴 High
 **Complexity:** M
 **Epic:** Template Management
 
@@ -356,7 +356,7 @@
 **Status:** ✅ DONE
 **Start date:** 2026-03-20
 **End date:** 2026-03-20
-**Priority:** ðŸ”´ High
+**Priority:** 🔴 High
 **Complexity:** M
 **Epic:** Template Management
 
@@ -400,7 +400,7 @@
 **Status:** ✅ DONE
 **Start date:** 2026-03-20
 **End date:** 2026-03-20
-**Priority:** ðŸŸ  Medium
+**Priority:** 🟠 Medium
 **Complexity:** M
 **Epic:** Template Management
 
@@ -444,7 +444,7 @@
 **Status:** ✅ DONE
 **Start date:** 2026-03-25
 **End date:** 2026-03-28
-**Priority:** ðŸŸ  Medium
+**Priority:** 🟠 Medium
 **Complexity:** S
 **Epic:** Template Management
 
@@ -487,7 +487,7 @@
 **Status:** â DONE
 **End date:** 2026-03-25 10:00
 **Start date:** 2026-03-25 09:00
-**Priority:** ðŸ”´ High
+**Priority:** 🔴 High
 **Complexity:** M
 **Epic:** Template Management
 
@@ -533,7 +533,7 @@
 **Status:** ✅ DONE
 **Start date:** 2026-03-19
 **End date:** 2026-03-19
-**Priority:** ðŸ”´ High
+**Priority:** 🔴 High
 **Complexity:** M
 **Epic:** Rendering Engine
 
@@ -576,7 +576,7 @@
 **Status:** ✅ DONE
 **Start date:** 2026-03-19
 **End date:** 2026-03-19
-**Priority:** ðŸ”´ High
+**Priority:** 🔴 High
 **Complexity:** M
 **Epic:** Rendering Engine
 
@@ -620,7 +620,7 @@
 **Status:** ✅ DONE
 **Start date:** 2026-03-20
 **End date:** 2026-03-20
-**Priority:** ðŸ”´ High
+**Priority:** 🔴 High
 **Complexity:** L
 **Epic:** Rendering Engine
 
@@ -673,7 +673,7 @@
 **Status:** ✅ DONE
 **Start date:** 2026-03-20
 **End date:** 2026-03-20
-**Priority:** ðŸ”´ High
+**Priority:** 🔴 High
 **Complexity:** M
 **Epic:** Data Source Connector
 
@@ -717,7 +717,7 @@
 **Status:** ✅ DONE
 **Start date:** 2026-03-20
 **End date:** 2026-03-20
-**Priority:** ðŸ”´ High
+**Priority:** 🔴 High
 **Complexity:** M
 **Epic:** Data Source Connector
 
@@ -773,7 +773,7 @@
 **Status:** 🟢 DONE
 **Start date:** 2026-03-25
 **End date:** 2026-03-25
-**Priority:** ðŸ”´ High
+**Priority:** 🔴 High
 **Complexity:** L
 **Epic:** Data Source Connector
 
@@ -818,7 +818,7 @@
 **Status:** ✅ DONE
 **Start date:** 2026-03-28
 **End date:** 2026-03-28
-**Priority:** ðŸŸ  Medium
+**Priority:** 🟠 Medium
 **Complexity:** M
 **Epic:** Data Source Connector
 
@@ -863,7 +863,7 @@
 **Status:** ✅ DONE
 **Start date:** 2026-03-19
 **End date:** 2026-03-19
-**Priority:** ðŸ”´ High
+**Priority:** 🔴 High
 **Complexity:** S
 **Epic:** Dispatch Engine
 
@@ -904,7 +904,7 @@
 **Status:** ✅ DONE
 **Start date:** 2026-03-20
 **End date:** 2026-03-20
-**Priority:** ðŸ”´ High
+**Priority:** 🔴 High
 **Complexity:** M
 **Epic:** Dispatch Engine
 
@@ -958,7 +958,7 @@
 **Status:** ✅ DONE
 **Start date:** 2026-03-20
 **End date:** 2026-03-20
-**Priority:** ðŸ”´ High
+**Priority:** 🔴 High
 **Complexity:** M
 **Epic:** Dispatch Engine
 
@@ -1003,7 +1003,7 @@
 **Status:** ✅ DONE
 **End date:** 2026-03-20
 **Start date:** 2026-03-20
-**Priority:** ðŸ”´ High
+**Priority:** 🔴 High
 **Complexity:** L
 **Epic:** Dispatch Engine
 
@@ -1058,7 +1058,7 @@
 **Status:** ✅ DONE
 **Start date:** 2026-03-28
 **End date:** 2026-03-28
-**Priority:** ðŸŸ  Medium
+**Priority:** 🟠 Medium
 **Complexity:** M
 **Epic:** Dispatch Engine
 
@@ -1104,7 +1104,7 @@
 **Status:** ✅ DONE
 **Start date:** 2026-03-25
 **End date:** 2026-03-25
-**Priority:** ðŸ”´ High
+**Priority:** 🔴 High
 **Complexity:** L
 **Epic:** Campaign Orchestrator
 
@@ -1152,7 +1152,7 @@
 **Status:** ✅ DONE
 **Start date:** 2026-03-25
 **End date:** 2026-03-25
-**Priority:** ðŸ”´ High
+**Priority:** 🔴 High
 **Complexity:** L
 **Epic:** Campaign Orchestrator
 
@@ -1238,7 +1238,7 @@
 **Status:** ✅ DONE
 **Start date:** 2026-03-25
 **End date:** 2026-03-26
-**Priority:** ðŸ”´ High
+**Priority:** 🔴 High
 **Complexity:** XL
 **Epic:** Campaign Orchestrator
 
@@ -1298,7 +1298,7 @@
 **Status:** ✅ DONE
 **Start date:** 2026-03-27 00:00 UTC
 **End date:** 2026-03-27 23:59 UTC
-**Priority:** ðŸ”´ High
+**Priority:** 🔴 High
 **Complexity:** M
 **Epic:** Campaign Orchestrator
 
@@ -1342,7 +1342,7 @@
 **Status:** ✅ DONE
 **Start date:** 2026-03-28
 **End date:** 2026-03-28
-**Priority:** ðŸŸ  Medium
+**Priority:** 🟠 Medium
 **Complexity:** M
 **Epic:** Campaign Orchestrator
 
@@ -1391,7 +1391,7 @@
 **Status:** ✅ DONE
 **Start date:** 2026-03-28
 **End date:** 2026-03-28
-**Priority:** ðŸŸ  Medium
+**Priority:** 🟠 Medium
 **Complexity:** S
 **Epic:** Campaign Orchestrator
 
@@ -1437,7 +1437,7 @@
 **Status:** ✅ DONE
 **Start date:** 2026-03-19
 **End date:** 2026-03-19
-**Priority:** ðŸ”´ High
+**Priority:** 🔴 High
 **Complexity:** M
 **Epic:** Generic Send API
 
@@ -1522,8 +1522,8 @@
 ---
 
 #### [US-032] - OpenAPI/Swagger documentation
-**Status:** ðŸŸ¡ TODO
-**Priority:** ðŸŸ  Medium
+**Status:** 🟡 TODO
+**Priority:** 🟠 Medium
 **Complexity:** S
 **Epic:** Generic Send API
 
@@ -1561,8 +1561,8 @@
 ---
 
 #### [US-033] - API rate limiting per consumer
-**Status:** ðŸŸ¡ TODO
-**Priority:** ðŸŸ  Medium
+**Status:** 🟡 TODO
+**Priority:** 🟠 Medium
 **Complexity:** S
 **Epic:** Generic Send API
 
@@ -1607,7 +1607,7 @@
 **Status:** ✅ DONE
 **Start date:** 2026-03-19
 **End date:** 2026-03-19
-**Priority:** ðŸ”´ High
+**Priority:** 🔴 High
 **Complexity:** M
 **Epic:** Tracking & Audit
 
@@ -1651,7 +1651,7 @@
 **Start date:** 2026-03-27
 **End date:** 2026-03-27
 
-**Priority:** ðŸ”´ High
+**Priority:** 🔴 High
 **Complexity:** M
 **Epic:** Tracking & Audit
 
@@ -1696,7 +1696,7 @@
 
 #### [US-036] - Campaign progress dashboard
 **Status:** 🟡 TODO
-**Priority:** ðŸŸ  Medium
+**Priority:** 🟠 Medium
 **Complexity:** M
 **Epic:** Reporting & Dashboards
 
@@ -1741,7 +1741,7 @@
 **Status:** ✅ DONE
 **Start date:** 2026-03-20
 **End date:** 2026-03-20
-**Priority:** ðŸ”´ High
+**Priority:** 🔴 High
 **Complexity:** S
 **Epic:** Epic 10
 **Type:** [Bug]
@@ -2008,9 +2008,9 @@
 ---
 
 **Legend:**
-- ðŸ”´ High Priority (MVP â€” Phase 1)
-- ðŸŸ  Medium Priority (Phase 2)
-- ðŸŸ¢ Low Priority (Phase 3 / Future)
-- ðŸŸ¡ TODO | ðŸ”µ In Progress | ðŸŸ¢ Done | ðŸ”´ Blocked
+- 🔴 High Priority (MVP â€” Phase 1)
+- 🟠 Medium Priority (Phase 2)
+- 🟢 Low Priority (Phase 3 / Future)
+- 🟡 TODO | 🔵 IN PROGRESS | ✅ DONE | ❌ BLOCKED
 
 
