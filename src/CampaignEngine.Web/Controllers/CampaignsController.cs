@@ -51,6 +51,7 @@ public class CampaignsController : ControllerBase
     /// <param name="dataSourceId">Filter by data source ID (optional).</param>
     /// <param name="page">Page number (1-based, default 1).</param>
     /// <param name="pageSize">Page size (1–100, default 20).</param>
+    /// <param name="cancellationToken">Optional cancellation token.</param>
     [HttpGet]
     [Authorize(Policy = AuthorizationPolicies.RequireAuthenticated)]
     [ProducesResponseType(typeof(CampaignPagedResult), StatusCodes.Status200OK)]
@@ -88,6 +89,7 @@ public class CampaignsController : ControllerBase
     /// Returns a single campaign by ID, including its steps.
     /// </summary>
     /// <param name="id">Campaign GUID.</param>
+    /// <param name="cancellationToken">Optional cancellation token.</param>
     [HttpGet("{id:guid}")]
     [Authorize(Policy = AuthorizationPolicies.RequireAuthenticated)]
     [ProducesResponseType(typeof(CampaignDto), StatusCodes.Status200OK)]
@@ -118,6 +120,7 @@ public class CampaignsController : ControllerBase
     /// - Operator must provide values for all freeField placeholders in the selected templates.
     /// </remarks>
     /// <param name="request">Campaign creation data.</param>
+    /// <param name="cancellationToken">Optional cancellation token.</param>
     [HttpPost]
     [Authorize(Policy = AuthorizationPolicies.RequireOperatorOrAdmin)]
     [ProducesResponseType(typeof(CampaignDto), StatusCodes.Status201Created)]
@@ -163,6 +166,7 @@ public class CampaignsController : ControllerBase
     /// - Template snapshots are created atomically with the status change.
     /// </remarks>
     /// <param name="id">Campaign GUID.</param>
+    /// <param name="cancellationToken">Optional cancellation token.</param>
     [HttpPost("{id:guid}/schedule")]
     [Authorize(Policy = AuthorizationPolicies.RequireOperatorOrAdmin)]
     [ProducesResponseType(typeof(CampaignDto), StatusCodes.Status200OK)]
@@ -203,6 +207,7 @@ public class CampaignsController : ControllerBase
     /// Snapshots are only present once the campaign has been scheduled.
     /// </summary>
     /// <param name="id">Campaign GUID.</param>
+    /// <param name="cancellationToken">Optional cancellation token.</param>
     [HttpGet("{id:guid}/snapshot")]
     [Authorize(Policy = AuthorizationPolicies.RequireAuthenticated)]
     [ProducesResponseType(typeof(IReadOnlyList<TemplateSnapshotDto>), StatusCodes.Status200OK)]
@@ -234,6 +239,7 @@ public class CampaignsController : ControllerBase
     /// and an ordered log of all status transitions with timestamps.
     /// </remarks>
     /// <param name="id">Campaign GUID.</param>
+    /// <param name="cancellationToken">Optional cancellation token.</param>
     [HttpGet("{id:guid}/status")]
     [Authorize(Policy = AuthorizationPolicies.RequireAuthenticated)]
     [ProducesResponseType(typeof(CampaignStatusDto), StatusCodes.Status200OK)]
@@ -264,6 +270,7 @@ public class CampaignsController : ControllerBase
     /// - The count is an approximation at the time of the request.
     /// </remarks>
     /// <param name="request">Data source ID and optional filter expression.</param>
+    /// <param name="cancellationToken">Optional cancellation token.</param>
     [HttpPost("estimate-recipients")]
     [Authorize(Policy = AuthorizationPolicies.RequireOperatorOrAdmin)]
     [ProducesResponseType(typeof(RecipientCountEstimateResult), StatusCodes.Status200OK)]
@@ -289,6 +296,7 @@ public class CampaignsController : ControllerBase
     /// Returns all attachments (static and dynamic) registered for a campaign.
     /// </summary>
     /// <param name="id">Campaign GUID.</param>
+    /// <param name="cancellationToken">Optional cancellation token.</param>
     [HttpGet("{id:guid}/attachments")]
     [Authorize(Policy = AuthorizationPolicies.RequireAuthenticated)]
     [ProducesResponseType(typeof(IReadOnlyList<CampaignAttachmentDto>), StatusCodes.Status200OK)]
@@ -323,6 +331,7 @@ public class CampaignsController : ControllerBase
     /// </remarks>
     /// <param name="id">Campaign GUID.</param>
     /// <param name="file">File to upload (multipart/form-data).</param>
+    /// <param name="cancellationToken">Optional cancellation token.</param>
     [HttpPost("{id:guid}/attachments")]
     [Authorize(Policy = AuthorizationPolicies.RequireOperatorOrAdmin)]
     [Consumes("multipart/form-data")]
@@ -385,6 +394,7 @@ public class CampaignsController : ControllerBase
     /// </remarks>
     /// <param name="id">Campaign GUID.</param>
     /// <param name="request">Dynamic field mapping configuration.</param>
+    /// <param name="cancellationToken">Optional cancellation token.</param>
     [HttpPost("{id:guid}/attachments/dynamic")]
     [Authorize(Policy = AuthorizationPolicies.RequireOperatorOrAdmin)]
     [ProducesResponseType(typeof(CampaignAttachmentDto), StatusCodes.Status201Created)]
@@ -434,6 +444,7 @@ public class CampaignsController : ControllerBase
     /// </summary>
     /// <param name="id">Campaign GUID.</param>
     /// <param name="attachmentId">Attachment GUID.</param>
+    /// <param name="cancellationToken">Optional cancellation token.</param>
     [HttpDelete("{id:guid}/attachments/{attachmentId:guid}")]
     [Authorize(Policy = AuthorizationPolicies.RequireOperatorOrAdmin)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]

@@ -35,6 +35,7 @@ public class SendLogsController : ControllerBase
     /// <param name="to">Filter: entries created on or before this UTC datetime.</param>
     /// <param name="page">Page number (1-based, default 1).</param>
     /// <param name="pageSize">Page size (1–200, default 50).</param>
+    /// <param name="cancellationToken">Optional cancellation token.</param>
     [HttpGet]
     [ProducesResponseType(typeof(SendLogPagedResult), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -90,6 +91,7 @@ public class SendLogsController : ControllerBase
     /// Returns a single send log entry by ID.
     /// </summary>
     /// <param name="id">The SEND_LOG entry ID.</param>
+    /// <param name="cancellationToken">Optional cancellation token.</param>
     [HttpGet("{id:guid}")]
     [ProducesResponseType(typeof(SendLogDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

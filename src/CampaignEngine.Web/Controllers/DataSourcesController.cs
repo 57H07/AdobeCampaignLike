@@ -41,6 +41,7 @@ public class DataSourcesController : ControllerBase
     /// <param name="nameContains">Partial name match (case-insensitive).</param>
     /// <param name="page">Page number (1-based, default 1).</param>
     /// <param name="pageSize">Page size (1–100, default 20).</param>
+    /// <param name="cancellationToken">Optional cancellation token.</param>
     [HttpGet]
     [Authorize(Policy = AuthorizationPolicies.RequireOperatorOrAdmin)]
     [ProducesResponseType(typeof(DataSourcePagedResult), StatusCodes.Status200OK)]
@@ -79,6 +80,7 @@ public class DataSourcesController : ControllerBase
     /// Returns a single data source by ID, including its field schema.
     /// </summary>
     /// <param name="id">The data source ID.</param>
+    /// <param name="cancellationToken">Optional cancellation token.</param>
     [HttpGet("{id:guid}")]
     [Authorize(Policy = AuthorizationPolicies.RequireOperatorOrAdmin)]
     [ProducesResponseType(typeof(DataSourceDto), StatusCodes.Status200OK)]
@@ -104,6 +106,7 @@ public class DataSourcesController : ControllerBase
     /// Admin role required.
     /// </summary>
     /// <param name="request">The data source creation request.</param>
+    /// <param name="cancellationToken">Optional cancellation token.</param>
     [HttpPost]
     [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
     [ProducesResponseType(typeof(DataSourceDto), StatusCodes.Status201Created)]
@@ -129,6 +132,7 @@ public class DataSourcesController : ControllerBase
     /// </summary>
     /// <param name="id">The data source ID.</param>
     /// <param name="request">The update request.</param>
+    /// <param name="cancellationToken">Optional cancellation token.</param>
     [HttpPut("{id:guid}")]
     [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
     [ProducesResponseType(typeof(DataSourceDto), StatusCodes.Status200OK)]
@@ -156,6 +160,7 @@ public class DataSourcesController : ControllerBase
     /// </summary>
     /// <param name="id">The data source ID.</param>
     /// <param name="fields">New field definitions.</param>
+    /// <param name="cancellationToken">Optional cancellation token.</param>
     [HttpPut("{id:guid}/schema")]
     [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
     [ProducesResponseType(typeof(DataSourceDto), StatusCodes.Status200OK)]
@@ -181,6 +186,7 @@ public class DataSourcesController : ControllerBase
     /// Admin role required.
     /// </summary>
     /// <param name="id">The data source ID.</param>
+    /// <param name="cancellationToken">Optional cancellation token.</param>
     [HttpPost("{id:guid}/test-connection")]
     [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
     [ProducesResponseType(typeof(ConnectionTestResult), StatusCodes.Status200OK)]
@@ -204,6 +210,7 @@ public class DataSourcesController : ControllerBase
     /// Admin role required.
     /// </summary>
     /// <param name="request">The type and plaintext connection string to test.</param>
+    /// <param name="cancellationToken">Optional cancellation token.</param>
     [HttpPost("test-connection")]
     [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
     [ProducesResponseType(typeof(ConnectionTestResult), StatusCodes.Status200OK)]
@@ -228,6 +235,7 @@ public class DataSourcesController : ControllerBase
     /// </summary>
     /// <param name="id">The data source ID.</param>
     /// <param name="isActive">True to activate, false to deactivate.</param>
+    /// <param name="cancellationToken">Optional cancellation token.</param>
     [HttpPatch("{id:guid}/active")]
     [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
     [ProducesResponseType(typeof(DataSourceDto), StatusCodes.Status200OK)]
@@ -259,6 +267,7 @@ public class DataSourcesController : ControllerBase
     /// </summary>
     /// <param name="id">The data source ID to preview.</param>
     /// <param name="request">Filter expressions and optional row limit (max 100).</param>
+    /// <param name="cancellationToken">Optional cancellation token.</param>
     [HttpPost("{id:guid}/preview")]
     [Authorize(Policy = AuthorizationPolicies.RequireOperatorOrAdmin)]
     [ProducesResponseType(typeof(PreviewDataSourceResult), StatusCodes.Status200OK)]
