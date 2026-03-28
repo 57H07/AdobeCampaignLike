@@ -1386,8 +1386,9 @@
 ---
 
 #### [US-029] - CC and BCC management
-**Status:** 🔵 IN PROGRESS
+**Status:** ✅ DONE
 **Start date:** 2026-03-28
+**End date:** 2026-03-28
 **Priority:** ðŸŸ  Medium
 **Complexity:** S
 **Epic:** Campaign Orchestrator
@@ -1400,20 +1401,20 @@
 > Static CC (operator-defined) + dynamic CC (from data source field); deduplicated, validated.
 
 **Acceptance criteria:**
-- [ ] Static CC addresses configured at campaign creation
-- [ ] Dynamic CC addresses from data source field
-- [ ] Email validation for all CC addresses
-- [ ] Deduplication (same address only receives one copy)
-- [ ] BCC support for hidden copies
+- [x] Static CC addresses configured at campaign creation ✅
+- [x] Dynamic CC addresses from data source field ✅
+- [x] Email validation for all CC addresses ✅
+- [x] Deduplication (same address only receives one copy) ✅
+- [x] BCC support for hidden copies ✅
 
 **Technical tasks:**
-- [ ] `TASK-029-01` - **[Model]** Add StaticCC and DynamicCCField to Campaign
-- [ ] `TASK-029-02` - **[Service]** Email validation service
-- [ ] `TASK-029-03` - **[Service]** CC deduplication service
-- [ ] `TASK-029-04` - **[Frontend]** CC/BCC configuration UI
-- [ ] `TASK-029-05` - **[Test]** Email validation tests
-- [ ] `TASK-029-06` - **[Test]** Deduplication tests
-- [ ] `TASK-029-07` - **[Doc]** CC management guide
+- [x] `TASK-029-01` - **[Model]** Add StaticCC and DynamicCCField to Campaign ✅ 2026-03-28
+- [x] `TASK-029-02` - **[Service]** Email validation service ✅ 2026-03-28
+- [x] `TASK-029-03` - **[Service]** CC deduplication service ✅ 2026-03-28
+- [x] `TASK-029-04` - **[Frontend]** CC/BCC configuration UI ✅ 2026-03-28
+- [x] `TASK-029-05` - **[Test]** Email validation tests ✅ 2026-03-28
+- [x] `TASK-029-06` - **[Test]** Deduplication tests ✅ 2026-03-28
+- [x] `TASK-029-07` - **[Doc]** CC management guide ✅ 2026-03-28
 
 **Business rules:**
 1. Static CC: comma-separated email list
