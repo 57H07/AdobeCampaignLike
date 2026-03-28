@@ -1563,7 +1563,8 @@
 ---
 
 #### [US-033] - API rate limiting per consumer
-**Status:** 🟡 TODO
+**Status:** 🔵 IN PROGRESS
+**Start date:** 2026-03-28
 **Priority:** 🟠 Medium
 **Complexity:** S
 **Epic:** Generic Send API
