@@ -1563,8 +1563,9 @@
 ---
 
 #### [US-033] - API rate limiting per consumer
-**Status:** 🔵 IN PROGRESS
+**Status:** ✅ DONE
 **Start date:** 2026-03-28
+**End date:** 2026-03-28
 **Priority:** 🟠 Medium
 **Complexity:** S
 **Epic:** Generic Send API
@@ -1577,19 +1578,19 @@
 > Configurable rate limits per API key. Prevent abuse and ensure fair resource allocation.
 
 **Acceptance criteria:**
-- [ ] Rate limits configurable per API key
-- [ ] Default rate limit applied to new API keys
-- [ ] 429 Too Many Requests response when limit exceeded
-- [ ] Rate limit headers in responses (X-RateLimit-*)
-- [ ] Rate limit monitoring and alerting
+- [x] Rate limits configurable per API key ✅
+- [x] Default rate limit applied to new API keys ✅
+- [x] 429 Too Many Requests response when limit exceeded ✅
+- [x] Rate limit headers in responses (X-RateLimit-*) ✅
+- [x] Rate limit monitoring and alerting ✅
 
 **Technical tasks:**
-- [ ] `TASK-033-01` - **[Service]** Implement API rate limiter (per key)
-- [ ] `TASK-033-02` - **[Middleware]** Rate limiting middleware
-- [ ] `TASK-033-03` - **[API]** Add rate limit headers to responses
-- [ ] `TASK-033-04` - **[Frontend]** Rate limit configuration in API key UI
-- [ ] `TASK-033-05` - **[Test]** Rate limiting tests
-- [ ] `TASK-033-06` - **[Doc]** Rate limiting documentation
+- [x] `TASK-033-01` - **[Service]** Implement API rate limiter (per key) ✅ 2026-03-28
+- [x] `TASK-033-02` - **[Middleware]** Rate limiting middleware ✅ 2026-03-28
+- [x] `TASK-033-03` - **[API]** Add rate limit headers to responses ✅ 2026-03-28
+- [x] `TASK-033-04` - **[Frontend]** Rate limit configuration in API key UI ✅ 2026-03-28
+- [x] `TASK-033-05` - **[Test]** Rate limiting tests ✅ 2026-03-28
+- [x] `TASK-033-06` - **[Doc]** Rate limiting documentation ✅ 2026-03-28
 
 **Business rules:**
 1. Default: 1000 requests/minute per key
