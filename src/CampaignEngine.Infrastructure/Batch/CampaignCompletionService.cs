@@ -1,8 +1,7 @@
 using CampaignEngine.Application.Interfaces;
+using CampaignEngine.Application.Interfaces.Repositories;
 using CampaignEngine.Domain.Enums;
 using CampaignEngine.Domain.Exceptions;
-using CampaignEngine.Infrastructure.Persistence;
-using Microsoft.EntityFrameworkCore;
 
 namespace CampaignEngine.Infrastructure.Batch;
 
@@ -22,14 +21,17 @@ public sealed class CampaignCompletionService : ICampaignCompletionService
     private const double PartialFailureThreshold = 0.02;  // 2%
     private const double ManualReviewThreshold = 0.10;    // 10%
 
-    private readonly CampaignEngineDbContext _dbContext;
+    private readonly ICampaignRepository _campaignRepository;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly IAppLogger<CampaignCompletionService> _logger;
 
     public CampaignCompletionService(
-        CampaignEngineDbContext dbContext,
+        ICampaignRepository campaignRepository,
+        IUnitOfWork unitOfWork,
         IAppLogger<CampaignCompletionService> logger)
     {
-        _dbContext = dbContext;
+        _campaignRepository = campaignRepository;
+        _unitOfWork = unitOfWork;
         _logger = logger;
     }
 
@@ -39,9 +41,7 @@ public sealed class CampaignCompletionService : ICampaignCompletionService
         Guid stepId,
         CancellationToken cancellationToken = default)
     {
-        var campaign = await _dbContext.Campaigns
-            .Include(c => c.Steps)
-            .FirstOrDefaultAsync(c => c.Id == campaignId, cancellationToken);
+        var campaign = await _campaignRepository.GetWithStepsAsync(campaignId, cancellationToken);
 
         if (campaign is null)
             throw new NotFoundException("Campaign", campaignId);
@@ -60,7 +60,7 @@ public sealed class CampaignCompletionService : ICampaignCompletionService
         var failures = campaign.FailureCount;
 
         // Refresh from DB to get atomically-updated counters
-        await _dbContext.Entry(campaign).ReloadAsync(cancellationToken);
+        await _campaignRepository.ReloadAsync(campaign, cancellationToken);
         total = campaign.TotalRecipients;
         failures = campaign.FailureCount;
 
@@ -93,7 +93,7 @@ public sealed class CampaignCompletionService : ICampaignCompletionService
         campaign.Status = finalStatus;
         campaign.CompletedAt = DateTime.UtcNow;
 
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        await _unitOfWork.CommitAsync(cancellationToken);
 
         _logger.LogInformation(
             "Campaign {CampaignId} finalized. Status={Status}, Total={Total}, Success={Success}, Failed={Failed}",

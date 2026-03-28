@@ -1,9 +1,8 @@
 using CampaignEngine.Application.DTOs.Dispatch;
 using CampaignEngine.Application.Interfaces;
+using CampaignEngine.Application.Interfaces.Repositories;
 using CampaignEngine.Domain.Enums;
-using CampaignEngine.Infrastructure.Persistence;
 using Hangfire;
-using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 
 namespace CampaignEngine.Infrastructure.Batch;
@@ -29,7 +28,8 @@ namespace CampaignEngine.Infrastructure.Batch;
 [AutomaticRetry(Attempts = 3, OnAttemptsExceeded = AttemptsExceededAction.Delete)]
 public sealed class ProcessChunkJob : IProcessChunkJob
 {
-    private readonly CampaignEngineDbContext _dbContext;
+    private readonly ICampaignChunkRepository _chunkRepository;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ITemplateRenderer _templateRenderer;
     private readonly ILoggingDispatchOrchestrator _dispatchOrchestrator;
     private readonly IChunkCoordinatorService _coordinator;
@@ -37,14 +37,16 @@ public sealed class ProcessChunkJob : IProcessChunkJob
     private readonly IAppLogger<ProcessChunkJob> _logger;
 
     public ProcessChunkJob(
-        CampaignEngineDbContext dbContext,
+        ICampaignChunkRepository chunkRepository,
+        IUnitOfWork unitOfWork,
         ITemplateRenderer templateRenderer,
         ILoggingDispatchOrchestrator dispatchOrchestrator,
         IChunkCoordinatorService coordinator,
         ICcResolutionService ccResolution,
         IAppLogger<ProcessChunkJob> logger)
     {
-        _dbContext = dbContext;
+        _chunkRepository = chunkRepository;
+        _unitOfWork = unitOfWork;
         _templateRenderer = templateRenderer;
         _dispatchOrchestrator = dispatchOrchestrator;
         _coordinator = coordinator;
@@ -60,11 +62,7 @@ public sealed class ProcessChunkJob : IProcessChunkJob
         // ----------------------------------------------------------------
         // 1. Load chunk and step with snapshot
         // ----------------------------------------------------------------
-        var chunk = await _dbContext.CampaignChunks
-            .Include(c => c.CampaignStep)
-                .ThenInclude(s => s!.TemplateSnapshot)
-            .Include(c => c.Campaign)
-            .FirstOrDefaultAsync(c => c.Id == chunkId, cancellationToken);
+        var chunk = await _chunkRepository.GetWithDetailsAsync(chunkId, cancellationToken);
 
         if (chunk is null)
         {
@@ -84,7 +82,7 @@ public sealed class ProcessChunkJob : IProcessChunkJob
         // Mark as processing
         chunk.Status = ChunkStatus.Processing;
         chunk.StartedAt ??= DateTime.UtcNow;
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        await _unitOfWork.CommitAsync(cancellationToken);
 
         var step = chunk.CampaignStep;
         if (step is null)

@@ -6,6 +6,7 @@ using CampaignEngine.Domain.Entities;
 using CampaignEngine.Domain.Enums;
 using CampaignEngine.Domain.Exceptions;
 using CampaignEngine.Infrastructure.Persistence;
+using CampaignEngine.Infrastructure.Persistence.Repositories;
 using CampaignEngine.Infrastructure.Templates;
 using Microsoft.EntityFrameworkCore;
 
@@ -50,8 +51,11 @@ public class TemplatePreviewServiceTests : IDisposable
         _postProcessorMock = new Mock<IChannelPostProcessor>();
         _loggerMock = new Mock<IAppLogger<TemplatePreviewService>>();
 
+        var templateRepository = new TemplateRepository(_context);
+        var dataSourceRepository = new DataSourceRepository(_context);
         _service = new TemplatePreviewService(
-            _context,
+            templateRepository,
+            dataSourceRepository,
             _encryptorMock.Object,
             _connectorRegistryMock.Object,
             _subTemplateResolverMock.Object,

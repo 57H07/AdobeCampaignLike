@@ -28,4 +28,10 @@ public interface IUnitOfWork : IAsyncDisposable
     /// Rolls back the current transaction without saving.
     /// </summary>
     Task RollbackTransactionAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Executes a raw SQL command against the database.
+    /// Used for atomic operations (e.g., incrementing counters) that EF cannot express safely.
+    /// </summary>
+    Task<int> ExecuteSqlRawAsync(string sql, CancellationToken cancellationToken = default, params object[] parameters);
 }

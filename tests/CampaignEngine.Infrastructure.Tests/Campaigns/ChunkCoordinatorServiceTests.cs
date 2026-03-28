@@ -140,8 +140,7 @@ public class ChunkCoordinatorServiceTests : IDisposable
             _completionServiceMock.Object,
             _jobClientMock.Object,
             BuildOptions(),
-            loggerMock.Object,
-            _context);
+            loggerMock.Object);
     }
 
     // ------------------------------------------------------------------

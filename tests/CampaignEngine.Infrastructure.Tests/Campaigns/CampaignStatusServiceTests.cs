@@ -3,6 +3,7 @@ using CampaignEngine.Domain.Entities;
 using CampaignEngine.Domain.Enums;
 using CampaignEngine.Infrastructure.Campaigns;
 using CampaignEngine.Infrastructure.Persistence;
+using CampaignEngine.Infrastructure.Persistence.Repositories;
 using Microsoft.EntityFrameworkCore;
 
 namespace CampaignEngine.Infrastructure.Tests.Campaigns;
@@ -34,8 +35,10 @@ public class CampaignStatusServiceTests : IDisposable
             .Options;
 
         _context = new CampaignEngineDbContext(options);
+        var historyRepository = new CampaignStatusHistoryRepository(_context);
+        var unitOfWork = new UnitOfWork(_context);
         var loggerMock = new Mock<IAppLogger<CampaignStatusService>>();
-        _sut = new CampaignStatusService(_context, loggerMock.Object);
+        _sut = new CampaignStatusService(historyRepository, unitOfWork, loggerMock.Object);
     }
 
     public void Dispose() => _context.Dispose();

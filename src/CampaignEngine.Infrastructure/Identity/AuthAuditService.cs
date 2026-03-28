@@ -1,6 +1,6 @@
 using CampaignEngine.Application.Interfaces;
+using CampaignEngine.Application.Interfaces.Repositories;
 using CampaignEngine.Domain.Entities;
-using CampaignEngine.Infrastructure.Persistence;
 
 namespace CampaignEngine.Infrastructure.Identity;
 
@@ -9,11 +9,13 @@ namespace CampaignEngine.Infrastructure.Identity;
 /// </summary>
 public class AuthAuditService : IAuthAuditService
 {
-    private readonly CampaignEngineDbContext _dbContext;
+    private readonly IAuthAuditLogRepository _auditLogRepository;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public AuthAuditService(CampaignEngineDbContext dbContext)
+    public AuthAuditService(IAuthAuditLogRepository auditLogRepository, IUnitOfWork unitOfWork)
     {
-        _dbContext = dbContext;
+        _auditLogRepository = auditLogRepository;
+        _unitOfWork = unitOfWork;
     }
 
     public Task LogLoginAsync(string userId, string userName, string? ipAddress, CancellationToken ct = default)
@@ -72,7 +74,7 @@ public class AuthAuditService : IAuthAuditService
             OccurredAt = DateTime.UtcNow
         };
 
-        _dbContext.AuthAuditLogs.Add(log);
-        await _dbContext.SaveChangesAsync(ct);
+        await _auditLogRepository.AddAsync(log, ct);
+        await _unitOfWork.CommitAsync(ct);
     }
 }

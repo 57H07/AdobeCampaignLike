@@ -4,6 +4,7 @@ using CampaignEngine.Domain.Enums;
 using CampaignEngine.Domain.Exceptions;
 using CampaignEngine.Infrastructure.Batch;
 using CampaignEngine.Infrastructure.Persistence;
+using CampaignEngine.Infrastructure.Persistence.Repositories;
 using Microsoft.EntityFrameworkCore;
 
 namespace CampaignEngine.Infrastructure.Tests.Campaigns;
@@ -29,8 +30,10 @@ public class CampaignCompletionServiceTests : IDisposable
             .Options;
         _context = new CampaignEngineDbContext(options);
 
+        var campaignRepository = new CampaignRepository(_context);
+        var unitOfWork = new UnitOfWork(_context);
         var loggerMock = new Mock<IAppLogger<CampaignCompletionService>>();
-        _sut = new CampaignCompletionService(_context, loggerMock.Object);
+        _sut = new CampaignCompletionService(campaignRepository, unitOfWork, loggerMock.Object);
     }
 
     public void Dispose() => _context.Dispose();

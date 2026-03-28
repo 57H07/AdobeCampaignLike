@@ -19,6 +19,13 @@ public sealed class CampaignChunkRepository : RepositoryBase<CampaignChunk>, ICa
             .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
 
     /// <inheritdoc />
+    public async Task<CampaignChunk?> GetWithDetailsAsync(Guid id, CancellationToken cancellationToken = default)
+        => await DbContext.CampaignChunks
+            .Include(c => c.CampaignStep).ThenInclude(s => s!.TemplateSnapshot)
+            .Include(c => c.Campaign)
+            .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
+
+    /// <inheritdoc />
     public async Task<int> CountPendingOrProcessingAsync(
         Guid campaignStepId,
         CancellationToken cancellationToken = default)

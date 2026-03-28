@@ -77,6 +77,9 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ITemplateRepository, TemplateRepository>();
         services.AddScoped<IDataSourceRepository, DataSourceRepository>();
         services.AddScoped<ISendLogRepository, SendLogRepository>();
+        services.AddScoped<ICampaignStatusHistoryRepository, CampaignStatusHistoryRepository>();
+        services.AddScoped<IPlaceholderManifestRepository, PlaceholderManifestRepository>();
+        services.AddScoped<IAuthAuditLogRepository, AuthAuditLogRepository>();
         services.AddScoped<IApiKeyRepository, ApiKeyRepository>();
         services.AddScoped<ICampaignChunkRepository, CampaignChunkRepository>();
 

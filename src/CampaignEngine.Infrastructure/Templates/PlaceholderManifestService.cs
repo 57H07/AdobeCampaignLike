@@ -1,16 +1,15 @@
 using CampaignEngine.Application.DTOs.Templates;
 using CampaignEngine.Application.Interfaces;
+using CampaignEngine.Application.Interfaces.Repositories;
 using CampaignEngine.Domain.Entities;
 using CampaignEngine.Domain.Exceptions;
-using CampaignEngine.Infrastructure.Persistence;
 using Mapster;
-using Microsoft.EntityFrameworkCore;
 
 namespace CampaignEngine.Infrastructure.Templates;
 
 /// <summary>
 /// Infrastructure implementation of IPlaceholderManifestService.
-/// Persists placeholder manifest entries for templates via EF Core.
+/// Persists placeholder manifest entries for templates via the repository pattern.
 /// Business rules enforced here:
 ///   - Keys must be unique within a template's manifest.
 ///   - FreeField placeholders default IsFromDataSource to false.
@@ -18,14 +17,20 @@ namespace CampaignEngine.Infrastructure.Templates;
 /// </summary>
 public sealed class PlaceholderManifestService : IPlaceholderManifestService
 {
-    private readonly CampaignEngineDbContext _dbContext;
+    private readonly IPlaceholderManifestRepository _manifestRepository;
+    private readonly ITemplateRepository _templateRepository;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly IAppLogger<PlaceholderManifestService> _logger;
 
     public PlaceholderManifestService(
-        CampaignEngineDbContext dbContext,
+        IPlaceholderManifestRepository manifestRepository,
+        ITemplateRepository templateRepository,
+        IUnitOfWork unitOfWork,
         IAppLogger<PlaceholderManifestService> logger)
     {
-        _dbContext = dbContext;
+        _manifestRepository = manifestRepository;
+        _templateRepository = templateRepository;
+        _unitOfWork = unitOfWork;
         _logger = logger;
     }
 
@@ -34,12 +39,7 @@ public sealed class PlaceholderManifestService : IPlaceholderManifestService
         Guid templateId,
         CancellationToken cancellationToken = default)
     {
-        var entries = await _dbContext.PlaceholderManifests
-            .AsNoTracking()
-            .Where(p => p.TemplateId == templateId)
-            .OrderBy(p => p.Key)
-            .ToListAsync(cancellationToken);
-
+        var entries = await _manifestRepository.GetByTemplateIdAsync(templateId, noTracking: true, cancellationToken);
         return entries.Select(e => e.Adapt<PlaceholderManifestEntryDto>()).ToList().AsReadOnly();
     }
 
@@ -54,8 +54,8 @@ public sealed class PlaceholderManifestService : IPlaceholderManifestService
 
         var entry = CreateEntry(templateId, request);
 
-        _dbContext.PlaceholderManifests.Add(entry);
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        await _manifestRepository.AddAsync(entry, cancellationToken);
+        await _unitOfWork.CommitAsync(cancellationToken);
 
         _logger.LogInformation(
             "Placeholder manifest entry added: TemplateId={TemplateId}, Key={Key}, Type={Type}",
@@ -71,8 +71,7 @@ public sealed class PlaceholderManifestService : IPlaceholderManifestService
         UpsertPlaceholderManifestRequest request,
         CancellationToken cancellationToken = default)
     {
-        var entry = await _dbContext.PlaceholderManifests
-            .FirstOrDefaultAsync(p => p.Id == entryId && p.TemplateId == templateId, cancellationToken);
+        var entry = await _manifestRepository.GetByIdAndTemplateIdAsync(entryId, templateId, cancellationToken);
 
         if (entry is null)
             throw new NotFoundException(nameof(PlaceholderManifestEntry), entryId);
@@ -84,7 +83,7 @@ public sealed class PlaceholderManifestService : IPlaceholderManifestService
         entry.IsFromDataSource = DeriveIsFromDataSource(request);
         entry.Description = request.Description;
 
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        await _unitOfWork.CommitAsync(cancellationToken);
 
         _logger.LogInformation(
             "Placeholder manifest entry updated: EntryId={EntryId}, TemplateId={TemplateId}, Key={Key}",
@@ -99,14 +98,13 @@ public sealed class PlaceholderManifestService : IPlaceholderManifestService
         Guid entryId,
         CancellationToken cancellationToken = default)
     {
-        var entry = await _dbContext.PlaceholderManifests
-            .FirstOrDefaultAsync(p => p.Id == entryId && p.TemplateId == templateId, cancellationToken);
+        var entry = await _manifestRepository.GetByIdAndTemplateIdAsync(entryId, templateId, cancellationToken);
 
         if (entry is null)
             throw new NotFoundException(nameof(PlaceholderManifestEntry), entryId);
 
-        _dbContext.PlaceholderManifests.Remove(entry);
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        _manifestRepository.Remove(entry);
+        await _unitOfWork.CommitAsync(cancellationToken);
 
         _logger.LogInformation(
             "Placeholder manifest entry deleted: EntryId={EntryId}, TemplateId={TemplateId}, Key={Key}",
@@ -137,17 +135,14 @@ public sealed class PlaceholderManifestService : IPlaceholderManifestService
         }
 
         // Remove existing entries
-        var existing = await _dbContext.PlaceholderManifests
-            .Where(p => p.TemplateId == templateId)
-            .ToListAsync(cancellationToken);
-
-        _dbContext.PlaceholderManifests.RemoveRange(existing);
+        var existing = await _manifestRepository.GetByTemplateIdAsync(templateId, noTracking: false, cancellationToken);
+        _manifestRepository.RemoveRange(existing);
 
         // Add new entries
         var newEntries = requestList.Select(r => CreateEntry(templateId, r)).ToList();
-        _dbContext.PlaceholderManifests.AddRange(newEntries);
+        await _manifestRepository.AddRangeAsync(newEntries, cancellationToken);
 
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        await _unitOfWork.CommitAsync(cancellationToken);
 
         _logger.LogInformation(
             "Placeholder manifest replaced for TemplateId={TemplateId}. {Count} entries saved.",
@@ -162,8 +157,8 @@ public sealed class PlaceholderManifestService : IPlaceholderManifestService
 
     private async Task EnsureTemplateExistsAsync(Guid templateId, CancellationToken cancellationToken)
     {
-        var exists = await _dbContext.Templates.AnyAsync(t => t.Id == templateId, cancellationToken);
-        if (!exists)
+        var template = await _templateRepository.GetByIdNoTrackingAsync(templateId, cancellationToken);
+        if (template is null)
             throw new NotFoundException(nameof(Template), templateId);
     }
 
@@ -173,13 +168,7 @@ public sealed class PlaceholderManifestService : IPlaceholderManifestService
         Guid? excludeEntryId,
         CancellationToken cancellationToken)
     {
-        var query = _dbContext.PlaceholderManifests
-            .Where(p => p.TemplateId == templateId && p.Key == key);
-
-        if (excludeEntryId.HasValue)
-            query = query.Where(p => p.Id != excludeEntryId.Value);
-
-        var exists = await query.AnyAsync(cancellationToken);
+        var exists = await _manifestRepository.KeyExistsAsync(templateId, key, excludeEntryId, cancellationToken);
         if (exists)
         {
             throw new ValidationException(
@@ -212,5 +201,4 @@ public sealed class PlaceholderManifestService : IPlaceholderManifestService
 
         return request.IsFromDataSource;
     }
-
 }

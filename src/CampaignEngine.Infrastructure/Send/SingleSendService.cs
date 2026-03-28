@@ -1,11 +1,10 @@
 using CampaignEngine.Application.DTOs.Dispatch;
 using CampaignEngine.Application.DTOs.Send;
 using CampaignEngine.Application.Interfaces;
+using CampaignEngine.Application.Interfaces.Repositories;
 using CampaignEngine.Application.Models;
 using CampaignEngine.Domain.Enums;
 using CampaignEngine.Domain.Exceptions;
-using CampaignEngine.Infrastructure.Persistence;
-using Microsoft.EntityFrameworkCore;
 
 namespace CampaignEngine.Infrastructure.Send;
 
@@ -28,7 +27,7 @@ public sealed class SingleSendService : ISingleSendService
     // The SEND_LOG.CampaignId is non-nullable in the schema, so we use a well-known zero GUID.
     internal static readonly Guid ApiSendCampaignId = Guid.Empty;
 
-    private readonly CampaignEngineDbContext _dbContext;
+    private readonly ITemplateRepository _templateRepository;
     private readonly ITemplateRenderer _templateRenderer;
     private readonly IChannelDispatcherRegistry _dispatcherRegistry;
     private readonly ISendRequestValidator _validator;
@@ -36,14 +35,14 @@ public sealed class SingleSendService : ISingleSendService
     private readonly IAppLogger<SingleSendService> _logger;
 
     public SingleSendService(
-        CampaignEngineDbContext dbContext,
+        ITemplateRepository templateRepository,
         ITemplateRenderer templateRenderer,
         IChannelDispatcherRegistry dispatcherRegistry,
         ISendRequestValidator validator,
         ISendLogService sendLogService,
         IAppLogger<SingleSendService> logger)
     {
-        _dbContext = dbContext;
+        _templateRepository = templateRepository;
         _templateRenderer = templateRenderer;
         _dispatcherRegistry = dispatcherRegistry;
         _validator = validator;
@@ -65,9 +64,7 @@ public sealed class SingleSendService : ISingleSendService
         // ----------------------------------------------------------------
         // Step 1: Resolve template (must exist and not be soft-deleted)
         // ----------------------------------------------------------------
-        var template = await _dbContext.Templates
-            .Include(t => t.PlaceholderManifests)
-            .FirstOrDefaultAsync(t => t.Id == request.TemplateId, cancellationToken);
+        var template = await _templateRepository.GetWithPlaceholderManifestsAsync(request.TemplateId, cancellationToken);
 
         if (template == null)
         {

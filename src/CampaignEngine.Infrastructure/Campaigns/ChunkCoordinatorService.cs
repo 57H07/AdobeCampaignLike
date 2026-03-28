@@ -5,9 +5,7 @@ using CampaignEngine.Domain.Entities;
 using CampaignEngine.Domain.Enums;
 using CampaignEngine.Domain.Exceptions;
 using CampaignEngine.Infrastructure.Configuration;
-using CampaignEngine.Infrastructure.Persistence;
 using Hangfire;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -39,9 +37,6 @@ public sealed class ChunkCoordinatorService : IChunkCoordinatorService
     private readonly BatchProcessingOptions _options;
     private readonly IAppLogger<ChunkCoordinatorService> _logger;
 
-    // Need direct DbContext access for raw SQL (ExecuteSqlRawAsync)
-    private readonly CampaignEngineDbContext _dbContext;
-
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
@@ -57,8 +52,7 @@ public sealed class ChunkCoordinatorService : IChunkCoordinatorService
         ICampaignCompletionService completionService,
         IBackgroundJobClient jobClient,
         IOptions<CampaignEngineOptions> options,
-        IAppLogger<ChunkCoordinatorService> logger,
-        CampaignEngineDbContext dbContext)
+        IAppLogger<ChunkCoordinatorService> logger)
     {
         _campaignRepository = campaignRepository;
         _chunkRepository = chunkRepository;
@@ -70,7 +64,6 @@ public sealed class ChunkCoordinatorService : IChunkCoordinatorService
         _jobClient = jobClient;
         _options = options.Value.BatchProcessing;
         _logger = logger;
-        _dbContext = dbContext;
     }
 
     /// <inheritdoc />
@@ -82,11 +75,7 @@ public sealed class ChunkCoordinatorService : IChunkCoordinatorService
         // ----------------------------------------------------------------
         // 1. Load campaign and step
         // ----------------------------------------------------------------
-        var campaign = await _dbContext.Campaigns
-            .Include(c => c.DataSource)
-                .ThenInclude(ds => ds!.Fields)
-            .Include(c => c.Steps)
-            .FirstOrDefaultAsync(c => c.Id == campaignId, cancellationToken);
+        var campaign = await _campaignRepository.GetWithDataSourceFieldsAndStepsAsync(campaignId, cancellationToken);
 
         if (campaign is null)
             throw new NotFoundException("Campaign", campaignId);
@@ -235,7 +224,7 @@ public sealed class ChunkCoordinatorService : IChunkCoordinatorService
 
         // Atomically increment campaign processed/success/failure counters
         // using raw SQL UPDATE to avoid EF concurrency races
-        await _dbContext.Database.ExecuteSqlRawAsync(
+        await _unitOfWork.ExecuteSqlRawAsync(
             """
             UPDATE Campaigns SET
                 ProcessedCount = ProcessedCount + {0},
@@ -244,6 +233,7 @@ public sealed class ChunkCoordinatorService : IChunkCoordinatorService
                 UpdatedAt = GETUTCDATE()
             WHERE Id = {3}
             """,
+            cancellationToken,
             successCount + failureCount,
             successCount,
             failureCount,

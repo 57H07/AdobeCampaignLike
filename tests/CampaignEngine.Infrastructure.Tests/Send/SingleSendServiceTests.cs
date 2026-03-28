@@ -68,7 +68,7 @@ public class SingleSendServiceTests : DbContextTestBase
         var logger = new Mock<IAppLogger<SingleSendService>>();
 
         return new SingleSendService(
-            Context,
+            new TemplateRepository(Context),
             renderer,
             registry,
             val,
@@ -332,7 +332,7 @@ public class SingleSendServiceTests : DbContextTestBase
         var logger = new Mock<IAppLogger<SingleSendService>>();
 
         var sut = new SingleSendService(
-            Context, renderer, emptyRegistry, validator, logService, logger.Object);
+            new TemplateRepository(Context), renderer, emptyRegistry, validator, logService, logger.Object);
 
         var request = new SendRequest
         {

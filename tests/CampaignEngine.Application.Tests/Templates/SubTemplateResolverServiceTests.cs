@@ -3,6 +3,7 @@ using CampaignEngine.Domain.Entities;
 using CampaignEngine.Domain.Enums;
 using CampaignEngine.Domain.Exceptions;
 using CampaignEngine.Infrastructure.Persistence;
+using CampaignEngine.Infrastructure.Persistence.Repositories;
 using CampaignEngine.Infrastructure.Templates;
 using Microsoft.EntityFrameworkCore;
 
@@ -28,8 +29,9 @@ public class SubTemplateResolverServiceTests : IDisposable
 
         _context = new CampaignEngineDbContext(options);
 
+        var templateRepository = new TemplateRepository(_context);
         var logger = new Mock<IAppLogger<SubTemplateResolverService>>();
-        _service = new SubTemplateResolverService(_context, logger.Object);
+        _service = new SubTemplateResolverService(templateRepository, logger.Object);
     }
 
     public void Dispose()

@@ -68,6 +68,19 @@ public sealed class TemplateRepository : RepositoryBase<Template>, ITemplateRepo
     }
 
     /// <inheritdoc />
+    public async Task<Template?> GetSubTemplateByNameAsync(string name, CancellationToken cancellationToken = default)
+        => await DbContext.Templates
+            .AsNoTracking()
+            .FirstOrDefaultAsync(t => t.Name == name && t.IsSubTemplate, cancellationToken);
+
+    /// <inheritdoc />
+    public async Task<Template?> GetWithPlaceholderManifestsAsync(Guid id, CancellationToken cancellationToken = default)
+        => await DbContext.Templates
+            .AsNoTracking()
+            .Include(t => t.PlaceholderManifests)
+            .FirstOrDefaultAsync(t => t.Id == id, cancellationToken);
+
+    /// <inheritdoc />
     public async Task<bool> NameExistsAsync(
         string name,
         ChannelType channel,

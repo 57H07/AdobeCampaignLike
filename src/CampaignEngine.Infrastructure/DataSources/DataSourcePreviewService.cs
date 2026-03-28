@@ -1,10 +1,9 @@
 using CampaignEngine.Application.DTOs.DataSources;
 using CampaignEngine.Application.Interfaces;
+using CampaignEngine.Application.Interfaces.Repositories;
 using CampaignEngine.Domain.Enums;
 using CampaignEngine.Domain.Exceptions;
 using CampaignEngine.Domain.Filters;
-using CampaignEngine.Infrastructure.Persistence;
-using Microsoft.EntityFrameworkCore;
 
 namespace CampaignEngine.Infrastructure.DataSources;
 
@@ -22,7 +21,7 @@ public sealed class DataSourcePreviewService : IDataSourcePreviewService
 {
     private const int MaxPreviewRows = 100;
 
-    private readonly CampaignEngineDbContext _dbContext;
+    private readonly IDataSourceRepository _dataSourceRepository;
     private readonly IConnectionStringEncryptor _encryptor;
     private readonly IDataSourceConnectorRegistry _connectorRegistry;
     private readonly IFilterExpressionValidator _validator;
@@ -30,14 +29,14 @@ public sealed class DataSourcePreviewService : IDataSourcePreviewService
     private readonly IAppLogger<DataSourcePreviewService> _logger;
 
     public DataSourcePreviewService(
-        CampaignEngineDbContext dbContext,
+        IDataSourceRepository dataSourceRepository,
         IConnectionStringEncryptor encryptor,
         IDataSourceConnectorRegistry connectorRegistry,
         IFilterExpressionValidator validator,
         IFilterAstTranslator translator,
         IAppLogger<DataSourcePreviewService> logger)
     {
-        _dbContext = dbContext;
+        _dataSourceRepository = dataSourceRepository;
         _encryptor = encryptor;
         _connectorRegistry = connectorRegistry;
         _validator = validator;
@@ -56,9 +55,7 @@ public sealed class DataSourcePreviewService : IDataSourcePreviewService
         // ----------------------------------------------------------------
         // 1. Resolve data source
         // ----------------------------------------------------------------
-        var dataSource = await _dbContext.DataSources
-            .Include(d => d.Fields)
-            .FirstOrDefaultAsync(d => d.Id == dataSourceId, cancellationToken);
+        var dataSource = await _dataSourceRepository.GetWithFieldsAsync(dataSourceId, cancellationToken);
 
         if (dataSource is null)
             throw new NotFoundException("DataSource", dataSourceId);

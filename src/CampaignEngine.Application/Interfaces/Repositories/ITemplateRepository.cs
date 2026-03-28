@@ -37,6 +37,18 @@ public interface ITemplateRepository : IRepository<Template>
     Task<IReadOnlyList<Template>> GetSubTemplatesAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Returns a non-deleted sub-template by name. AsNoTracking.
+    /// Returns null if not found or not marked as a sub-template.
+    /// </summary>
+    Task<Template?> GetSubTemplateByNameAsync(string name, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Returns a non-deleted template with its PlaceholderManifests loaded. AsNoTracking.
+    /// Used by SingleSendService for validation. Returns null if not found or soft-deleted.
+    /// </summary>
+    Task<Template?> GetWithPlaceholderManifestsAsync(Guid id, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Returns true if a non-deleted template with the given name and channel exists,
     /// optionally excluding the specified ID (for self-update validation).
     /// </summary>

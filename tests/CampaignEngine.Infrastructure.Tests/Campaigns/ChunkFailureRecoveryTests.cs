@@ -79,8 +79,7 @@ public class ChunkFailureRecoveryTests : IDisposable
             _completionServiceMock.Object,
             new Mock<IBackgroundJobClient>().Object,
             BuildOptions(maxRetry),
-            new Mock<IAppLogger<ChunkCoordinatorService>>().Object,
-            _context);
+            new Mock<IAppLogger<ChunkCoordinatorService>>().Object);
     }
 
     private async Task<(Campaign Campaign, CampaignStep Step)> SeedAsync(
@@ -257,7 +256,7 @@ public class ChunkFailureRecoveryTests : IDisposable
     public async Task Finalize_ZeroFailures_SetsCompletedStatus()
     {
         var loggerMock = new Mock<IAppLogger<CampaignCompletionService>>();
-        var completionSvc = new CampaignCompletionService(_context, loggerMock.Object);
+        var completionSvc = new CampaignCompletionService(new CampaignRepository(_context), new UnitOfWork(_context), loggerMock.Object);
 
         var campaign = new Campaign
         {
@@ -286,7 +285,7 @@ public class ChunkFailureRecoveryTests : IDisposable
     public async Task Finalize_TwoPercentFailures_SetsPartialFailureStatus()
     {
         var loggerMock = new Mock<IAppLogger<CampaignCompletionService>>();
-        var completionSvc = new CampaignCompletionService(_context, loggerMock.Object);
+        var completionSvc = new CampaignCompletionService(new CampaignRepository(_context), new UnitOfWork(_context), loggerMock.Object);
 
         var campaign = new Campaign
         {
@@ -315,7 +314,7 @@ public class ChunkFailureRecoveryTests : IDisposable
     public async Task Finalize_TenPercentFailures_SetsManualReviewStatus()
     {
         var loggerMock = new Mock<IAppLogger<CampaignCompletionService>>();
-        var completionSvc = new CampaignCompletionService(_context, loggerMock.Object);
+        var completionSvc = new CampaignCompletionService(new CampaignRepository(_context), new UnitOfWork(_context), loggerMock.Object);
 
         var campaign = new Campaign
         {
@@ -344,7 +343,7 @@ public class ChunkFailureRecoveryTests : IDisposable
     public async Task Finalize_AllFailed_SetsManualReviewStatus()
     {
         var loggerMock = new Mock<IAppLogger<CampaignCompletionService>>();
-        var completionSvc = new CampaignCompletionService(_context, loggerMock.Object);
+        var completionSvc = new CampaignCompletionService(new CampaignRepository(_context), new UnitOfWork(_context), loggerMock.Object);
 
         var campaign = new Campaign
         {
@@ -377,7 +376,7 @@ public class ChunkFailureRecoveryTests : IDisposable
     public async Task Finalize_Always_SetsCompletedAt()
     {
         var loggerMock = new Mock<IAppLogger<CampaignCompletionService>>();
-        var completionSvc = new CampaignCompletionService(_context, loggerMock.Object);
+        var completionSvc = new CampaignCompletionService(new CampaignRepository(_context), new UnitOfWork(_context), loggerMock.Object);
 
         var campaign = new Campaign
         {

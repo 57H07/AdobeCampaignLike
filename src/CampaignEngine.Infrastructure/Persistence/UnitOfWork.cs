@@ -1,4 +1,5 @@
 using CampaignEngine.Application.Interfaces;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 
 namespace CampaignEngine.Infrastructure.Persistence;
@@ -37,6 +38,10 @@ public sealed class UnitOfWork : IUnitOfWork
         await _currentTransaction!.RollbackAsync(cancellationToken);
         _currentTransaction = null;
     }
+
+    /// <inheritdoc />
+    public Task<int> ExecuteSqlRawAsync(string sql, CancellationToken cancellationToken = default, params object[] parameters)
+        => _dbContext.Database.ExecuteSqlRawAsync(sql, parameters, cancellationToken);
 
     /// <inheritdoc />
     public async ValueTask DisposeAsync()

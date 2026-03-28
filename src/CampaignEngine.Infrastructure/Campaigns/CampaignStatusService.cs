@@ -1,8 +1,7 @@
 using CampaignEngine.Application.Interfaces;
+using CampaignEngine.Application.Interfaces.Repositories;
 using CampaignEngine.Domain.Entities;
 using CampaignEngine.Domain.Enums;
-using CampaignEngine.Infrastructure.Persistence;
-using Microsoft.EntityFrameworkCore;
 
 namespace CampaignEngine.Infrastructure.Campaigns;
 
@@ -59,14 +58,17 @@ public sealed class CampaignStatusService : ICampaignStatusService
         CampaignStatus.WaitingNext
     };
 
-    private readonly CampaignEngineDbContext _dbContext;
+    private readonly ICampaignStatusHistoryRepository _historyRepository;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly IAppLogger<CampaignStatusService> _logger;
 
     public CampaignStatusService(
-        CampaignEngineDbContext dbContext,
+        ICampaignStatusHistoryRepository historyRepository,
+        IUnitOfWork unitOfWork,
         IAppLogger<CampaignStatusService> logger)
     {
-        _dbContext = dbContext;
+        _historyRepository = historyRepository;
+        _unitOfWork = unitOfWork;
         _logger = logger;
     }
 
@@ -107,8 +109,8 @@ public sealed class CampaignStatusService : ICampaignStatusService
             OccurredAt = DateTime.UtcNow
         };
 
-        _dbContext.CampaignStatusHistories.Add(entry);
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        await _historyRepository.AddAsync(entry, cancellationToken);
+        await _unitOfWork.CommitAsync(cancellationToken);
 
         _logger.LogInformation(
             "Campaign {CampaignId}: status transition {From} -> {To}. Reason: {Reason}",
@@ -120,9 +122,9 @@ public sealed class CampaignStatusService : ICampaignStatusService
         Guid campaignId,
         CancellationToken cancellationToken = default)
     {
-        var history = await _dbContext.CampaignStatusHistories
-            .Where(h => h.CampaignId == campaignId)
-            .OrderBy(h => h.OccurredAt)
+        var entries = await _historyRepository.GetByCampaignIdAsync(campaignId, cancellationToken);
+
+        return entries
             .Select(h => new CampaignStatusTransitionDto(
                 h.Id,
                 h.CampaignId,
@@ -130,8 +132,6 @@ public sealed class CampaignStatusService : ICampaignStatusService
                 h.ToStatus.ToString(),
                 h.Reason,
                 h.OccurredAt))
-            .ToListAsync(cancellationToken);
-
-        return history;
+            .ToList();
     }
 }

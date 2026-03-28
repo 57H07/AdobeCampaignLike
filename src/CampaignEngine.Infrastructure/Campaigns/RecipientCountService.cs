@@ -1,11 +1,10 @@
 using CampaignEngine.Application.DTOs.Campaigns;
 using CampaignEngine.Application.DTOs.DataSources;
 using CampaignEngine.Application.Interfaces;
+using CampaignEngine.Application.Interfaces.Repositories;
 using CampaignEngine.Domain.Exceptions;
 using CampaignEngine.Domain.Filters;
-using CampaignEngine.Infrastructure.Persistence;
 using CampaignEngine.Infrastructure.Serialization;
-using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 
 namespace CampaignEngine.Infrastructure.Campaigns;
@@ -17,20 +16,20 @@ namespace CampaignEngine.Infrastructure.Campaigns;
 /// </summary>
 public sealed class RecipientCountService : IRecipientCountService
 {
-    private readonly CampaignEngineDbContext _dbContext;
+    private readonly IDataSourceRepository _dataSourceRepository;
     private readonly IConnectionStringEncryptor _encryptor;
     private readonly IDataSourceConnectorRegistry _connectorRegistry;
     private readonly IFilterExpressionValidator _validator;
     private readonly IAppLogger<RecipientCountService> _logger;
 
     public RecipientCountService(
-        CampaignEngineDbContext dbContext,
+        IDataSourceRepository dataSourceRepository,
         IConnectionStringEncryptor encryptor,
         IDataSourceConnectorRegistry connectorRegistry,
         IFilterExpressionValidator validator,
         IAppLogger<RecipientCountService> logger)
     {
-        _dbContext = dbContext;
+        _dataSourceRepository = dataSourceRepository;
         _encryptor = encryptor;
         _connectorRegistry = connectorRegistry;
         _validator = validator;
@@ -49,9 +48,7 @@ public sealed class RecipientCountService : IRecipientCountService
             // ----------------------------------------------------------------
             // 1. Resolve data source
             // ----------------------------------------------------------------
-            var dataSource = await _dbContext.DataSources
-                .Include(d => d.Fields)
-                .FirstOrDefaultAsync(d => d.Id == request.DataSourceId, cancellationToken);
+            var dataSource = await _dataSourceRepository.GetWithFieldsAsync(request.DataSourceId, cancellationToken);
 
             if (dataSource is null)
                 return new RecipientCountEstimateResult

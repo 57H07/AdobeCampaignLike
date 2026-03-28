@@ -47,6 +47,19 @@ public interface ICampaignRepository : IRepository<Campaign>
     Task<bool> DataSourceExistsAsync(Guid dataSourceId, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Reloads the entity from the database, discarding any in-memory changes.
+    /// Used by CampaignCompletionService to re-read atomic SQL counters.
+    /// </summary>
+    Task ReloadAsync(Campaign campaign, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Loads a campaign with Steps, DataSource, and DataSource.Fields navigation properties.
+    /// Used by ChunkCoordinatorService to query recipients.
+    /// Returns null if not found.
+    /// </summary>
+    Task<Campaign?> GetWithDataSourceFieldsAndStepsAsync(Guid id, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Returns campaigns matching the given statuses with their Steps loaded.
     /// Used by the dashboard service (US-036).
     /// Results ordered by StartedAt descending, then CreatedAt descending.

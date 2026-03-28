@@ -14,6 +14,12 @@ public interface ICampaignChunkRepository : IRepository<CampaignChunk>
     Task<CampaignChunk?> GetTrackedAsync(Guid id, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Returns a tracked chunk with CampaignStep (+ TemplateSnapshot) and Campaign loaded.
+    /// Used by ProcessChunkJob. Returns null if not found.
+    /// </summary>
+    Task<CampaignChunk?> GetWithDetailsAsync(Guid id, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Returns the count of chunks for a given step that are still Pending or Processing.
     /// Used for completion detection.
     /// </summary>

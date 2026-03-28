@@ -1,9 +1,8 @@
 using System.Text.RegularExpressions;
 using CampaignEngine.Application.Interfaces;
+using CampaignEngine.Application.Interfaces.Repositories;
 using CampaignEngine.Domain.Common;
 using CampaignEngine.Domain.Exceptions;
-using CampaignEngine.Infrastructure.Persistence;
-using Microsoft.EntityFrameworkCore;
 
 namespace CampaignEngine.Infrastructure.Templates;
 
@@ -34,14 +33,14 @@ public sealed class SubTemplateResolverService : ISubTemplateResolverService
         @"\{\{>\s*(?<name>[a-zA-Z_][a-zA-Z0-9_\-\s]*?)\s*\}\}",
         RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
-    private readonly CampaignEngineDbContext _dbContext;
+    private readonly ITemplateRepository _templateRepository;
     private readonly IAppLogger<SubTemplateResolverService> _logger;
 
     public SubTemplateResolverService(
-        CampaignEngineDbContext dbContext,
+        ITemplateRepository templateRepository,
         IAppLogger<SubTemplateResolverService> logger)
     {
-        _dbContext = dbContext;
+        _templateRepository = templateRepository;
         _logger = logger;
     }
 
@@ -121,11 +120,7 @@ public sealed class SubTemplateResolverService : ISubTemplateResolverService
 
         foreach (var reference in references)
         {
-            var subTemplate = await _dbContext.Templates
-                .AsNoTracking()
-                .FirstOrDefaultAsync(
-                    t => t.Name == reference.Name && t.IsSubTemplate,
-                    cancellationToken);
+            var subTemplate = await _templateRepository.GetSubTemplateByNameAsync(reference.Name, cancellationToken);
 
             if (subTemplate is null)
             {
@@ -192,20 +187,14 @@ public sealed class SubTemplateResolverService : ISubTemplateResolverService
         globalVisited.Add(templateId);
         currentPath.Push(templateId);
 
-        var template = await _dbContext.Templates
-            .AsNoTracking()
-            .FirstOrDefaultAsync(t => t.Id == templateId, cancellationToken);
+        var template = await _templateRepository.GetByIdNoTrackingAsync(templateId, cancellationToken);
 
         if (template is not null)
         {
             var references = ExtractReferences(template.HtmlBody);
             foreach (var reference in references)
             {
-                var subTemplate = await _dbContext.Templates
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(
-                        t => t.Name == reference.Name && t.IsSubTemplate,
-                        cancellationToken);
+                var subTemplate = await _templateRepository.GetSubTemplateByNameAsync(reference.Name, cancellationToken);
 
                 if (subTemplate is not null)
                 {

@@ -98,6 +98,18 @@ public sealed class CampaignRepository : RepositoryBase<Campaign>, ICampaignRepo
         => await DbContext.DataSources.AnyAsync(d => d.Id == dataSourceId, cancellationToken);
 
     /// <inheritdoc />
+    public async Task ReloadAsync(Campaign campaign, CancellationToken cancellationToken = default)
+        => await DbContext.Entry(campaign).ReloadAsync(cancellationToken);
+
+    /// <inheritdoc />
+    public async Task<Campaign?> GetWithDataSourceFieldsAndStepsAsync(Guid id, CancellationToken cancellationToken = default)
+        => await DbContext.Campaigns
+            .Include(c => c.DataSource)
+                .ThenInclude(ds => ds!.Fields)
+            .Include(c => c.Steps)
+            .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
+
+    /// <inheritdoc />
     public async Task<IReadOnlyList<Campaign>> GetActiveForDashboardAsync(
         IReadOnlyList<CampaignStatus> statuses,
         DateTime? startedFrom,

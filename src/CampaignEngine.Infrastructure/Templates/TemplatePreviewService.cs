@@ -1,11 +1,10 @@
 using CampaignEngine.Application.DTOs.DataSources;
 using CampaignEngine.Application.DTOs.Templates;
 using CampaignEngine.Application.Interfaces;
+using CampaignEngine.Application.Interfaces.Repositories;
 using CampaignEngine.Application.Models;
 using CampaignEngine.Domain.Enums;
 using CampaignEngine.Domain.Exceptions;
-using CampaignEngine.Infrastructure.Persistence;
-using Microsoft.EntityFrameworkCore;
 
 namespace CampaignEngine.Infrastructure.Templates;
 
@@ -29,7 +28,8 @@ public sealed class TemplatePreviewService : ITemplatePreviewService
 {
     private const int MaxSampleRows = 5;
 
-    private readonly CampaignEngineDbContext _dbContext;
+    private readonly ITemplateRepository _templateRepository;
+    private readonly IDataSourceRepository _dataSourceRepository;
     private readonly IConnectionStringEncryptor _encryptor;
     private readonly IDataSourceConnectorRegistry _connectorRegistry;
     private readonly ISubTemplateResolverService _subTemplateResolver;
@@ -39,7 +39,8 @@ public sealed class TemplatePreviewService : ITemplatePreviewService
     private readonly IAppLogger<TemplatePreviewService> _logger;
 
     public TemplatePreviewService(
-        CampaignEngineDbContext dbContext,
+        ITemplateRepository templateRepository,
+        IDataSourceRepository dataSourceRepository,
         IConnectionStringEncryptor encryptor,
         IDataSourceConnectorRegistry connectorRegistry,
         ISubTemplateResolverService subTemplateResolver,
@@ -48,7 +49,8 @@ public sealed class TemplatePreviewService : ITemplatePreviewService
         IChannelPostProcessorRegistry postProcessorRegistry,
         IAppLogger<TemplatePreviewService> logger)
     {
-        _dbContext = dbContext;
+        _templateRepository = templateRepository;
+        _dataSourceRepository = dataSourceRepository;
         _encryptor = encryptor;
         _connectorRegistry = connectorRegistry;
         _subTemplateResolver = subTemplateResolver;
@@ -67,8 +69,7 @@ public sealed class TemplatePreviewService : ITemplatePreviewService
         // ----------------------------------------------------------------
         // 1. Load the template
         // ----------------------------------------------------------------
-        var template = await _dbContext.Templates
-            .FirstOrDefaultAsync(t => t.Id == templateId && !t.IsDeleted, cancellationToken);
+        var template = await _templateRepository.GetByIdNoTrackingAsync(templateId, cancellationToken);
 
         if (template is null)
             throw new NotFoundException("Template", templateId);
@@ -95,11 +96,9 @@ public sealed class TemplatePreviewService : ITemplatePreviewService
         // ----------------------------------------------------------------
         var clampedRowCount = Math.Clamp(request.SampleRowCount, 1, MaxSampleRows);
 
-        var dataSource = await _dbContext.DataSources
-            .Include(d => d.Fields)
-            .FirstOrDefaultAsync(d => d.Id == request.DataSourceId && d.IsActive, cancellationToken);
+        var dataSource = await _dataSourceRepository.GetWithFieldsAsync(request.DataSourceId, cancellationToken);
 
-        if (dataSource is null)
+        if (dataSource is null || !dataSource.IsActive)
             throw new NotFoundException("DataSource", request.DataSourceId);
 
         var plainCs = _encryptor.Decrypt(dataSource.EncryptedConnectionString);

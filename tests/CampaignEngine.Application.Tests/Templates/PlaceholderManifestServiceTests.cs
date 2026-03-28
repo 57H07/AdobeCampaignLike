@@ -4,6 +4,7 @@ using CampaignEngine.Domain.Entities;
 using CampaignEngine.Domain.Enums;
 using CampaignEngine.Domain.Exceptions;
 using CampaignEngine.Infrastructure.Persistence;
+using CampaignEngine.Infrastructure.Persistence.Repositories;
 using CampaignEngine.Infrastructure.Templates;
 using Microsoft.EntityFrameworkCore;
 
@@ -28,8 +29,11 @@ public class PlaceholderManifestServiceTests : IDisposable
 
         _context = new CampaignEngineDbContext(options);
 
+        var manifestRepository = new PlaceholderManifestRepository(_context);
+        var templateRepository = new TemplateRepository(_context);
+        var unitOfWork = new UnitOfWork(_context);
         var logger = new Mock<IAppLogger<PlaceholderManifestService>>();
-        _service = new PlaceholderManifestService(_context, logger.Object);
+        _service = new PlaceholderManifestService(manifestRepository, templateRepository, unitOfWork, logger.Object);
 
         // Seed a template for tests to use
         _templateId = Guid.NewGuid();
