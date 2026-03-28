@@ -1,6 +1,7 @@
 using CampaignEngine.Application.DependencyInjection;
 using CampaignEngine.Infrastructure.DependencyInjection;
 using CampaignEngine.Web.Middleware;
+using CampaignEngine.Web.OpenApi;
 using Hangfire;
 using Microsoft.AspNetCore.Authorization;
 using Serilog;
@@ -56,18 +57,9 @@ try
     builder.Services.AddControllers();
 
     // ----------------------------------------------------------------
-    // OpenAPI / Swagger (development only)
+    // OpenAPI / Swagger — full configuration via SwaggerServiceExtensions
     // ----------------------------------------------------------------
-    builder.Services.AddEndpointsApiExplorer();
-    builder.Services.AddSwaggerGen(options =>
-    {
-        options.SwaggerDoc("v1", new()
-        {
-            Title = "CampaignEngine API",
-            Version = "v1",
-            Description = "Multi-channel campaign engine — Email, SMS, Letter"
-        });
-    });
+    builder.Services.AddSwaggerDocumentation();
 
     // ----------------------------------------------------------------
     // HTTP context accessor (needed by correlation ID middleware)
@@ -79,10 +71,13 @@ try
     // ----------------------------------------------------------------
     // Middleware pipeline
     // ----------------------------------------------------------------
+    // ----------------------------------------------------------------
+    // OpenAPI / Swagger UI — accessible in non-production only (business rule BR-1)
+    // ----------------------------------------------------------------
+    app.UseSwaggerDocumentation();
+
     if (app.Environment.IsDevelopment())
     {
-        app.UseSwagger();
-        app.UseSwaggerUI();
         app.UseDeveloperExceptionPage();
     }
     else

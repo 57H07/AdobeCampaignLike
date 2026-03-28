@@ -1,0 +1,53 @@
+/* CampaignEngine Swagger UI custom theme */
+
+/* Header bar — dark blue accent matching CampaignEngine brand */
+.swagger-ui .topbar {
+    background-color: #1a2a4a;
+    padding: 8px 0;
+}
+
+.swagger-ui .topbar .topbar-wrapper img {
+    display: none;
+}
+
+.swagger-ui .topbar .topbar-wrapper::before {
+    content: "CampaignEngine API";
+    color: #ffffff;
+    font-size: 1.2rem;
+    font-weight: 600;
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    letter-spacing: 0.04em;
+}
+
+/* Info section title */
+.swagger-ui .info .title {
+    color: #1a2a4a;
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Operation method badges */
+.swagger-ui .opblock.opblock-post .opblock-summary-method {
+    background-color: #2d7d46;
+}
+
+.swagger-ui .opblock.opblock-get .opblock-summary-method {
+    background-color: #2060a8;
+}
+
+.swagger-ui .opblock.opblock-delete .opblock-summary-method {
+    background-color: #b32929;
+}
+
+.swagger-ui .opblock.opblock-put .opblock-summary-method {
+    background-color: #8a5d00;
+}
+
+/* Authorize button */
+.swagger-ui .btn.authorize {
+    color: #1a2a4a;
+    border-color: #1a2a4a;
+}
+
+.swagger-ui .btn.authorize svg {
+    fill: #1a2a4a;
+}

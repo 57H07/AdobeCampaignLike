@@ -17,7 +17,7 @@ public class FilterExpressionDto
     public string? FieldName { get; set; }
 
     /// <summary>
-    /// Comparison operator: =, !=, >, <, >=, <=, LIKE, IN.
+    /// Comparison operator: =, !=, &gt;, &lt;, &gt;=, &lt;=, LIKE, IN.
     /// </summary>
     public string? Operator { get; set; }
 
