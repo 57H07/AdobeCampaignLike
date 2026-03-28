@@ -1699,8 +1699,9 @@
 > Monitoring and analytics for campaigns
 
 #### [US-036] - Campaign progress dashboard
-**Status:** 🔵 IN PROGRESS
+**Status:** ✅ DONE
 **Start date:** 2026-03-28
+**End date:** 2026-03-28
 **Priority:** 🟠 Medium
 **Complexity:** M
 **Epic:** Reporting & Dashboards
@@ -1713,20 +1714,20 @@
 > Aggregate view: total recipients, processed count, success/failure breakdown per step.
 
 **Acceptance criteria:**
-- [ ] Dashboard shows all active campaigns
-- [ ] Per-campaign metrics: total, processed, sent, failed counts
-- [ ] Progress percentage and estimated completion time
-- [ ] Multi-step campaign timeline visualization
-- [ ] Auto-refresh every 10 seconds
+- [x] Dashboard shows all active campaigns ✅
+- [x] Per-campaign metrics: total, processed, sent, failed counts ✅
+- [x] Progress percentage and estimated completion time ✅
+- [x] Multi-step campaign timeline visualization ✅
+- [x] Auto-refresh every 10 seconds ✅
 
 **Technical tasks:**
-- [ ] `TASK-036-01` - **[API]** GET /api/campaigns/dashboard endpoint
-- [ ] `TASK-036-02` - **[Service]** Aggregate metrics calculation service
-- [ ] `TASK-036-03` - **[Frontend]** Dashboard page with campaign cards
-- [ ] `TASK-036-04` - **[Frontend]** Real-time update via SignalR or polling
-- [ ] `TASK-036-05` - **[Frontend]** Timeline visualization for multi-step
-- [ ] `TASK-036-06` - **[Test]** Dashboard metrics tests
-- [ ] `TASK-036-07` - **[Doc]** Dashboard user guide
+- [x] `TASK-036-01` - **[API]** GET /api/campaigns/dashboard endpoint ✅ 2026-03-28
+- [x] `TASK-036-02` - **[Service]** Aggregate metrics calculation service ✅ 2026-03-28
+- [x] `TASK-036-03` - **[Frontend]** Dashboard page with campaign cards ✅ 2026-03-28
+- [x] `TASK-036-04` - **[Frontend]** Real-time update via SignalR or polling ✅ 2026-03-28
+- [x] `TASK-036-05` - **[Frontend]** Timeline visualization for multi-step ✅ 2026-03-28
+- [x] `TASK-036-06` - **[Test]** Dashboard metrics tests ✅ 2026-03-28
+- [x] `TASK-036-07` - **[Doc]** Dashboard user guide ✅ 2026-03-28
 
 **Business rules:**
 1. Dashboard shows campaigns in Running or StepInProgress status
