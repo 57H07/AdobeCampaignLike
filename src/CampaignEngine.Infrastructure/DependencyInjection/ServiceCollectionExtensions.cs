@@ -132,6 +132,15 @@ public static class ServiceCollectionExtensions
         // Send log service — SEND_LOG is the source of truth for all dispatch activity.
         services.AddScoped<ISendLogService, SendLogService>();
 
+        // ----------------------------------------------------------------
+        // US-029: CC/BCC resolution services
+        // EmailValidationService: validates individual email addresses using MimeKit.
+        // CcResolutionService: combines static + dynamic CC, validates, deduplicates, caps at 10.
+        // Both are Scoped (use scoped logger).
+        // ----------------------------------------------------------------
+        services.AddScoped<IEmailValidationService, EmailValidationService>();
+        services.AddScoped<ICcResolutionService, CcResolutionService>();
+
         // Template service — CRUD operations with soft delete and unique-name enforcement.
         services.AddScoped<ITemplateService, TemplateService>();
 

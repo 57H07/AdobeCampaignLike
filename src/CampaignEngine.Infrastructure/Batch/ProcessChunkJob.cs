@@ -33,6 +33,7 @@ public sealed class ProcessChunkJob : IProcessChunkJob
     private readonly ITemplateRenderer _templateRenderer;
     private readonly ILoggingDispatchOrchestrator _dispatchOrchestrator;
     private readonly IChunkCoordinatorService _coordinator;
+    private readonly ICcResolutionService _ccResolution;
     private readonly IAppLogger<ProcessChunkJob> _logger;
 
     public ProcessChunkJob(
@@ -40,12 +41,14 @@ public sealed class ProcessChunkJob : IProcessChunkJob
         ITemplateRenderer templateRenderer,
         ILoggingDispatchOrchestrator dispatchOrchestrator,
         IChunkCoordinatorService coordinator,
+        ICcResolutionService ccResolution,
         IAppLogger<ProcessChunkJob> logger)
     {
         _dbContext = dbContext;
         _templateRenderer = templateRenderer;
         _dispatchOrchestrator = dispatchOrchestrator;
         _coordinator = coordinator;
+        _ccResolution = ccResolution;
         _logger = logger;
     }
 
@@ -165,34 +168,20 @@ public sealed class ProcessChunkJob : IProcessChunkJob
                 // Apply CC/BCC from campaign if Email channel (US-029)
                 if (step.Channel == ChannelType.Email && chunk.Campaign is not null)
                 {
-                    // Static CC: comma-separated list from campaign configuration
-                    var ccAddresses = new List<string>();
-                    if (!string.IsNullOrWhiteSpace(chunk.Campaign.StaticCcAddresses))
-                    {
-                        ccAddresses.AddRange(chunk.Campaign.StaticCcAddresses
-                            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
-                    }
-
-                    // Dynamic CC: per-recipient field value (semicolon or comma separated)
-                    if (!string.IsNullOrWhiteSpace(chunk.Campaign.DynamicCcField)
-                        && recipient.TryGetValue(chunk.Campaign.DynamicCcField, out var dynCcValue)
-                        && dynCcValue is not null)
-                    {
-                        var dynCcStr = dynCcValue.ToString() ?? string.Empty;
-                        ccAddresses.AddRange(dynCcStr
-                            .Split([',', ';'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
-                    }
+                    // Resolve CC: static + dynamic, validated, deduplicated, capped at 10
+                    var ccAddresses = _ccResolution.ResolveCc(
+                        chunk.Campaign.StaticCcAddresses,
+                        chunk.Campaign.DynamicCcField,
+                        recipient);
 
                     if (ccAddresses.Count > 0)
-                        dispatchRequest.CcAddresses = ccAddresses;
+                        dispatchRequest.CcAddresses = [.. ccAddresses];
 
-                    // Static BCC: comma-separated list from campaign configuration
-                    if (!string.IsNullOrWhiteSpace(chunk.Campaign.StaticBccAddresses))
-                    {
-                        dispatchRequest.BccAddresses = chunk.Campaign.StaticBccAddresses
-                            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                            .ToList();
-                    }
+                    // Resolve BCC: static, validated, deduplicated
+                    var bccAddresses = _ccResolution.ResolveBcc(chunk.Campaign.StaticBccAddresses);
+
+                    if (bccAddresses.Count > 0)
+                        dispatchRequest.BccAddresses = [.. bccAddresses];
                 }
 
                 var (_, result) = await _dispatchOrchestrator.SendWithLoggingAsync(
