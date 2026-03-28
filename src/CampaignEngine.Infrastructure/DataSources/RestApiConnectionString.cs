@@ -28,7 +28,7 @@ namespace CampaignEngine.Infrastructure.DataSources;
 ///   PageParam  — ?page=N&amp;per_page=100 style
 ///   NextLink   — follows Link: &lt;url&gt;; rel="next" header
 /// </summary>
-internal sealed class RestApiConnectionString
+public sealed class RestApiConnectionString
 {
     // ----------------------------------------------------------------
     // Core endpoint
@@ -222,7 +222,7 @@ internal sealed class RestApiConnectionString
 }
 
 /// <summary>Authentication mode for REST API connector.</summary>
-internal enum RestApiAuthMode
+public enum RestApiAuthMode
 {
     None   = 0,
     ApiKey = 1,
@@ -231,7 +231,7 @@ internal enum RestApiAuthMode
 }
 
 /// <summary>Pagination mode for REST API connector.</summary>
-internal enum RestApiPaginationMode
+public enum RestApiPaginationMode
 {
     /// <summary>Single-page request — no pagination.</summary>
     None      = 0,

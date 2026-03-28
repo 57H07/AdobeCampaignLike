@@ -6,7 +6,7 @@ namespace CampaignEngine.Infrastructure.DataSources;
 ///
 /// Used by RestApiConnector to enforce the 50 MB response size business rule (US-017).
 /// </summary>
-internal sealed class LimitedStream : Stream
+public sealed class LimitedStream : Stream
 {
     private readonly Stream _inner;
     private readonly long _maxBytes;

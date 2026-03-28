@@ -400,7 +400,7 @@ public sealed class RestApiConnector : IDataSourceConnector
     ///   - Null    → null
     ///   - Object/Array → serialized JSON string (for flat-row compatibility)
     /// </summary>
-    internal static List<IDictionary<string, object?>> ParseJsonToRows(
+    public static List<IDictionary<string, object?>> ParseJsonToRows(
         string jsonBody,
         string dataPath)
     {
