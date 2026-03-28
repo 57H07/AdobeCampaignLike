@@ -815,7 +815,8 @@
 ---
 
 #### [US-017] - REST API data connector (Phase 2)
-**Status:** ðŸŸ¡ TODO
+**Status:** ðŸ”µ IN PROGRESS
+**Start date:** 2026-03-28
 **Priority:** ðŸŸ  Medium
 **Complexity:** M
 **Epic:** Data Source Connector
