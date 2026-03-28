@@ -1,8 +1,10 @@
 using CampaignEngine.Application.DependencyInjection;
 using CampaignEngine.Application.DTOs.ApiKeys;
 using CampaignEngine.Application.Interfaces;
+using CampaignEngine.Web.OpenApi.Examples;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Swashbuckle.AspNetCore.Filters;
 
 namespace CampaignEngine.Web.Controllers;
 
@@ -80,6 +82,8 @@ public class ApiKeysController : ControllerBase
     /// The response includes the plaintext key value — this is shown ONCE and cannot be retrieved again.
     /// </summary>
     [HttpPost]
+    [SwaggerRequestExample(typeof(CreateApiKeyRequest), typeof(CreateApiKeyRequestExample))]
+    [SwaggerResponseExample(StatusCodes.Status201Created, typeof(ApiKeyCreatedResponseExample))]
     [ProducesResponseType(typeof(ApiKeyCreatedResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<ApiKeyCreatedResponse>> Create(

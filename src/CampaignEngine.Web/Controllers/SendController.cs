@@ -1,7 +1,9 @@
 using CampaignEngine.Application.DTOs.Send;
 using CampaignEngine.Application.Interfaces;
+using CampaignEngine.Web.OpenApi.Examples;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Swashbuckle.AspNetCore.Filters;
 
 namespace CampaignEngine.Web.Controllers;
 
@@ -53,6 +55,8 @@ public class SendController : ControllerBase
     /// </returns>
     [HttpPost]
     [AllowAnonymous]
+    [SwaggerRequestExample(typeof(SendRequest), typeof(SendRequestExample))]
+    [SwaggerResponseExample(StatusCodes.Status200OK, typeof(SendResponseExample))]
     [ProducesResponseType(typeof(SendResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

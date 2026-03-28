@@ -1,12 +1,17 @@
+using Swashbuckle.AspNetCore.Annotations;
+
 namespace CampaignEngine.Application.DTOs.Send;
 
 /// <summary>
 /// Recipient information for a single send request.
+/// At least one of Email or PhoneNumber must be supplied depending on the channel.
 /// </summary>
+[SwaggerSchema(Description = "Recipient contact details.")]
 public class SendRecipient
 {
     /// <summary>
     /// Email address (required for Email channel).
+    /// Example: recipient@example.com
     /// </summary>
     public string? Email { get; set; }
 
@@ -17,11 +22,13 @@ public class SendRecipient
 
     /// <summary>
     /// Optional display name of the recipient.
+    /// Example: Marie Dupont
     /// </summary>
     public string? DisplayName { get; set; }
 
     /// <summary>
     /// Optional external reference identifier from the caller's system.
+    /// Example: CRM-12345
     /// </summary>
     public string? ExternalRef { get; set; }
 }
