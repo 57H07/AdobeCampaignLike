@@ -1386,7 +1386,8 @@
 ---
 
 #### [US-029] - CC and BCC management
-**Status:** ðŸŸ¡ TODO
+**Status:** 🔵 IN PROGRESS
+**Start date:** 2026-03-28
 **Priority:** ðŸŸ  Medium
 **Complexity:** S
 **Epic:** Campaign Orchestrator
