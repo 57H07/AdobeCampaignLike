@@ -546,7 +546,8 @@
 ---
 
 #### [US-012] - Conditional UI toggle for file upload
-**Status:** 🟡 TODO
+**Status:** 🔵 IN PROGRESS
+**Start date:** 2026-03-29
 **Priority:** 🟠 Medium
 **Complexity:** S
 **Epic:** Epic 2
