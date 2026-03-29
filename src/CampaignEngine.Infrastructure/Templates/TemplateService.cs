@@ -65,11 +65,21 @@ public sealed class TemplateService : ITemplateService
         return await _templateRepository.GetByIdNoTrackingAsync(id, cancellationToken);
     }
 
+    /// <summary>Maximum allowed file size in bytes (10 MB). F-204 defense-in-depth re-validation.</summary>
+    private const long MaxFileSizeBytes = 10_485_760;
+
     /// <inheritdoc />
     public async Task<Template> CreateAsync(
         CreateTemplateRequest request,
         CancellationToken cancellationToken = default)
     {
+        // Defense-in-depth: re-validate file size even if Kestrel limit already rejected oversized requests.
+        if (request.FileSizeBytes.HasValue && request.FileSizeBytes.Value > MaxFileSizeBytes)
+        {
+            throw new ValidationException(
+                $"File size {request.FileSizeBytes.Value:N0} bytes exceeds the 10 MB limit ({MaxFileSizeBytes:N0} bytes).");
+        }
+
         await EnsureNameUniqueAsync(request.Name, request.Channel, null, cancellationToken);
 
         var template = new Template

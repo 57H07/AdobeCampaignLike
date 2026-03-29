@@ -45,4 +45,11 @@ public class CreateTemplateRequest
     /// that can be embedded in parent templates via {{> name}} syntax.
     /// </summary>
     public bool IsSubTemplate { get; set; } = false;
+
+    /// <summary>
+    /// Optional file size in bytes for the uploaded template body file.
+    /// Used for service-layer re-validation of the 10 MB limit (F-204, defense-in-depth).
+    /// Leave null when the file size is not known or not applicable.
+    /// </summary>
+    public long? FileSizeBytes { get; set; }
 }

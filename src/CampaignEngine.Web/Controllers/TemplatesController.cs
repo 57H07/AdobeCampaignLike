@@ -227,6 +227,138 @@ public class TemplatesController : ControllerBase
     }
 
     // ================================================================
+    // Letter Channel Upload Endpoints (US-010)
+    // ================================================================
+
+    /// <summary>
+    /// Creates a new Letter template by uploading a DOCX file.
+    /// Maximum file size is 10 MB (10,485,760 bytes).
+    /// </summary>
+    /// <remarks>
+    /// Business rules:
+    /// - File must not exceed 10 MB (F-204).
+    /// - Template name must be unique within the Letter channel.
+    /// - New templates start in Draft status.
+    /// - Only Designer and Admin roles can create templates.
+    /// </remarks>
+    [HttpPost("letter")]
+    [RequestSizeLimit(10_485_760)]
+    [Authorize(Policy = AuthorizationPolicies.RequireDesignerOrAdmin)]
+    [Consumes("multipart/form-data")]
+    [ProducesResponseType(typeof(TemplateDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status413RequestEntityTooLarge)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult<TemplateDto>> CreateLetterTemplate(
+        [FromForm] string name,
+        [FromForm] IFormFile file,
+        [FromForm] string? description = null,
+        CancellationToken cancellationToken = default)
+    {
+        if (file is null)
+            return BadRequest(new { error = "A DOCX file is required." });
+
+        const long maxFileSizeBytes = 10_485_760;
+        if (file.Length > maxFileSizeBytes)
+            return StatusCode(StatusCodes.Status413RequestEntityTooLarge,
+                new { error = $"File size {file.Length:N0} bytes exceeds the 10 MB limit ({maxFileSizeBytes:N0} bytes)." });
+
+        var request = new CreateTemplateRequest
+        {
+            Name = name,
+            Channel = ChannelType.Letter,
+            BodyPath = file.FileName,
+            Description = description,
+            FileSizeBytes = file.Length
+        };
+
+        var template = await _templateService.CreateAsync(request, cancellationToken);
+
+        var dto = new TemplateDto
+        {
+            Id = template.Id,
+            Name = template.Name,
+            Channel = template.Channel.ToString(),
+            BodyPath = template.BodyPath,
+            BodyChecksum = template.BodyChecksum,
+            Status = template.Status.ToString(),
+            Version = template.Version,
+            IsSubTemplate = template.IsSubTemplate,
+            Description = template.Description,
+            CreatedAt = template.CreatedAt,
+            UpdatedAt = template.UpdatedAt
+        };
+
+        return CreatedAtAction(nameof(GetTemplate), new { id = template.Id }, dto);
+    }
+
+    /// <summary>
+    /// Updates an existing Letter template by uploading a new DOCX file.
+    /// Maximum file size is 10 MB (10,485,760 bytes).
+    /// </summary>
+    /// <remarks>
+    /// Business rules:
+    /// - File must not exceed 10 MB (F-204).
+    /// - Template name must remain unique within the Letter channel.
+    /// - File is optional: if omitted, existing DOCX is retained.
+    /// - Only Designer and Admin roles can edit templates.
+    /// </remarks>
+    /// <param name="id">Template GUID.</param>
+    [HttpPut("{id:guid}/letter")]
+    [RequestSizeLimit(10_485_760)]
+    [Authorize(Policy = AuthorizationPolicies.RequireDesignerOrAdmin)]
+    [Consumes("multipart/form-data")]
+    [ProducesResponseType(typeof(TemplateDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status413RequestEntityTooLarge)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult<TemplateDto>> UpdateLetterTemplate(
+        Guid id,
+        [FromForm] string name,
+        [FromForm] IFormFile? file = null,
+        [FromForm] string? description = null,
+        CancellationToken cancellationToken = default)
+    {
+        const long maxFileSizeBytes = 10_485_760;
+        if (file is not null && file.Length > maxFileSizeBytes)
+            return StatusCode(StatusCodes.Status413RequestEntityTooLarge,
+                new { error = $"File size {file.Length:N0} bytes exceeds the 10 MB limit ({maxFileSizeBytes:N0} bytes)." });
+
+        // Retrieve existing template to retain current BodyPath when no new file is provided
+        var existing = await _templateService.GetByIdAsync(id, cancellationToken);
+        if (existing is null) return NotFound();
+
+        var request = new UpdateTemplateRequest
+        {
+            Name = name,
+            BodyPath = file is not null ? file.FileName : existing.BodyPath,
+            BodyChecksum = existing.BodyChecksum,
+            Description = description,
+            ChangedBy = _currentUserService.UserName
+        };
+
+        var template = await _templateService.UpdateAsync(id, request, cancellationToken);
+
+        return Ok(new TemplateDto
+        {
+            Id = template.Id,
+            Name = template.Name,
+            Channel = template.Channel.ToString(),
+            BodyPath = template.BodyPath,
+            BodyChecksum = template.BodyChecksum,
+            Status = template.Status.ToString(),
+            Version = template.Version,
+            IsSubTemplate = template.IsSubTemplate,
+            Description = template.Description,
+            CreatedAt = template.CreatedAt,
+            UpdatedAt = template.UpdatedAt
+        });
+    }
+
+    // ================================================================
     // Status Lifecycle Endpoints
     // ================================================================
 
