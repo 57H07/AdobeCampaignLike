@@ -76,7 +76,8 @@
 > Migrate template body storage from database columns to file system for all channels (Letter, Email, SMS). This is a prerequisite for Epic 2.
 
 #### [US-001] - ITemplateBodyStore abstraction layer
-**Status:** 🟡 TODO
+**Status:** 🔵 IN PROGRESS
+**Start date:** 2026-03-29
 **Priority:** 🔴 High
 **Complexity:** M
 **Epic:** Epic 1
