@@ -1,6 +1,6 @@
 # PRD: Letter Channel Migration — HTML to DOCX Templates
 
-> Version: 1.3 — Updated 2026-03-29
+> Version: 1.4 — Updated 2026-03-29
 > Status: Draft
 
 ---
@@ -13,6 +13,7 @@
 | 1.1 | 2026-03-29 | Removed PDF/Syncfusion output (output stays DOCX). Added file-system storage for template bodies (breaking change: DB stores paths, not content). Simplified rendering engine (scalar replacement + table collection support only, no paragraph duplication, no exotic fields). Locked upload to `.docx` only. Clarified validation rules. Marked headers/footers as Should-have. Added HTML custom functions requirement. Expanded multipart upload API spec. Added LetterDispatcher test coverage requirement. |
 | 1.2 | 2026-03-29 | Clarified snapshot body storage (moves to file system, no DB column). Specified `ITemplateBodyStore` read semantics (throw on missing/corrupt, distinguish NotFound vs. Corrupted). Moved F-305 (Scriban custom functions) to new Epic 3b. Fixed DOCX dispatch model: one recipient = one DOCX file, no batch accumulation. Clarified orphaned file cleanup (external background job, out-of-scope). Promoted F-308 (headers/footers) to Must-have. Declared nested conditionals out of scope. Moved Word text boxes (Q4) to Out of Scope. Changed F-503 diff indicator to SHA-256 checksum. Added `DispatchRequest` schema change. Added startup fail-fast check for storage root. No data migration needed (never in production). |
 | 1.3 | 2026-03-29 | Resolved Q8: print provider confirmed to accept `.docx`. Added `BodyChecksum` (nvarchar(64), nullable) to `Template`, `TemplateHistory`, and `TemplateSnapshot` entities (F-503). Clarified file-on-update semantics: previous body is **copied** (not moved) to `history/v{n}.docx` before new version is written. Clarified `TemplateDto.bodyPath` exposes a relative path only (no server root). Amended F-301: `DocxRunMerger` must traverse `HeaderPart` and `FooterPart` in addition to the main document body. Specified F-303 missing-`{{ end }}` behavior: throw `TemplateRenderException` with "Missing {{ end }} for collection '...'." Specified F-104b startup check wiring: `IHostedService` (not DI registration). Resolved Q8 in Open Questions. |
+| 1.4 | 2026-03-29 | **Breaking clarifications from stakeholder review.** Removed snapshot feature entirely (F-109, all `TemplateSnapshot` references, snapshot file-naming convention) — snapshots do not exist in this project. Removed F-502 (DOCX revert) — moved to Out of Scope. Kept F-503 (SHA-256 `BodyChecksum`) for audit diff in version history. Promoted F-304 (conditional blocks) to Must-have; added exact error message for nested conditional violation. Resolved Q5: `LetterPostProcessor` removed in this initiative (not kept as dead code). Resolved Q6: all template history versions retained forever, no cleanup logic. Resolved Q7: DOCX rendering uses existing 10 s timeout, not configurable separately. Resolved Q9: local single-instance file system only for initial deployment. Removed Phase 3 duplicate of F-305. Extended `GET /api/templates/{id}/docx` to allow CampaignManager role (download only). Documented that CampaignManager is excluded from upload/update endpoints. Clarified F-501 (version history) as audit trail only — no per-version download, no revert. |
 
 ---
 
@@ -24,7 +25,7 @@ CampaignEngine's Letter channel currently forces designers to author print-ready
 
 This initiative also introduces a **breaking change to template storage** that affects all channels (Letter, Email, SMS): template body content (DOCX binary and HTML text) is no longer stored in the database. Instead, template bodies are stored as files on the server file system, and the database stores only the file path. This decouples binary payload size from database row size, improves query performance, and aligns with file-oriented workflows.
 
-This applies to **all three body-storing entities**: `Template`, `TemplateHistory`, and `TemplateSnapshot`. Snapshot bodies (frozen at campaign scheduling time) are also stored as files on the file system — the database stores only the path. There is no `ResolvedHtmlBody` / `ResolvedDocxBody` column in the database for snapshots.
+This applies to **both body-storing entities**: `Template` and `TemplateHistory`. There is no `ResolvedHtmlBody` / `ResolvedDocxBody` column in the database.
 
 > **Note:** No data migration is required. The application has never been in production.
 
@@ -105,20 +106,18 @@ This epic applies to **all channels** (Letter, Email, SMS). It is a prerequisite
 | ID | Feature | User Story | Priority |
 |----|---------|------------|----------|
 | F-101 | File-system storage for template bodies | As the system, I need to store template body files (HTML for Email/SMS, DOCX for Letter) on the server file system instead of in the database, so that binary payloads are decoupled from relational data | Must-have |
-| F-102 | Database stores file paths only | As the system, the `Template`, `TemplateHistory`, and `TemplateSnapshot` entities must store a `BodyPath` (`nvarchar`, file relative path) instead of `HtmlBody` / `DocxBody` columns, and a `BodyChecksum` (`nvarchar(64)`, nullable) for SHA-256 content comparison. `BodyPath` exposes a **relative path only** in DTOs (e.g. `templates/{id}/v3.docx`) — the server storage root is never included in API responses. | Must-have |
+| F-102 | Database stores file paths only | As the system, the `Template` and `TemplateHistory` entities must store a `BodyPath` (`nvarchar`, file relative path) instead of `HtmlBody` / `DocxBody` columns, and a `BodyChecksum` (`nvarchar(64)`, nullable) for SHA-256 content comparison. `BodyPath` exposes a **relative path only** in DTOs (e.g. `templates/{id}/v3.docx`) — the server storage root is never included in API responses. | Must-have |
 | F-103 | ITemplateBodyStore interface | As the system, I need an `ITemplateBodyStore` interface abstracting file read/write operations, so the storage location (local disk, network share, future blob storage) can be swapped without changing service logic. **Read semantics:** `ReadAsync(path)` throws `TemplateBodyNotFoundException` if the file does not exist (file was never written or path is null/empty); throws `TemplateBodyCorruptedException` if the file exists but cannot be opened or parsed as valid content. The distinction between these two exceptions allows callers to surface appropriate error messages. | Must-have |
-| F-104 | Configurable storage root | As Sarah, I want the template storage root directory configured via `appsettings.json` (`TemplateStorage:RootPath`) so that I can point it to a network share or mounted volume | Must-have |
+| F-104 | Configurable storage root | As Sarah, I want the template storage root directory configured via `appsettings.json` (`TemplateStorage:RootPath`) so that I can control where template files are stored without a code change | Must-have |
 | F-104b | Startup fail-fast for storage root | As Sarah, I want the application to fail at startup with a clear error message if `TemplateStorage:RootPath` is not configured, does not exist, or is not writable by the application service account — so misconfiguration is detected immediately at deploy time rather than at first template upload. **Wiring:** implemented as an `IHostedService` that runs at application start and throws if the validation fails, preventing the host from starting. | Must-have |
-| F-105 | Atomic write + path commit | As the system, I need template file writes and database path commits to be atomic: write the file first, then commit the path to the DB; on DB failure, delete the orphaned file immediately in the same request. Periodic orphaned-file scanning (for files that survived despite a DB failure) is handled by an external background job — that job is out of scope for this initiative. **On update:** the current body file is **copied** (not moved) to `history/v{n}.docx` before the new version is written as `v{n+1}.docx`. Both files coexist on disk; TemplateHistory stores the history path. This ensures safe revert without relying on a file rename being atomic. | Must-have |
+| F-105 | Atomic write + path commit | As the system, I need template file writes and database path commits to be atomic: write the file first, then commit the path to the DB; on DB failure, delete the orphaned file immediately in the same request. Periodic orphaned-file scanning (for files that survived despite a DB failure) is handled by an external background job — that job is out of scope for this initiative. **On update:** the current body file is **copied** (not moved) to `history/v{n}.docx` before the new version is written as `v{n+1}.docx`. Both files coexist on disk; TemplateHistory stores the history path. This ensures a complete audit record without relying on a file rename being atomic. | Must-have |
 | F-106 | DOCX binary storage | As Claire, I want my uploaded `.docx` file stored on the server so that I can download it later for editing | Must-have |
 | F-107 | HTML body storage | As the system, I need HTML template bodies (Email/SMS) stored as `.html` files on the server, with the path saved in the database | Must-have |
-| F-108 | DOCX versioning via file system | As Claire, I want each template update to save the previous DOCX version as a separate file so that I can revert to an earlier version | Must-have |
-| F-109 | Body snapshot on schedule | As Marc, I want the template body file (DOCX for Letter, HTML for Email/SMS) copied to a snapshot path when a campaign is scheduled, so that later template edits don't affect running campaigns. The `TemplateSnapshot` entity stores only `BodyPath` (string) — no body content in the database. | Must-have |
-| F-110 | DOCX download endpoint | As Thomas, I want to download the current DOCX file via `GET /api/templates/{id}/docx` so that I can inspect or re-edit it offline | Should-have |
+| F-108 | DOCX versioning via file system | As Claire, I want each template update to save the previous DOCX version as a separate file so that the version history provides a complete audit trail | Must-have |
+| F-110 | DOCX download endpoint | As Thomas or Marc, I want to download the current DOCX file via `GET /api/templates/{id}/docx` so that I can inspect or re-edit it offline | Should-have |
 
 **File naming convention:**
 - Template bodies: `{storageRoot}/templates/{templateId}/v{version}.docx` (Letter) or `v{version}.html` (Email/SMS)
-- Snapshots: `{storageRoot}/snapshots/{snapshotId}.docx` or `.html`
 - History entries share the template directory: `{storageRoot}/templates/{templateId}/history/v{version}.docx`
 
 #### Epic 2: DOCX Template Upload & Validation
@@ -160,10 +159,15 @@ This epic applies to **all channels** (Letter, Email, SMS). It is a prerequisite
 - On channel mismatch (template is not Letter channel): HTTP 422 with `{ "error": "Template {id} is not a Letter template." }`
 
 `GET /api/templates/{id}/docx` — Download the DOCX file
-- Authorization: `RequireDesignerOrAdmin`
+- Authorization: `RequireDesignerOrAdminOrCampaignManager` (read-only access; CampaignManager may download for offline review but cannot upload or update templates)
 - Returns: DOCX bytes as `application/vnd.openxmlformats-officedocument.wordprocessingml.document` with `Content-Disposition: attachment; filename="{templateName}.docx"`
 - On `id` not found: HTTP 404
 - On template not being a Letter template: HTTP 422
+
+> **Role summary for template endpoints:**
+> - `POST /api/templates/letter` and `PUT /api/templates/{id}/letter`: require Designer or Admin role only.
+> - `GET /api/templates/{id}/docx`: requires Designer, Admin, **or CampaignManager** role.
+> - CampaignManager may preview and download, but may not create or modify templates.
 
 #### Epic 3: DOCX Placeholder Engine
 
@@ -174,7 +178,7 @@ The rendering engine is intentionally **simple**. It operates on a single Word d
 | F-301 | XML run merging | As the system, I need to merge Word's split XML runs (`<w:r>`) so that `{{ firstName }}` is recognized even when Word fragments it across multiple runs. The merger must preserve `<w:bookmarkStart>`, `<w:bookmarkEnd>`, and `<w:rPr>` run properties. Smart-quote normalization (`"` `"` → `"`) must be applied during merging. **Scope:** the merger must traverse the main document body **and** all `HeaderPart` and `FooterPart` XML parts — consistent with F-308 which requires placeholder replacement in headers/footers. Bookmark elements (`<w:bookmarkStart>`, `<w:bookmarkEnd>`) that fall inside a split placeholder are discarded during the merge; this is not expected in valid authoring workflows. | Must-have |
 | F-302 | Scalar placeholder replacement | As Claire, I want `{{ firstName }}`, `{{ address }}`, etc. in my Word document replaced with recipient data. Values are XML-escaped before insertion to prevent OpenXML injection. Missing keys are replaced with an empty string. | Must-have |
 | F-303 | Collection rendering via table rows | As Claire, I want to place a marker row `{{ collection_key }}` in a Word table, followed by a template row containing `{{ item.field }}` placeholders, followed by an `{{ end }}` row. The engine duplicates the template row once per item in the collection and removes the marker rows. This is the only supported collection pattern — no paragraph-level looping. **Error handling:** if a `{{ collection_key }}` marker row is found with no matching `{{ end }}` row, the renderer throws `TemplateRenderException` with the message "Missing {{ end }} for collection '{key}'." | Must-have |
-| F-304 | Conditional support | As Claire, I want `{{ if condition_key }}...{{ end }}` to show or hide **whole paragraphs or whole table rows** based on a boolean value in recipient data. The `{{ if }}` and `{{ end }}` markers each occupy a dedicated paragraph or table row. `{{ else }}` is not supported in this version. **Nested conditionals are not supported** — `{{ if }}` blocks may not be nested inside other `{{ if }}` blocks. This is enforced at render time with a clear error. | Should-have |
+| F-304 | Conditional support | As Claire, I want `{{ if condition_key }}...{{ end }}` to show or hide **whole paragraphs or whole table rows** based on a boolean value in recipient data. The `{{ if }}` and `{{ end }}` markers each occupy a dedicated paragraph or table row. `{{ else }}` is not supported in this version. **Nested conditionals are not supported** — `{{ if }}` blocks may not be nested inside other `{{ if }}` blocks. This is enforced at render time: throw `TemplateRenderException` with message `"Nested {{ if }} blocks are not supported (found inside '{{ if condition_key }}')."` | Must-have |
 | F-306 | Placeholder extraction from DOCX | As the system, I need to auto-detect all `{{ key }}` placeholders in a DOCX file (handling split runs and headers/footers) to populate the manifest | Must-have |
 | F-307 | Manifest validation for DOCX | As Claire, I want the system to warn me if my DOCX contains undeclared placeholders before I publish | Must-have |
 | F-308 | Headers/footers placeholder replacement | As Claire, I want placeholders in Word headers and footers to be replaced with recipient data, so that running headers (e.g., `{{ recipientName }}`) and footers (e.g., `{{ pageRef }}`) are personalized | Must-have |
@@ -185,7 +189,7 @@ The rendering engine is intentionally **simple**. It operates on a single Word d
 - Collection rendering: table-row duplication only (see F-303)
 - Conditionals: paragraph/row block removal only (see F-304)
 - No `{{ else }}` blocks
-- No nested `{{ if }}` blocks — attempting to nest conditionals produces a render-time error
+- No nested `{{ if }}` blocks — throws `TemplateRenderException` with message `"Nested {{ if }} blocks are not supported (found inside '{{ if condition_key }}')."`
 - No sub-template composition (`{{> name }}` is not supported for DOCX)
 - No embedded image manipulation — images in the template are preserved as-is in the output
 - No execution of Word fields (e.g., `=SUM(ABOVE)` table formulas, `DATE` fields, TOC fields) — these are left as-is in the output
@@ -213,9 +217,8 @@ These features extend the existing Scriban-based HTML renderer for Email and SMS
 
 | ID | Feature | User Story | Priority |
 |----|---------|------------|----------|
-| F-501 | DOCX version history | As Claire, I want to see the version history of a Letter template (version number, who changed, when, file path) | Must-have |
-| F-502 | DOCX revert | As Claire, I want to revert a Letter template to a previous DOCX version (copies the historical file to a new current version) | Should-have |
-| F-503 | Binary diff indicator | As Claire, I want to see whether the DOCX content changed between versions (yes/no — based on SHA-256 checksum comparison of the stored files), even though visual diff is not available for binary files. The checksum is computed at upload time and stored in a `BodyChecksum` column (`nvarchar(64)`, nullable) on `Template`, `TemplateHistory`, and `TemplateSnapshot`. | Nice-to-have |
+| F-501 | DOCX version history | As Claire, I want to see the version history of a Letter template (version number, who changed, when, file path) as an **audit trail only** — no per-version download and no revert action | Must-have |
+| F-503 | Binary diff indicator | As Claire, I want to see whether the DOCX content changed between versions (yes/no — based on SHA-256 checksum comparison of the stored files), even though visual diff is not available for binary files. The checksum is computed at upload time and stored in a `BodyChecksum` column (`nvarchar(64)`, nullable) on `Template` and `TemplateHistory`. | Nice-to-have |
 
 ### 5.2 Non-functional Requirements
 
@@ -223,7 +226,7 @@ These features extend the existing Scriban-based HTML renderer for Email and SMS
 |----------|-------------|
 | **Performance** | Per-recipient DOCX rendering must complete in < 500 ms at p95 for a typical 1-3 page letter |
 | **Performance** | Batch throughput must remain >= 250 letters/minute |
-| **Scalability** | File-system storage must support templates up to 10 MB without degradation. Storage root must be configurable to a network share or mounted volume for multi-instance deployments |
+| **Scalability** | File-system storage must support templates up to 10 MB without degradation. Initial deployment targets local single-instance file system only. The `ITemplateBodyStore` abstraction supports future migration to a network share or blob storage without changing service logic. |
 | **Scalability** | Template history file accumulation must not cause noticeable query slowdowns — the database only stores paths (strings), not binaries |
 | **Reliability** | Corrupt or malformed DOCX uploads must be rejected with a clear error, not crash the application |
 | **Reliability** | Run-merging edge cases must not silently drop placeholders — unrecognized patterns must be logged at Warning level |
@@ -252,8 +255,11 @@ The following are explicitly **not** part of this initiative:
 - **Dynamic image insertion.** Images embedded in the Word document are preserved as-is. No runtime image replacement.
 - **Exotic Word fields.** `=SUM(ABOVE)`, `DATE`, `TOC`, and other Word calculated fields are not processed — they remain unchanged in the output DOCX.
 - **Macro-enabled templates (`.docm`, `.dotm`).** Only `.docx` format is accepted. `.docm` files are rejected at upload with a clear error.
-- **Blob storage / cloud file storage.** The `ITemplateBodyStore` interface supports this as a future extension, but the initial implementation targets local/network file system only.
-- **Removal of DinkToPdf as a project dependency.** The `LetterPostProcessor` using DinkToPdf becomes dead code but is retained temporarily for rollback safety. It can be removed in a follow-up cleanup.
+- **Blob storage / cloud file storage.** The `ITemplateBodyStore` interface supports this as a future extension, but the initial implementation targets local single-instance file system only.
+- **Template version revert.** Reverting to a previous DOCX version is not supported. Version history is an audit trail only.
+- **Per-version DOCX download.** The download endpoint (`GET /api/templates/{id}/docx`) returns only the current version. Historical DOCX files are accessible to administrators via the file system directly.
+- **Template history retention limit.** All template versions are retained indefinitely. No automated cleanup job is in scope.
+- **Multi-instance / concurrent file system writes.** Initial deployment is single-instance local disk only. Network share and concurrent-write safety are deferred to a future infrastructure initiative.
 - **PDF batch consolidation changes.** `PdfConsolidationService` and PdfSharp are not used by the Letter channel after this migration. They are not removed in this initiative.
 - **Supported Word features for designers:** SmartArt, WordArt, OLE objects, ActiveX controls, and advanced drawing objects are not officially supported — they are preserved in the output but rendering fidelity is not guaranteed.
 
@@ -295,9 +301,9 @@ The following are explicitly **not** part of this initiative:
 | **Content sanitization** | Placeholder values inserted into DOCX are plain text. Values must be XML-escaped when written into `<w:t>` elements to prevent OpenXML injection. |
 | **Smart-quote normalization** | The run merger normalizes `"` `"` → `"` before placeholder scanning, making the engine resilient to Word auto-formatting. |
 | **No code execution** | The DOCX rendering engine performs text substitution and structural operations only (row duplication, block removal). No macros, scripts, or OLE objects are executed. |
-| **Authentication** | Template upload endpoints require Designer or Admin role (existing authorization). API endpoints require `X-Api-Key` header (existing). |
+| **Authentication** | Template upload and update endpoints (`POST`, `PUT`) require Designer or Admin role. The DOCX download endpoint (`GET /api/templates/{id}/docx`) additionally allows CampaignManager role. API endpoints require `X-Api-Key` header (existing). |
 | **File system access control** | Template body files are stored outside the web root. They are not served as static files. Access is controlled by reading the file in application code only after authorization checks. |
-| **Audit trail** | All template changes (upload, update, revert) are tracked in TemplateHistory with `ChangedBy` attribution — unchanged from current behavior. The stored path confirms which file was active at each version. |
+| **Audit trail** | All template changes (upload, update) are tracked in TemplateHistory with `ChangedBy` attribution. The stored path confirms which file was active at each version. Revert is not supported. |
 | **Orphaned file cleanup** | If a DB transaction fails after a file write, the orphaned file must be deleted immediately within the same request (synchronous cleanup). Periodic scanning for any files that survived despite a DB failure is the responsibility of an external background job — that job is out of scope for this initiative. |
 
 ---
@@ -326,7 +332,7 @@ The following are explicitly **not** part of this initiative:
 - Add `DocumentFormat.OpenXml` NuGet package
 - Implement `ITemplateBodyStore` + `FileSystemTemplateBodyStore` (with `TemplateBodyNotFoundException` / `TemplateBodyCorruptedException`)
 - Startup validation of `TemplateStorage:RootPath` (F-104b) — fail fast if missing or not writable
-- EF Core migration: replace `HtmlBody` / `DocxBody` columns with `BodyPath` (nvarchar) on `Templates`, `TemplateHistory`, `TemplateSnapshots`. No data migration needed (never in production).
+- EF Core migration: replace `HtmlBody` / `DocxBody` columns with `BodyPath` (nvarchar) on `Templates` and `TemplateHistory`. No data migration needed (never in production).
 - Implement `DocxRunMerger` (XML run merging + smart-quote normalization)
 - Implement `IDocxTemplateRenderer` (scalar replacement + table collection rendering + conditional block removal; no nested conditionals)
 - Implement `IDocxPlaceholderParser` (post-merge placeholder extraction from body + headers/footers)
@@ -335,10 +341,9 @@ The following are explicitly **not** part of this initiative:
 ### Phase 2 — Service Layer Integration
 **Target: Sprint 3**
 
-- Modify `TemplateService`: write/read DOCX and HTML bodies via `ITemplateBodyStore`; update Create/Update/Revert/Diff for file-backed storage
-- Modify `TemplateSnapshotService`: copy DOCX/HTML file to snapshot path at campaign schedule time
+- Modify `TemplateService`: write/read DOCX and HTML bodies via `ITemplateBodyStore`; update Create/Update/Diff for file-backed storage
 - Modify `TemplatePreviewService`: read body file, render DOCX, return bytes for download
-- Register Scriban custom functions (`format_date`, `format_currency`) for HTML renderer
+- Register Scriban custom functions (`format_date`, `format_currency`) for HTML renderer (F-305)
 - Service-layer tests
 
 ### Phase 3 — API, UI & Dispatch Pipeline
@@ -349,15 +354,14 @@ The following are explicitly **not** part of this initiative:
 - Update Razor Pages: conditional file upload UI for Letter channel; DOCX download link on Edit page
 - Extend `DispatchRequest` with `BinaryContent` (`byte[]?`) property (F-403b)
 - Modify `ProcessChunkJob`: read DOCX body from file system, call `IDocxTemplateRenderer` per recipient, pass bytes via `DispatchRequest.BinaryContent` — one call to `SendAsync` per recipient, no accumulation
-- Rewrite `LetterDispatcher`: remove PDF accumulation + `FlushBatchAsync`; accept `BinaryContent`, write one `.docx` file per `SendAsync` call via `PrintProviderFileDropHandler`
-- Register Scriban custom functions (`format_date`, `format_currency`) for HTML renderer (F-305)
+- Rewrite `LetterDispatcher`: remove PDF accumulation + `FlushBatchAsync`; accept `BinaryContent`, write one `.docx` file per `SendAsync` call via `PrintProviderFileDropHandler`; **delete `LetterPostProcessor` and all DinkToPdf/wkhtmltox references**
 - Write LetterDispatcher unit tests (F-404 coverage)
 - DI registration of all new services
 
 ### Phase 4 — Hardening & Documentation
 **Target: Sprint 5**
 
-- Designer guide: supported Word features, placeholder syntax, collection table pattern, conditional pattern, smart-quote note
+- Designer guide: `docs/letter-template-designer-guide.md` — supported Word features, placeholder syntax (`{{ key }}`), collection table pattern, conditional pattern, smart-quote note, unsupported features list. Reviewed and approved by Product before release.
 - Performance benchmarks: DOCX rendering throughput
 - Edge case testing: complex tables, merged cells, images, headers/footers, bookmarks between runs
 - Security review: DOCX upload validation, XML injection testing
@@ -373,8 +377,8 @@ The following are explicitly **not** part of this initiative:
 | Q2 | What Word features should be officially "supported" vs. "use at your own risk"? | Designer documentation | Product / Design | Partially resolved — see Section 6 Out of Scope |
 | Q3 | Should `{{ else }}` blocks be supported in conditionals from day 1, or deferred? | Complexity | Engineering | **Resolved: Deferred. Not in scope for this initiative.** |
 | Q4 | How should the system handle placeholders inside Word text boxes (separate XML part `wps:txbx`)? | Run-merger scope | Engineering | **Resolved: Out of scope. Text boxes are preserved as-is in the output. See Section 6.** |
-| Q5 | Should the old `LetterPostProcessor` (HTML-to-PDF via DinkToPdf) be removed or kept as dead code? | Code cleanliness | Engineering | Open — retained for rollback safety; removal deferred |
-| Q6 | Is there a maximum number of template versions to retain in history, or should all versions be kept indefinitely? | File storage planning | Product / Ops | Open — recommend defining a default retention policy (e.g., last 50 versions per template) |
-| Q7 | Should the rendering timeout for DOCX templates be the same as HTML (10 seconds) or configurable separately? | Performance configuration | Engineering | Open — DOCX-only rendering should be well under 500 ms; 10 s is likely sufficient |
+| Q5 | Should the old `LetterPostProcessor` (HTML-to-PDF via DinkToPdf) be removed or kept as dead code? | Code cleanliness | Engineering | **Resolved: Remove in this initiative.** `LetterPostProcessor` and all DinkToPdf/wkhtmltox references are deleted as part of Phase 3. |
+| Q6 | Is there a maximum number of template versions to retain in history, or should all versions be kept indefinitely? | File storage planning | Product / Ops | **Resolved: Keep all versions indefinitely.** No automated cleanup job. Ops manages disk usage manually if needed. |
+| Q7 | Should the rendering timeout for DOCX templates be the same as HTML (10 seconds) or configurable separately? | Performance configuration | Engineering | **Resolved: Reuse existing 10 s timeout. Not separately configurable.** |
 | Q8 | **Does the print provider accept `.docx` files as the file drop format?** | Critical business dependency | Product / Ops | **Resolved: Yes — print provider confirmed acceptance of `.docx` files. Implementation may proceed.** |
-| Q9 | For multi-instance deployments, is the storage root a UNC share or a mounted volume? Who is responsible for HA/backup of this path? | Infrastructure | Ops | Open |
+| Q9 | For multi-instance deployments, is the storage root a UNC share or a mounted volume? Who is responsible for HA/backup of this path? | Infrastructure | Ops | **Resolved: Out of scope for this initiative.** Initial deployment is single-instance local disk only. Multi-instance storage is deferred. See Section 6. |
