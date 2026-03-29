@@ -415,7 +415,8 @@
 > Enable designers to upload `.docx` files via web UI and REST API with comprehensive validation.
 
 #### [US-009] - DOCX structural validation
-**Status:** 🟡 TODO
+**Status:** 🔵 IN PROGRESS
+**Start date:** 2026-03-29
 **Priority:** 🔴 High
 **Complexity:** M
 **Epic:** Epic 2
