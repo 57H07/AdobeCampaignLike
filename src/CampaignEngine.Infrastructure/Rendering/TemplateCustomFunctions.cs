@@ -1,10 +1,10 @@
-using System.Globalization;
+using CampaignEngine.Application.Rendering.CustomFunctions;
 using Scriban.Runtime;
 
 namespace CampaignEngine.Infrastructure.Rendering;
 
 /// <summary>
-/// Custom Scriban functions registered in the rendering context.
+/// Custom Scriban functions registered in the rendering context for Email and SMS templates.
 ///
 /// Available functions in templates:
 ///   format_date(value, format)     - Format a date/DateTime value using a .NET format string.
@@ -14,10 +14,15 @@ namespace CampaignEngine.Infrastructure.Rendering;
 ///   {{ format_date invoice_date "dd/MM/yyyy" }}
 ///   {{ format_currency total_amount "€" }}
 ///
+/// NOTE: These functions are registered only for the Scriban renderer (Email/SMS channels).
+/// They are NOT available in the DOCX renderer used for Letter channel templates, which uses
+/// plain-text {{ }} placeholder substitution via DocumentFormat.OpenXml (see F-305).
+///
 /// Implementation note:
 ///   Scriban requires functions to be registered as members of a ScriptObject subclass.
 ///   Static methods with snake_case names are auto-imported by ScriptObject.Import().
 ///   Method naming: Scriban converts PascalCase -> snake_case automatically on import.
+///   Pure function logic lives in Application/Rendering/CustomFunctions/ (no Scriban dep).
 /// </summary>
 public sealed class TemplateCustomFunctions : ScriptObject
 {
@@ -36,6 +41,7 @@ public sealed class TemplateCustomFunctions : ScriptObject
 
     /// <summary>
     /// Factory method: creates a TemplateCustomFunctions instance ready to push into a Scriban context.
+    /// Called from <see cref="ScribanTemplateRenderer.BuildScribanContext"/> at render time.
     /// </summary>
     public static TemplateCustomFunctions CreateAndRegister() => new();
 
@@ -47,32 +53,14 @@ public sealed class TemplateCustomFunctions : ScriptObject
     /// Formats a date value using the given .NET format string.
     /// Imported into Scriban as <c>format_date</c>.
     ///
-    /// Supported input types: DateTime, DateTimeOffset, string (ISO 8601 parsed).
-    /// If the value is null or unparseable, returns an empty string.
+    /// Delegates to <see cref="FormatDateFunction.Execute"/> (Application layer).
     ///
     /// Template usage:
     ///   {{ format_date birth_date "dd/MM/yyyy" }}         -> 19/03/1990
     ///   {{ format_date invoice_date "MMMM d, yyyy" }}     -> March 19, 2026
     /// </summary>
     public static string FormatDate(object? value, string format)
-    {
-        if (value is null)
-            return string.Empty;
-
-        if (string.IsNullOrEmpty(format))
-            format = "d";
-
-        DateTime? dateTime = value switch
-        {
-            DateTime dt => dt,
-            DateTimeOffset dto => dto.DateTime,
-            DateOnly d => d.ToDateTime(TimeOnly.MinValue),
-            string s when DateTime.TryParse(s, out var parsed) => parsed,
-            _ => null
-        };
-
-        return dateTime.HasValue ? dateTime.Value.ToString(format) : string.Empty;
-    }
+        => FormatDateFunction.Execute(value, format);
 
     // ----------------------------------------------------------------
     // format_currency
@@ -82,9 +70,7 @@ public sealed class TemplateCustomFunctions : ScriptObject
     /// Formats a numeric value as currency.
     /// Imported into Scriban as <c>format_currency</c>.
     ///
-    /// The symbol parameter is prepended to the formatted number.
-    /// If symbol is omitted or empty, no prefix is added.
-    /// The number is always formatted with 2 decimal places and thousands separator.
+    /// Delegates to <see cref="FormatCurrencyFunction.Execute"/> (Application layer).
     ///
     /// Template usage:
     ///   {{ format_currency total "€" }}    -> €1,234.56
@@ -92,23 +78,5 @@ public sealed class TemplateCustomFunctions : ScriptObject
     ///   {{ format_currency amount "" }}    -> 1,234.56
     /// </summary>
     public static string FormatCurrency(object? value, string symbol)
-    {
-        if (value is null)
-            return string.Empty;
-
-        decimal amount;
-        try
-        {
-            amount = Convert.ToDecimal(value);
-        }
-        catch
-        {
-            return string.Empty;
-        }
-
-        // Use InvariantCulture to produce consistent output regardless of server locale:
-        // N2 with InvariantCulture uses "." as decimal separator and "," as thousands separator.
-        var formatted = amount.ToString("N2", CultureInfo.InvariantCulture);
-        return string.IsNullOrEmpty(symbol) ? formatted : symbol + formatted;
-    }
+        => FormatCurrencyFunction.Execute(value, symbol);
 }
