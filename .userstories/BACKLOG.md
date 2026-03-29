@@ -458,8 +458,9 @@
 ---
 
 #### [US-010] - File size limit enforcement
-**Status:** 🔵 IN PROGRESS
+**Status:** ✅ DONE
 **Start date:** 2026-03-29
+**End date:** 2026-03-29
 **Priority:** 🔴 High
 **Complexity:** S
 **Epic:** Epic 2
@@ -472,17 +473,17 @@
 > F-204: 10 MB limit enforced at Kestrel level (`[RequestSizeLimit]`) and re-validated in service layer.
 
 **Acceptance criteria:**
-- [ ] Kestrel `[RequestSizeLimit(10_485_760)]` attribute applied to upload endpoints
-- [ ] Service layer re-validates file size before processing
-- [ ] Uploads exceeding 10 MB return HTTP 413 Payload Too Large
-- [ ] Error response includes clear message
+- [x] Kestrel `[RequestSizeLimit(10_485_760)]` attribute applied to upload endpoints ✅
+- [x] Service layer re-validates file size before processing ✅
+- [x] Uploads exceeding 10 MB return HTTP 413 Payload Too Large ✅
+- [x] Error response includes clear message ✅
 
 **Technical tasks:**
-- [ ] `TASK-010-01` - **[Attribute]** Add `[RequestSizeLimit(10_485_760)]` to `POST /api/templates/letter`
-- [ ] `TASK-010-02` - **[Attribute]** Add `[RequestSizeLimit(10_485_760)]` to `PUT /api/templates/{id}/letter`
-- [ ] `TASK-010-03` - **[Validation]** Re-validate file size in `TemplateService.CreateAsync`
-- [ ] `TASK-010-04` - **[Test]** API test with 10 MB file (success)
-- [ ] `TASK-010-05` - **[Test]** API test with 11 MB file (rejected)
+- [x] `TASK-010-01` - **[Attribute]** Add `[RequestSizeLimit(10_485_760)]` to `POST /api/templates/letter` ✅ 2026-03-29
+- [x] `TASK-010-02` - **[Attribute]** Add `[RequestSizeLimit(10_485_760)]` to `PUT /api/templates/{id}/letter` ✅ 2026-03-29
+- [x] `TASK-010-03` - **[Validation]** Re-validate file size in `TemplateService.CreateAsync` ✅ 2026-03-29
+- [x] `TASK-010-04` - **[Test]** API test with 10 MB file (success) ✅ 2026-03-29
+- [x] `TASK-010-05` - **[Test]** API test with 11 MB file (rejected) ✅ 2026-03-29
 
 **Business rules:**
 1. Limit is 10 MB (10,485,760 bytes)
