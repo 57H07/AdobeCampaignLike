@@ -163,8 +163,9 @@
 ---
 
 #### [US-003] - Database schema migration for BodyPath
-**Status:** 🔵 IN PROGRESS
+**Status:** ✅ DONE
 **Start date:** 2026-03-29
+**End date:** 2026-03-29
 **Priority:** 🔴 High
 **Complexity:** S
 **Epic:** Epic 1
@@ -177,22 +178,22 @@
 > F-102: Database stores file paths only. BodyPath exposes a relative path (e.g., `templates/{id}/v3.docx`). Also add `BodyChecksum` (nvarchar(64), nullable) and `RowVersion` (timestamp) concurrency token to `Template`.
 
 **Acceptance criteria:**
-- [ ] `Template` entity has `BodyPath` property (string, required)
-- [ ] `Template` entity has `BodyChecksum` property (string?, nullable, max 64 chars)
-- [ ] `Template` entity has `RowVersion` property (byte[], concurrency token)
-- [ ] `TemplateHistory` entity has `BodyPath` property (string, required)
-- [ ] `TemplateHistory` entity has `BodyChecksum` property (string?, nullable, max 64 chars)
-- [ ] EF Core migration removes old `HtmlBody` / `DocxBody` columns
-- [ ] Migration applies cleanly on empty database (no data migration needed)
+- [x] `Template` entity has `BodyPath` property (string, required) ✅
+- [x] `Template` entity has `BodyChecksum` property (string?, nullable, max 64 chars) ✅
+- [x] `Template` entity has `RowVersion` property (byte[], concurrency token) ✅
+- [x] `TemplateHistory` entity has `BodyPath` property (string, required) ✅
+- [x] `TemplateHistory` entity has `BodyChecksum` property (string?, nullable, max 64 chars) ✅
+- [x] EF Core migration removes old `HtmlBody` / `DocxBody` columns ✅
+- [x] Migration applies cleanly on empty database (no data migration needed) ✅
 
 **Technical tasks:**
-- [ ] `TASK-003-01` - **[Model]** Add `BodyPath` property to `Template` entity
-- [ ] `TASK-003-02` - **[Model]** Add `BodyChecksum` property to `Template` entity
-- [ ] `TASK-003-03` - **[Model]** Add `RowVersion` property with `[Timestamp]` attribute
-- [ ] `TASK-003-04` - **[Model]** Update `TemplateHistory` entity with `BodyPath` and `BodyChecksum`
-- [ ] `TASK-003-05` - **[Migration]** Generate EF migration: `AddBodyPathAndChecksumToTemplates`
-- [ ] `TASK-003-06` - **[Migration]** Test migration up/down on clean database
-- [ ] `TASK-003-07` - **[Doc]** Add deployment note: no down-migration, restore from backup for rollback
+- [x] `TASK-003-01` - **[Model]** Add `BodyPath` property to `Template` entity ✅ 2026-03-29
+- [x] `TASK-003-02` - **[Model]** Add `BodyChecksum` property to `Template` entity ✅ 2026-03-29
+- [x] `TASK-003-03` - **[Model]** Add `RowVersion` property with `[Timestamp]` attribute ✅ 2026-03-29
+- [x] `TASK-003-04` - **[Model]** Update `TemplateHistory` entity with `BodyPath` and `BodyChecksum` ✅ 2026-03-29
+- [x] `TASK-003-05` - **[Migration]** Generate EF migration: `AddBodyPathAndChecksumToTemplates` ✅ 2026-03-29
+- [x] `TASK-003-06` - **[Migration]** Test migration up/down on clean database ✅ 2026-03-29
+- [x] `TASK-003-07` - **[Doc]** Add deployment note: no down-migration, restore from backup for rollback ✅ 2026-03-29
 
 **Business rules:**
 1. BodyPath is a relative path from storage root (never includes server root)
