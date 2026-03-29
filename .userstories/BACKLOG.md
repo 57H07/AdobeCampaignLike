@@ -846,8 +846,9 @@
 > Extend the existing Scriban-based HTML renderer for Email and SMS channels with custom functions.
 
 #### [US-019] - Custom Scriban functions for HTML templates
-**Status:** 🔵 IN PROGRESS
+**Status:** ✅ DONE
 **Start date:** 2026-03-29
+**End date:** 2026-03-29
 **Priority:** 🔴 High
 **Complexity:** S
 **Epic:** Epic 3b
@@ -860,19 +861,19 @@
 > F-305: Custom Scriban functions `format_date` and `format_currency` registered at startup. Email/SMS only (not available in DOCX renderer).
 
 **Acceptance criteria:**
-- [ ] `format_date` function: `{{ format_date invoiceDate "dd/MM/yyyy" }}`
-- [ ] `format_currency` function: `{{ format_currency amount "€" }}`
-- [ ] Functions registered in Scriban template context at startup
-- [ ] Functions work in Email and SMS templates (tested)
-- [ ] Functions not available in DOCX renderer (documented)
+- [x] `format_date` function: `{{ format_date invoiceDate "dd/MM/yyyy" }}` ✅
+- [x] `format_currency` function: `{{ format_currency amount "€" }}` ✅
+- [x] Functions registered in Scriban template context at startup ✅
+- [x] Functions work in Email and SMS templates (tested) ✅
+- [x] Functions not available in DOCX renderer (documented) ✅
 
 **Technical tasks:**
-- [ ] `TASK-019-01` - **[Function]** Implement `FormatDateFunction` in `Application/Rendering/CustomFunctions/`
-- [ ] `TASK-019-02` - **[Function]** Implement `FormatCurrencyFunction` in `Application/Rendering/CustomFunctions/`
-- [ ] `TASK-019-03` - **[Registration]** Register functions in Scriban `TemplateContext` at startup
-- [ ] `TASK-019-04` - **[Test]** Unit tests for `format_date` with various formats
-- [ ] `TASK-019-05` - **[Test]** Unit tests for `format_currency` with various symbols
-- [ ] `TASK-019-06` - **[Doc]** Update HTML template designer guide with function usage
+- [x] `TASK-019-01` - **[Function]** Implement `FormatDateFunction` in `Application/Rendering/CustomFunctions/` ✅ 2026-03-29
+- [x] `TASK-019-02` - **[Function]** Implement `FormatCurrencyFunction` in `Application/Rendering/CustomFunctions/` ✅ 2026-03-29
+- [x] `TASK-019-03` - **[Registration]** Register functions in Scriban `TemplateContext` at startup ✅ 2026-03-29
+- [x] `TASK-019-04` - **[Test]** Unit tests for `format_date` with various formats ✅ 2026-03-29
+- [x] `TASK-019-05` - **[Test]** Unit tests for `format_currency` with various symbols ✅ 2026-03-29
+- [x] `TASK-019-06` - **[Doc]** Update HTML template designer guide with function usage ✅ 2026-03-29
 
 **Business rules:**
 1. Functions are global (available in all Email/SMS templates)
