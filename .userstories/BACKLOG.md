@@ -969,7 +969,8 @@
 ---
 
 #### [US-022] - DispatchRequest schema change for BinaryContent
-**Status:** 🟡 TODO
+**Status:** 🔵 IN PROGRESS
+**Start date:** 2026-03-29
 **Priority:** 🔴 High
 **Complexity:** S
 **Epic:** Epic 4
