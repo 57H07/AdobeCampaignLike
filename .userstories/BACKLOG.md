@@ -76,8 +76,9 @@
 > Migrate template body storage from database columns to file system for all channels (Letter, Email, SMS). This is a prerequisite for Epic 2.
 
 #### [US-001] - ITemplateBodyStore abstraction layer
-**Status:** 🔵 IN PROGRESS
+**Status:** ✅ DONE
 **Start date:** 2026-03-29
+**End date:** 2026-03-29
 **Priority:** 🔴 High
 **Complexity:** M
 **Epic:** Epic 1
@@ -90,22 +91,22 @@
 > F-103: `ITemplateBodyStore` interface with `ReadAsync(path)` that throws `TemplateBodyNotFoundException` if file doesn't exist, and `TemplateBodyCorruptedException` if file exists but cannot be opened or parsed. Both exception types live in `Application/Interfaces/` as part of the store contract.
 
 **Acceptance criteria:**
-- [ ] `ITemplateBodyStore` interface created in `Application/Interfaces/`
-- [ ] `TemplateBodyNotFoundException` exception defined in `Application/Interfaces/`
-- [ ] `TemplateBodyCorruptedException` exception defined in `Application/Interfaces/`
-- [ ] `ReadAsync(path)` throws `TemplateBodyNotFoundException` for missing/null/empty path
-- [ ] `ReadAsync(path)` throws `TemplateBodyCorruptedException` for corrupt files
-- [ ] `WriteAsync(path, stream)` method defined
-- [ ] `DeleteAsync(path)` method defined
+- [x] `ITemplateBodyStore` interface created in `Application/Interfaces/` ✅
+- [x] `TemplateBodyNotFoundException` exception defined in `Application/Interfaces/` ✅
+- [x] `TemplateBodyCorruptedException` exception defined in `Application/Interfaces/` ✅
+- [x] `ReadAsync(path)` throws `TemplateBodyNotFoundException` for missing/null/empty path ✅
+- [x] `ReadAsync(path)` throws `TemplateBodyCorruptedException` for corrupt files ✅
+- [x] `WriteAsync(path, stream)` method defined ✅
+- [x] `DeleteAsync(path)` method defined ✅
 
 **Technical tasks:**
-- [ ] `TASK-001-01` - **[Interface]** Define `ITemplateBodyStore` in `Application/Interfaces/Storage/`
-- [ ] `TASK-001-02` - **[Exception]** Create `TemplateBodyNotFoundException` in `Application/Interfaces/Exceptions/`
-- [ ] `TASK-001-03` - **[Exception]** Create `TemplateBodyCorruptedException` in `Application/Interfaces/Exceptions/`
-- [ ] `TASK-001-04` - **[Method]** Define `Task<Stream> ReadAsync(string path, CancellationToken ct)`
-- [ ] `TASK-001-05` - **[Method]** Define `Task<string> WriteAsync(string path, Stream content, CancellationToken ct)`
-- [ ] `TASK-001-06` - **[Method]** Define `Task DeleteAsync(string path, CancellationToken ct)`
-- [ ] `TASK-001-07` - **[Doc]** XML comments for all interface members
+- [x] `TASK-001-01` - **[Interface]** Define `ITemplateBodyStore` in `Application/Interfaces/Storage/` ✅ 2026-03-29
+- [x] `TASK-001-02` - **[Exception]** Create `TemplateBodyNotFoundException` in `Application/Interfaces/Exceptions/` ✅ 2026-03-29
+- [x] `TASK-001-03` - **[Exception]** Create `TemplateBodyCorruptedException` in `Application/Interfaces/Exceptions/` ✅ 2026-03-29
+- [x] `TASK-001-04` - **[Method]** Define `Task<Stream> ReadAsync(string path, CancellationToken ct)` ✅ 2026-03-29
+- [x] `TASK-001-05` - **[Method]** Define `Task<string> WriteAsync(string path, Stream content, CancellationToken ct)` ✅ 2026-03-29
+- [x] `TASK-001-06` - **[Method]** Define `Task DeleteAsync(string path, CancellationToken ct)` ✅ 2026-03-29
+- [x] `TASK-001-07` - **[Doc]** XML comments for all interface members ✅ 2026-03-29
 
 **Business rules:**
 1. Exceptions are part of the interface contract (Application layer)
