@@ -4,6 +4,7 @@ using CampaignEngine.Application.Interfaces;
 using CampaignEngine.Domain.Enums;
 using CampaignEngine.Domain.Exceptions;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using System.ComponentModel.DataAnnotations;
@@ -30,6 +31,40 @@ public class CreateTemplateModel : PageModel
 
     public async Task<IActionResult> OnPostAsync()
     {
+        var channel = (ChannelType)Input.Channel;
+
+        // Server-side conditional validation:
+        // - Email/SMS require a BodyPath
+        // - Letter requires a DOCX file upload
+        if (channel == ChannelType.Letter)
+        {
+            ModelState.Remove(nameof(Input) + "." + nameof(Input.BodyPath));
+
+            if (Input.DocxFile == null || Input.DocxFile.Length == 0)
+            {
+                ModelState.AddModelError(
+                    nameof(Input) + "." + nameof(Input.DocxFile),
+                    "A .docx file is required for Letter templates.");
+            }
+            else if (!Input.DocxFile.FileName.EndsWith(".docx", StringComparison.OrdinalIgnoreCase))
+            {
+                ModelState.AddModelError(
+                    nameof(Input) + "." + nameof(Input.DocxFile),
+                    "Only .docx files are accepted for Letter templates.");
+            }
+        }
+        else
+        {
+            // BodyPath is required for Email/SMS.
+            ModelState.Remove(nameof(Input) + "." + nameof(Input.DocxFile));
+            if (string.IsNullOrWhiteSpace(Input.BodyPath))
+            {
+                ModelState.AddModelError(
+                    nameof(Input) + "." + nameof(Input.BodyPath),
+                    "Body path is required.");
+            }
+        }
+
         if (!ModelState.IsValid)
             return Page();
 
@@ -41,13 +76,19 @@ public class CreateTemplateModel : PageModel
 
         try
         {
+            // Derive BodyPath for Letter from the uploaded file name.
+            var bodyPath = channel == ChannelType.Letter
+                ? $"templates/letter/{Input.DocxFile!.FileName}"
+                : Input.BodyPath ?? string.Empty;
+
             var request = new CreateTemplateRequest
             {
                 Name = Input.Name,
-                Channel = (ChannelType)Input.Channel,
-                BodyPath = Input.BodyPath,
+                Channel = channel,
+                BodyPath = bodyPath,
                 Description = string.IsNullOrWhiteSpace(Input.Description) ? null : Input.Description,
-                IsSubTemplate = Input.IsSubTemplate
+                IsSubTemplate = Input.IsSubTemplate,
+                FileSizeBytes = Input.DocxFile?.Length
             };
 
             var template = await _templateService.CreateAsync(request);
@@ -70,14 +111,22 @@ public class CreateTemplateInputModel
 
     [Required(ErrorMessage = "Please select a channel.")]
     [Range(1, 3, ErrorMessage = "Please select a valid channel.")]
-    public int Channel { get; set; }
+    public int Channel { get; set; } = (int)ChannelType.Email;
 
     [MaxLength(500, ErrorMessage = "Description must not exceed 500 characters.")]
     public string? Description { get; set; }
 
-    [Required(ErrorMessage = "Body path is required.")]
+    /// <summary>
+    /// Required for Email and SMS channels. For Letter, the file upload path is derived
+    /// from the uploaded DOCX file and this field is ignored.
+    /// </summary>
     [MaxLength(500, ErrorMessage = "Body path must not exceed 500 characters.")]
-    public string BodyPath { get; set; } = string.Empty;
+    public string? BodyPath { get; set; }
+
+    /// <summary>
+    /// DOCX file upload — required when Channel is Letter (ChannelType.Letter = 2).
+    /// </summary>
+    public IFormFile? DocxFile { get; set; }
 
     /// <summary>
     /// When checked, this template is a reusable sub-template block

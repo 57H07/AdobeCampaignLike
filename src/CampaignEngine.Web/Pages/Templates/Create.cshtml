@@ -15,7 +15,7 @@
     <div class="col-lg-8">
         <div class="card">
             <div class="card-body">
-                <form method="post">
+                <form method="post" enctype="multipart/form-data">
                     <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
 
                     <div class="mb-3">
@@ -27,9 +27,9 @@
 
                     <div class="mb-3">
                         <label asp-for="Input.Channel" class="form-label">Channel <span class="text-danger">*</span></label>
-                        <select asp-for="Input.Channel" class="form-select">
+                        <select asp-for="Input.Channel" class="form-select" id="channelSelector">
                             <option value="">-- Select channel --</option>
-                            <option value="1">Email</option>
+                            <option value="1" selected>Email</option>
                             <option value="2">Letter</option>
                             <option value="3">SMS</option>
                         </select>
@@ -57,18 +57,37 @@
                         </div>
                     </div>
 
-                    <div class="mb-3">
+                    @* HTML editor section: shown for Email and SMS, hidden for Letter *@
+                    <div class="mb-3" id="htmlEditorSection">
                         <label asp-for="Input.BodyPath" class="form-label">Body Path <span class="text-danger">*</span></label>
                         <input asp-for="Input.BodyPath" class="form-control"
-                               placeholder="e.g. templates/{id}/v1.docx" />
+                               placeholder="e.g. templates/{id}/v1.html" />
                         <span asp-validation-for="Input.BodyPath" class="text-danger"></span>
                         <div class="form-text">
                             Relative path from storage root to the template body file.
                         </div>
                     </div>
 
+                    @* File upload section: shown only for Letter channel *@
+                    <div class="mb-3" id="fileUploadSection" style="display:none;">
+                        <label for="Input_DocxFile" class="form-label">
+                            DOCX File <span class="text-danger">*</span>
+                        </label>
+                        <input type="file"
+                               id="Input_DocxFile"
+                               name="Input.DocxFile"
+                               class="form-control"
+                               accept=".docx" />
+                        <span id="docxFileValidation" class="text-danger" style="display:none;">
+                            A .docx file is required for Letter templates.
+                        </span>
+                        <div class="form-text">
+                            Upload a <strong>.docx</strong> file. The file path will be set automatically.
+                        </div>
+                    </div>
+
                     <div class="d-flex gap-2">
-                        <button type="submit" class="btn btn-primary">
+                        <button type="submit" class="btn btn-primary" id="submitBtn">
                             <i class="bi bi-floppy"></i> Create Template
                         </button>
                         <a asp-page="Index" class="btn btn-outline-secondary">Cancel</a>
@@ -89,7 +108,7 @@
                     </li>
                     <li class="mb-2">
                         <span class="badge bg-warning text-dark">Letter</span>
-                        HTML converted to PDF for print/mail providers.
+                        Upload a DOCX file. Placeholders use <code>{{ }}</code> syntax.
                     </li>
                     <li>
                         <span class="badge bg-success">SMS</span>
@@ -98,9 +117,96 @@
                 </ul>
             </div>
         </div>
+
+        <div class="card mt-3" id="letterHintCard" style="display:none;">
+            <div class="card-header bg-warning bg-opacity-10">
+                <h6 class="mb-0 text-warning-emphasis">
+                    <i class="bi bi-file-earmark-word me-1"></i> DOCX Template Tips
+                </h6>
+            </div>
+            <div class="card-body">
+                <p class="small mb-2">Use double-brace placeholders directly in your Word document:</p>
+                <ul class="list-unstyled small font-monospace mb-0">
+                    <li class="mb-1"><code>{{ firstName }}</code> — scalar value</li>
+                    <li class="mb-1"><code>{{ address.street }}</code> — nested field</li>
+                    <li><code>{{ for item in items }}<br />...<br />{{ end }}</code> — list</li>
+                </ul>
+            </div>
+        </div>
     </div>
 </div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        (function () {
+            var LETTER_VALUE = '2';
+
+            var channelSelector = document.getElementById('channelSelector');
+            var htmlEditorSection = document.getElementById('htmlEditorSection');
+            var fileUploadSection = document.getElementById('fileUploadSection');
+            var letterHintCard = document.getElementById('letterHintCard');
+            var docxFileInput = document.getElementById('Input_DocxFile');
+            var docxFileValidation = document.getElementById('docxFileValidation');
+            var bodyPathInput = document.querySelector('input[name="Input.BodyPath"]');
+
+            function toggleSections() {
+                var isLetter = channelSelector.value === LETTER_VALUE;
+
+                if (isLetter) {
+                    htmlEditorSection.style.display = 'none';
+                    fileUploadSection.style.display = '';
+                    letterHintCard.style.display = '';
+                    // BodyPath is not required for Letter — set a placeholder value
+                    if (bodyPathInput) {
+                        bodyPathInput.removeAttribute('required');
+                        bodyPathInput.value = '';
+                    }
+                } else {
+                    htmlEditorSection.style.display = '';
+                    fileUploadSection.style.display = 'none';
+                    letterHintCard.style.display = 'none';
+                    docxFileValidation.style.display = 'none';
+                    if (bodyPathInput) {
+                        bodyPathInput.setAttribute('required', 'required');
+                    }
+                }
+            }
+
+            // Client-side validation: file required for Letter
+            document.querySelector('form').addEventListener('submit', function (e) {
+                if (channelSelector.value !== LETTER_VALUE) return;
+
+                if (!docxFileInput.files || docxFileInput.files.length === 0) {
+                    e.preventDefault();
+                    docxFileValidation.style.display = '';
+                    docxFileInput.focus();
+                    return false;
+                }
+
+                var file = docxFileInput.files[0];
+                if (!file.name.toLowerCase().endsWith('.docx')) {
+                    e.preventDefault();
+                    docxFileValidation.textContent = 'Only .docx files are accepted for Letter templates.';
+                    docxFileValidation.style.display = '';
+                    docxFileInput.focus();
+                    return false;
+                }
+
+                // Hide any previous validation message
+                docxFileValidation.style.display = 'none';
+            });
+
+            // Hide validation message when user selects a file
+            docxFileInput.addEventListener('change', function () {
+                docxFileValidation.style.display = 'none';
+            });
+
+            // Wire up the channel selector
+            channelSelector.addEventListener('change', toggleSections);
+
+            // Run on page load to apply default state (Email selected)
+            toggleSections();
+        })();
+    </script>
 }
