@@ -30,6 +30,11 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ISendRequestValidator, SendRequestValidator>();
 
         // ----------------------------------------------------------------
+        // DOCX structural validation (US-009, F-203)
+        // ----------------------------------------------------------------
+        services.AddScoped<IDocxValidationService, DocxValidationService>();
+
+        // ----------------------------------------------------------------
         // Authorization policies — role-based access control
         // Business rules:
         //   Designer: template CRUD + preview, no campaign access
