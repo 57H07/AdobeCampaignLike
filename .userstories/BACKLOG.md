@@ -415,8 +415,9 @@
 > Enable designers to upload `.docx` files via web UI and REST API with comprehensive validation.
 
 #### [US-009] - DOCX structural validation
-**Status:** 🔵 IN PROGRESS
+**Status:** ✅ DONE
 **Start date:** 2026-03-29
+**End date:** 2026-03-29
 **Priority:** 🔴 High
 **Complexity:** M
 **Epic:** Epic 2
@@ -429,22 +430,22 @@
 > F-203: Validate (1) `.docx` extension only; (2) valid ZIP archive; (3) contains `[Content_Types].xml`; (4) opens as `WordprocessingDocument`; (5) no `vbaProject.bin` (macros).
 
 **Acceptance criteria:**
-- [ ] Files with non-`.docx` extension (including `.docm`) rejected with HTTP 422
-- [ ] Invalid ZIP archives rejected with HTTP 422
-- [ ] Files missing `[Content_Types].xml` rejected with HTTP 422
-- [ ] Files that cannot open as `WordprocessingDocument` rejected with HTTP 422
-- [ ] Files containing `vbaProject.bin` rejected with HTTP 422
-- [ ] Clear error messages for each validation failure
+- [x] Files with non-`.docx` extension (including `.docm`) rejected with HTTP 422 ✅
+- [x] Invalid ZIP archives rejected with HTTP 422 ✅
+- [x] Files missing `[Content_Types].xml` rejected with HTTP 422 ✅
+- [x] Files that cannot open as `WordprocessingDocument` rejected with HTTP 422 ✅
+- [x] Files containing `vbaProject.bin` rejected with HTTP 422 ✅
+- [x] Clear error messages for each validation failure ✅
 
 **Technical tasks:**
-- [ ] `TASK-009-01` - **[Service]** Create `DocxValidationService` in `Application/Services/`
-- [ ] `TASK-009-02` - **[Validation]** Check file extension (`.docx` case-insensitive)
-- [ ] `TASK-009-03` - **[Validation]** Validate ZIP archive structure
-- [ ] `TASK-009-04` - **[Validation]** Check for `[Content_Types].xml` part
-- [ ] `TASK-009-05` - **[Validation]** Attempt `WordprocessingDocument.Open()`
-- [ ] `TASK-009-06` - **[Validation]** Check for `vbaProject.bin` (macro detection)
-- [ ] `TASK-009-07` - **[Exception]** Map validation failures to `ValidationException` with clear messages
-- [ ] `TASK-009-08` - **[Test]** Unit tests for each validation rule with fixture files
+- [x] `TASK-009-01` - **[Service]** Create `DocxValidationService` in `Application/Services/` ✅ 2026-03-29
+- [x] `TASK-009-02` - **[Validation]** Check file extension (`.docx` case-insensitive) ✅ 2026-03-29
+- [x] `TASK-009-03` - **[Validation]** Validate ZIP archive structure ✅ 2026-03-29
+- [x] `TASK-009-04` - **[Validation]** Check for `[Content_Types].xml` part ✅ 2026-03-29
+- [x] `TASK-009-05` - **[Validation]** Attempt `WordprocessingDocument.Open()` ✅ 2026-03-29
+- [x] `TASK-009-06` - **[Validation]** Check for `vbaProject.bin` (macro detection) ✅ 2026-03-29
+- [x] `TASK-009-07` - **[Exception]** Map validation failures to `ValidationException` with clear messages ✅ 2026-03-29
+- [x] `TASK-009-08` - **[Test]** Unit tests for each validation rule with fixture files ✅ 2026-03-29
 
 **Business rules:**
 1. Extension check is case-insensitive (`.DOCX` is valid)
