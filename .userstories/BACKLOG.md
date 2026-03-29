@@ -546,8 +546,9 @@
 ---
 
 #### [US-012] - Conditional UI toggle for file upload
-**Status:** 🔵 IN PROGRESS
+**Status:** ✅ DONE
 **Start date:** 2026-03-29
+**End date:** 2026-03-29
 **Priority:** 🟠 Medium
 **Complexity:** S
 **Epic:** Epic 2
@@ -560,18 +561,18 @@
 > F-206: Conditional UI toggle. Letter channel → file upload; Email/SMS → HTML editor.
 
 **Acceptance criteria:**
-- [ ] Template create page shows channel selector dropdown
-- [ ] Selecting "Letter" displays file upload input (hides HTML editor)
-- [ ] Selecting "Email" or "SMS" displays HTML editor (hides file upload)
-- [ ] File upload input accepts `.docx` files only (HTML input attribute)
-- [ ] Form validation enforces required file for Letter templates
+- [x] Template create page shows channel selector dropdown ✅
+- [x] Selecting "Letter" displays file upload input (hides HTML editor) ✅
+- [x] Selecting "Email" or "SMS" displays HTML editor (hides file upload) ✅
+- [x] File upload input accepts `.docx` files only (HTML input attribute) ✅
+- [x] Form validation enforces required file for Letter templates ✅
 
 **Technical tasks:**
-- [ ] `TASK-012-01` - **[UI]** Update `CreateTemplate.cshtml` with channel selector
-- [ ] `TASK-012-02` - **[UI]** Add conditional file upload input for Letter
-- [ ] `TASK-012-03` - **[UI]** Add JavaScript to toggle input visibility
-- [ ] `TASK-012-04` - **[Validation]** Client-side validation for file requirement
-- [ ] `TASK-012-05` - **[Test]** Manual UI testing for toggle behavior
+- [x] `TASK-012-01` - **[UI]** Update `CreateTemplate.cshtml` with channel selector ✅ 2026-03-29
+- [x] `TASK-012-02` - **[UI]** Add conditional file upload input for Letter ✅ 2026-03-29
+- [x] `TASK-012-03` - **[UI]** Add JavaScript to toggle input visibility ✅ 2026-03-29
+- [x] `TASK-012-04` - **[Validation]** Client-side validation for file requirement ✅ 2026-03-29
+- [x] `TASK-012-05` - **[Test]** Manual UI testing for toggle behavior ✅ 2026-03-29
 
 **Business rules:**
 1. Channel selector defaults to Email
