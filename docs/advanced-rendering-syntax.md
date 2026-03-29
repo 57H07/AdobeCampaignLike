@@ -318,6 +318,13 @@ Apply per-row conditional logic to highlight new items, show/hide columns, or ap
 
 ## Custom Functions
 
+> **Channel availability:** `format_date` and `format_currency` are available exclusively in
+> **Email and SMS** channel templates rendered by the Scriban engine. They are **not available**
+> in **Letter/DOCX** templates. The DOCX renderer (`DocumentFormat.OpenXml`) uses plain-text
+> `{{ field_name }}` placeholder substitution and does not support Scriban syntax (F-305).
+> For date/number formatting in Letter templates, pre-format the values in your data source
+> or dispatch service before passing them to the template.
+
 ### `format_date`
 
 Formats a date value using a .NET format string.
@@ -489,6 +496,8 @@ This example combines all advanced features:
 
 - Basic syntax: `docs/template-syntax-reference.md`
 - `ITemplateRenderer`: `src/CampaignEngine.Application/Interfaces/ITemplateRenderer.cs`
-- `TemplateCustomFunctions`: `src/CampaignEngine.Infrastructure/Rendering/TemplateCustomFunctions.cs`
+- `FormatDateFunction` (pure logic): `src/CampaignEngine.Application/Rendering/CustomFunctions/FormatDateFunction.cs`
+- `FormatCurrencyFunction` (pure logic): `src/CampaignEngine.Application/Rendering/CustomFunctions/FormatCurrencyFunction.cs`
+- `TemplateCustomFunctions` (Scriban adapter): `src/CampaignEngine.Infrastructure/Rendering/TemplateCustomFunctions.cs`
 - `ScribanTemplateRenderer`: `src/CampaignEngine.Infrastructure/Rendering/ScribanTemplateRenderer.cs`
 - [Scriban official documentation](https://github.com/scriban/scriban/blob/master/doc/language.md)

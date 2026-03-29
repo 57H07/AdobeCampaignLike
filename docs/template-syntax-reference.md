@@ -189,6 +189,43 @@ Scriban supports pipe filters for common transformations.
 
 ---
 
+## Custom Functions (Email/SMS Only)
+
+The following built-in helper functions are registered automatically in the Scriban rendering
+context for **Email and SMS** channel templates. They are **not available** in Letter/DOCX
+templates, which use plain-text `{{ }}` placeholder substitution (see F-305).
+
+### `format_date`
+
+Formats a date value using a .NET format string.
+
+```scriban
+{{ format_date invoice_date "dd/MM/yyyy" }}    -> 19/03/2026
+{{ format_date birth_date "MMMM d, yyyy" }}   -> March 19, 1990
+```
+
+- Accepts `DateTime`, `DateTimeOffset`, `DateOnly`, or ISO 8601 string inputs.
+- Null or unparseable values return **empty string** (no exception).
+- Format strings follow .NET standard date format specifiers.
+
+### `format_currency`
+
+Formats a numeric value as currency with a prefix symbol.
+
+```scriban
+{{ format_currency amount "€" }}    -> €1,234.56
+{{ format_currency price "$" }}     -> $9.99
+{{ format_currency total "" }}      -> 1,234.56
+```
+
+- Always uses 2 decimal places and invariant-culture separators (`.` decimal, `,` thousands).
+- Symbol is prepended directly without a space (business rule BR-019-02).
+- Null or non-numeric values return **empty string** (no exception).
+
+> For detailed examples and loop usage, see `docs/advanced-rendering-syntax.md`.
+
+---
+
 ## String Concatenation
 
 ```scriban
@@ -304,3 +341,6 @@ public class EmailService(ITemplateRenderer renderer)
 - `ITemplateRenderer` interface: `src/CampaignEngine.Application/Interfaces/ITemplateRenderer.cs`
 - `TemplateContext` model: `src/CampaignEngine.Application/Models/TemplateContext.cs`
 - `ScribanTemplateRenderer`: `src/CampaignEngine.Infrastructure/Rendering/ScribanTemplateRenderer.cs`
+- Custom functions (advanced usage): `docs/advanced-rendering-syntax.md`
+- `FormatDateFunction`: `src/CampaignEngine.Application/Rendering/CustomFunctions/FormatDateFunction.cs`
+- `FormatCurrencyFunction`: `src/CampaignEngine.Application/Rendering/CustomFunctions/FormatCurrencyFunction.cs`
