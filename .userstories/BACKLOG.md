@@ -969,8 +969,9 @@
 ---
 
 #### [US-022] - DispatchRequest schema change for BinaryContent
-**Status:** 🔵 IN PROGRESS
+**Status:** ✅ DONE
 **Start date:** 2026-03-29
+**End date:** 2026-03-29
 **Priority:** 🔴 High
 **Complexity:** S
 **Epic:** Epic 4
@@ -983,16 +984,16 @@
 > F-403b: Extend `DispatchRequest` record with `BinaryContent` (`byte[]?`). `Content` (string) remains for Email/SMS. Letter sets `BinaryContent`; Email/SMS set `Content`.
 
 **Acceptance criteria:**
-- [ ] `DispatchRequest` record has `BinaryContent` property (`byte[]?`, nullable)
-- [ ] `Content` property remains (`string?`, nullable)
-- [ ] For Letter dispatch: `BinaryContent` set, `Content` null
-- [ ] For Email/SMS dispatch: `Content` set, `BinaryContent` null
-- [ ] Existing Email/SMS dispatchers unaffected
+- [x] `DispatchRequest` record has `BinaryContent` property (`byte[]?`, nullable) ✅
+- [x] `Content` property remains (`string?`, nullable) ✅
+- [x] For Letter dispatch: `BinaryContent` set, `Content` null ✅
+- [x] For Email/SMS dispatch: `Content` set, `BinaryContent` null ✅
+- [x] Existing Email/SMS dispatchers unaffected ✅
 
 **Technical tasks:**
-- [ ] `TASK-022-01` - **[Model]** Add `BinaryContent` property to `DispatchRequest` record
-- [ ] `TASK-022-02` - **[Validation]** Document mutual exclusivity (only one set at a time)
-- [ ] `TASK-022-03` - **[Test]** Unit tests for record creation with both properties
+- [x] `TASK-022-01` - **[Model]** Add `BinaryContent` property to `DispatchRequest` record ✅ 2026-03-29
+- [x] `TASK-022-02` - **[Validation]** Document mutual exclusivity (only one set at a time) ✅ 2026-03-29
+- [x] `TASK-022-03` - **[Test]** Unit tests for record creation with both properties ✅ 2026-03-29
 
 **Business rules:**
 1. `BinaryContent` and `Content` are mutually exclusive (only one set per request)
