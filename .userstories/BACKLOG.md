@@ -846,7 +846,8 @@
 > Extend the existing Scriban-based HTML renderer for Email and SMS channels with custom functions.
 
 #### [US-019] - Custom Scriban functions for HTML templates
-**Status:** 🟡 TODO
+**Status:** 🔵 IN PROGRESS
+**Start date:** 2026-03-29
 **Priority:** 🔴 High
 **Complexity:** S
 **Epic:** Epic 3b
