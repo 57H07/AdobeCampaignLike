@@ -62,7 +62,8 @@ public class TemplateDetailModel : PageModel
             Id = template.Id,
             Name = template.Name,
             Channel = template.Channel.ToString(),
-            HtmlBody = template.HtmlBody,
+            BodyPath = template.BodyPath,
+            BodyChecksum = template.BodyChecksum,
             Status = template.Status.ToString(),
             Version = template.Version,
             IsSubTemplate = template.IsSubTemplate,
@@ -72,7 +73,7 @@ public class TemplateDetailModel : PageModel
             PlaceholderManifests = manifests
         };
 
-        ValidationResult = _parserService.ValidateManifestCompleteness(template.HtmlBody, manifests);
+        ValidationResult = _parserService.ValidateManifestCompleteness(template.BodyPath, manifests);
 
         // Load available data sources for the preview modal (Designer / Admin only)
         if (User.IsInRole("Designer") || User.IsInRole("Admin"))

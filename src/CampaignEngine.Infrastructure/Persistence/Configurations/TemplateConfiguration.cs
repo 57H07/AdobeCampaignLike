@@ -16,9 +16,16 @@ public class TemplateConfiguration : IEntityTypeConfiguration<Template>
             .IsRequired()
             .HasMaxLength(200);
 
-        builder.Property(t => t.HtmlBody)
+        builder.Property(t => t.BodyPath)
             .IsRequired()
-            .HasColumnType("nvarchar(max)");
+            .HasMaxLength(500);
+
+        builder.Property(t => t.BodyChecksum)
+            .HasMaxLength(64);
+
+        builder.Property(t => t.RowVersion)
+            .IsRowVersion()
+            .IsConcurrencyToken();
 
         builder.Property(t => t.Description)
             .HasMaxLength(500);

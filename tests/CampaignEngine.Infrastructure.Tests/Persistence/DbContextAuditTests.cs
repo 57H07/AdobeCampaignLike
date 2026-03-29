@@ -18,7 +18,7 @@ public class DbContextAuditTests : DbContextTestBase
             Name = "Audit Template",
             Channel = ChannelType.Email,
             Status = TemplateStatus.Draft,
-            HtmlBody = "<p>Original</p>",
+            BodyPath = "templates/audit/v1.html",
             Version = 1
         };
         Context.Templates.Add(template);
@@ -30,7 +30,7 @@ public class DbContextAuditTests : DbContextTestBase
         await Task.Delay(5);
 
         // Act — modify and save again
-        template.HtmlBody = "<p>Updated</p>";
+        template.BodyPath = "templates/audit/v2.html";
         await Context.SaveChangesAsync();
 
         // Assert

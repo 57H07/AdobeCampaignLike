@@ -44,7 +44,7 @@ public class EditTemplateModel : PageModel
     public IReadOnlyList<TemplateSummaryDto> AvailableSubTemplates { get; private set; }
         = Array.Empty<TemplateSummaryDto>();
 
-    /// <summary>Sub-template names referenced in the current template's HTML body.</summary>
+    /// <summary>Sub-template names referenced in the current template's body path.</summary>
     public IReadOnlyList<string> ReferencedSubTemplates { get; private set; }
         = Array.Empty<string>();
 
@@ -60,12 +60,12 @@ public class EditTemplateModel : PageModel
         Input = new EditTemplateInputModel
         {
             Name = template.Name,
-            HtmlBody = template.HtmlBody,
+            BodyPath = template.BodyPath,
             Description = template.Description,
             IsSubTemplate = template.IsSubTemplate
         };
 
-        await LoadSubTemplateDataAsync(template.HtmlBody);
+        await LoadSubTemplateDataAsync(template.BodyPath);
         return Page();
     }
 
@@ -79,7 +79,7 @@ public class EditTemplateModel : PageModel
             TemplateId = id;
             ChannelDisplay = existing.Channel.ToString();
             StatusDisplay = existing.Status.ToString();
-            await LoadSubTemplateDataAsync(Input.HtmlBody);
+            await LoadSubTemplateDataAsync(Input.BodyPath);
             return Page();
         }
 
@@ -88,7 +88,7 @@ public class EditTemplateModel : PageModel
             var request = new UpdateTemplateRequest
             {
                 Name = Input.Name,
-                HtmlBody = Input.HtmlBody,
+                BodyPath = Input.BodyPath,
                 Description = string.IsNullOrWhiteSpace(Input.Description) ? null : Input.Description,
                 IsSubTemplate = Input.IsSubTemplate
             };
@@ -107,16 +107,16 @@ public class EditTemplateModel : PageModel
             TemplateId = id;
             ChannelDisplay = existing?.Channel.ToString() ?? string.Empty;
             StatusDisplay = existing?.Status.ToString() ?? string.Empty;
-            await LoadSubTemplateDataAsync(Input.HtmlBody);
+            await LoadSubTemplateDataAsync(Input.BodyPath);
             ModelState.AddModelError(string.Empty, ex.Message);
             return Page();
         }
     }
 
-    private async Task LoadSubTemplateDataAsync(string htmlBody)
+    private async Task LoadSubTemplateDataAsync(string bodyPath)
     {
         AvailableSubTemplates = await _templateService.GetSubTemplatesAsync();
-        var refs = _subTemplateResolver.ExtractReferences(htmlBody ?? string.Empty);
+        var refs = _subTemplateResolver.ExtractReferences(bodyPath ?? string.Empty);
         ReferencedSubTemplates = refs.Select(r => r.Name).ToList().AsReadOnly();
     }
 }
@@ -131,8 +131,9 @@ public class EditTemplateInputModel
     [MaxLength(500, ErrorMessage = "Description must not exceed 500 characters.")]
     public string? Description { get; set; }
 
-    [Required(ErrorMessage = "HTML body is required.")]
-    public string HtmlBody { get; set; } = string.Empty;
+    [Required(ErrorMessage = "Body path is required.")]
+    [MaxLength(500, ErrorMessage = "Body path must not exceed 500 characters.")]
+    public string BodyPath { get; set; } = string.Empty;
 
     /// <summary>When checked, marks this template as a reusable sub-template block.</summary>
     public bool IsSubTemplate { get; set; } = false;

@@ -104,7 +104,7 @@ public sealed class SingleSendService : ISingleSendService
         string renderedContent;
         try
         {
-            renderedContent = await _templateRenderer.RenderAsync(template.HtmlBody, context, cancellationToken);
+            renderedContent = await _templateRenderer.RenderAsync(template.BodyPath, context, cancellationToken);
         }
         catch (Exception ex)
         {

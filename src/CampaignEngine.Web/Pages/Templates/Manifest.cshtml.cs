@@ -57,7 +57,7 @@ public class TemplateManifestModel : PageModel
         TemplateName = template.Name;
 
         var entries = await _manifestService.GetByTemplateIdAsync(id);
-        ValidationResult = _parserService.ValidateManifestCompleteness(template.HtmlBody, entries);
+        ValidationResult = _parserService.ValidateManifestCompleteness(template.BodyPath, entries);
 
         Entries = entries.Select(e => new ManifestEntryInputModel
         {
@@ -86,7 +86,7 @@ public class TemplateManifestModel : PageModel
         if (!ModelState.IsValid)
         {
             var current = await _manifestService.GetByTemplateIdAsync(id);
-            ValidationResult = _parserService.ValidateManifestCompleteness(template.HtmlBody, current);
+            ValidationResult = _parserService.ValidateManifestCompleteness(template.BodyPath, current);
             return Page();
         }
 
@@ -101,7 +101,7 @@ public class TemplateManifestModel : PageModel
             }).ToList();
 
             var saved = await _manifestService.ReplaceManifestAsync(id, requests);
-            ValidationResult = _parserService.ValidateManifestCompleteness(template.HtmlBody, saved);
+            ValidationResult = _parserService.ValidateManifestCompleteness(template.BodyPath, saved);
 
             SuccessMessage = $"Placeholder manifest saved. {saved.Count} entr{(saved.Count == 1 ? "y" : "ies")} declared.";
 
@@ -125,14 +125,14 @@ public class TemplateManifestModel : PageModel
         {
             ModelState.AddModelError(string.Empty, ex.Message);
             var current = await _manifestService.GetByTemplateIdAsync(id);
-            ValidationResult = _parserService.ValidateManifestCompleteness(template.HtmlBody, current);
+            ValidationResult = _parserService.ValidateManifestCompleteness(template.BodyPath, current);
             return Page();
         }
         catch (Exception ex)
         {
             ErrorMessage = $"Failed to save manifest: {ex.Message}";
             var current = await _manifestService.GetByTemplateIdAsync(id);
-            ValidationResult = _parserService.ValidateManifestCompleteness(template.HtmlBody, current);
+            ValidationResult = _parserService.ValidateManifestCompleteness(template.BodyPath, current);
             return Page();
         }
     }

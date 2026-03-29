@@ -11,7 +11,17 @@ public class TemplateHistory : AuditableEntity
 {
     public Guid TemplateId { get; set; }
     public int Version { get; set; }
-    public string HtmlBody { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Relative path from storage root to the template body file at this version.
+    /// </summary>
+    public string BodyPath { get; set; } = string.Empty;
+
+    /// <summary>
+    /// SHA-256 hex checksum of the template body file (64 hex characters), nullable.
+    /// </summary>
+    public string? BodyChecksum { get; set; }
+
     public string Name { get; set; } = string.Empty;
     public ChannelType Channel { get; set; }
     public string? ChangedBy { get; set; }

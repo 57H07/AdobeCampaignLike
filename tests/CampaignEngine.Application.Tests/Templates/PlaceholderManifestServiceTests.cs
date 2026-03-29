@@ -42,7 +42,7 @@ public class PlaceholderManifestServiceTests : IDisposable
             Id = _templateId,
             Name = "Test Template",
             Channel = ChannelType.Email,
-            HtmlBody = "<p>{{ name }}</p>",
+            BodyPath = "templates/test/v1.html",
             Status = TemplateStatus.Draft,
             Version = 1
         };

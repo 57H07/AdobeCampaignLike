@@ -53,15 +53,7 @@ public class DatabaseSeeder
             Status = TemplateStatus.Published,
             Version = 1,
             Description = "Welcome email sent to new customers",
-            HtmlBody = @"<!DOCTYPE html>
-<html>
-<head><style>body { font-family: Arial, sans-serif; }</style></head>
-<body>
-  <h1>Welcome, {{ firstname }} {{ lastname }}!</h1>
-  <p>Thank you for joining us. Your account has been created successfully.</p>
-  <p>Please contact us at <a href=""mailto:support@example.com"">support@example.com</a> if you have questions.</p>
-</body>
-</html>",
+            BodyPath = "templates/00000000-0000-0000-0001-000000000001/v1.html",
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         };
@@ -74,7 +66,7 @@ public class DatabaseSeeder
             Status = TemplateStatus.Published,
             Version = 1,
             Description = "SMS reminder for scheduled appointments",
-            HtmlBody = "Hi {{ firstname }}, your appointment is confirmed for {{ appointment_date }}. Reply STOP to unsubscribe.",
+            BodyPath = "templates/00000000-0000-0000-0001-000000000002/v1.txt",
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         };
@@ -87,13 +79,7 @@ public class DatabaseSeeder
             Status = TemplateStatus.Draft,
             Version = 1,
             Description = "Monthly newsletter template — work in progress",
-            HtmlBody = @"<!DOCTYPE html>
-<html>
-<body>
-  <h1>Newsletter - {{ month }} {{ year }}</h1>
-  <p>{{ newsletter_content }}</p>
-</body>
-</html>",
+            BodyPath = "templates/00000000-0000-0000-0001-000000000003/v1.html",
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         };

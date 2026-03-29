@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using CampaignEngine.Domain.Common;
 using CampaignEngine.Domain.Enums;
 using CampaignEngine.Domain.Exceptions;
@@ -12,7 +13,24 @@ public class Template : SoftDeletableEntity
 {
     public string Name { get; set; } = string.Empty;
     public ChannelType Channel { get; set; }
-    public string HtmlBody { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Relative path from storage root to the template body file (e.g., "templates/{id}/v3.docx").
+    /// Never includes a server-absolute root prefix.
+    /// </summary>
+    public string BodyPath { get; set; } = string.Empty;
+
+    /// <summary>
+    /// SHA-256 hex checksum of the template body file (64 hex characters), nullable.
+    /// </summary>
+    public string? BodyChecksum { get; set; }
+
+    /// <summary>
+    /// Concurrency token managed by SQL Server (rowversion/timestamp).
+    /// </summary>
+    [Timestamp]
+    public byte[] RowVersion { get; set; } = Array.Empty<byte>();
+
     public TemplateStatus Status { get; set; } = TemplateStatus.Draft;
     public int Version { get; set; } = 1;
     public bool IsSubTemplate { get; set; } = false;

@@ -145,7 +145,7 @@ public sealed class SubTemplateResolverService : ISubTemplateResolverService
             // Recurse: resolve the sub-template's body before embedding
             var subChain = new List<Guid>(visitedChain) { subTemplate.Id };
             var resolvedSubBody = await ResolveRecursiveAsync(
-                subTemplate.HtmlBody,
+                subTemplate.BodyPath,
                 subChain,
                 depth + 1,
                 cancellationToken);
@@ -191,7 +191,7 @@ public sealed class SubTemplateResolverService : ISubTemplateResolverService
 
         if (template is not null)
         {
-            var references = ExtractReferences(template.HtmlBody);
+            var references = ExtractReferences(template.BodyPath);
             foreach (var reference in references)
             {
                 var subTemplate = await _templateRepository.GetSubTemplateByNameAsync(reference.Name, cancellationToken);

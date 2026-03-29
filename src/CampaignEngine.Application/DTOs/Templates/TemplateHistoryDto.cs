@@ -20,8 +20,11 @@ public class TemplateHistoryDto
     /// <summary>Channel type at the time of this snapshot.</summary>
     public string Channel { get; init; } = string.Empty;
 
-    /// <summary>HTML body at the time of this snapshot.</summary>
-    public string HtmlBody { get; init; } = string.Empty;
+    /// <summary>Relative path to the template body file at the time of this snapshot.</summary>
+    public string BodyPath { get; init; } = string.Empty;
+
+    /// <summary>SHA-256 hex checksum at the time of this snapshot, nullable.</summary>
+    public string? BodyChecksum { get; init; }
 
     /// <summary>Username of the user who made the change, if known.</summary>
     public string? ChangedBy { get; init; }

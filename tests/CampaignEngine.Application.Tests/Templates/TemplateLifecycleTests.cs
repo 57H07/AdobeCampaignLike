@@ -62,7 +62,7 @@ public class TemplateLifecycleTests : IDisposable
         {
             Name = "New Template",
             Channel = ChannelType.Email,
-            HtmlBody = "<p>Hello</p>"
+            BodyPath = "templates/new-template/v1.html"
         };
 
         // Act
@@ -84,7 +84,7 @@ public class TemplateLifecycleTests : IDisposable
         {
             Name = "Ready to Publish",
             Channel = ChannelType.Email,
-            HtmlBody = "<p>Hello {{ name }}</p>"
+            BodyPath = "templates/ready-to-publish/v1.html"
         });
 
         // Mock: manifest service returns one entry for 'name'
@@ -122,7 +122,7 @@ public class TemplateLifecycleTests : IDisposable
         {
             Name = "Incomplete Manifest Template",
             Channel = ChannelType.Email,
-            HtmlBody = "<p>Hello {{ name }}, your ref is {{ ref }}</p>"
+            BodyPath = "templates/incomplete-manifest/v1.html"
         });
 
         // Mock: manifest service returns only 'name', missing 'ref'
@@ -161,7 +161,7 @@ public class TemplateLifecycleTests : IDisposable
         {
             Name = "Already Published",
             Channel = ChannelType.Email,
-            HtmlBody = "<p>Hello</p>"
+            BodyPath = "templates/new-template/v1.html"
         });
 
         // Set to Published directly in context to simulate already-published state
@@ -185,7 +185,7 @@ public class TemplateLifecycleTests : IDisposable
         {
             Name = "Archived Template",
             Channel = ChannelType.Email,
-            HtmlBody = "<p>Hello</p>"
+            BodyPath = "templates/new-template/v1.html"
         });
 
         var entity = await _context.Templates.FirstAsync(t => t.Id == template.Id);
@@ -222,7 +222,7 @@ public class TemplateLifecycleTests : IDisposable
         {
             Name = "Draft to Archive",
             Channel = ChannelType.Email,
-            HtmlBody = "<p>Hello</p>"
+            BodyPath = "templates/new-template/v1.html"
         });
 
         // Act
@@ -240,7 +240,7 @@ public class TemplateLifecycleTests : IDisposable
         {
             Name = "Published to Archive",
             Channel = ChannelType.Email,
-            HtmlBody = "<p>Hello</p>"
+            BodyPath = "templates/new-template/v1.html"
         });
 
         // Set to Published directly in context
@@ -263,7 +263,7 @@ public class TemplateLifecycleTests : IDisposable
         {
             Name = "Already Archived",
             Channel = ChannelType.Email,
-            HtmlBody = "<p>Hello</p>"
+            BodyPath = "templates/new-template/v1.html"
         });
 
         // Set to Archived
@@ -301,7 +301,7 @@ public class TemplateLifecycleTests : IDisposable
         {
             Name = "Archived Cannot Publish",
             Channel = ChannelType.Email,
-            HtmlBody = "<p>Hello</p>"
+            BodyPath = "templates/new-template/v1.html"
         });
 
         // Archive the template
@@ -344,7 +344,7 @@ public class TemplateLifecycleTests : IDisposable
         {
             Name = "Persist Publish Test",
             Channel = ChannelType.Email,
-            HtmlBody = "<p>Hello</p>"
+            BodyPath = "templates/new-template/v1.html"
         });
 
         _manifestServiceMock
@@ -374,7 +374,7 @@ public class TemplateLifecycleTests : IDisposable
         {
             Name = "Persist Archive Test",
             Channel = ChannelType.Email,
-            HtmlBody = "<p>Hello</p>"
+            BodyPath = "templates/new-template/v1.html"
         });
 
         // Act

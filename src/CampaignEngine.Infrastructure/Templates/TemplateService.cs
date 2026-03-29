@@ -76,7 +76,8 @@ public sealed class TemplateService : ITemplateService
         {
             Name = request.Name,
             Channel = request.Channel,
-            HtmlBody = request.HtmlBody,
+            BodyPath = request.BodyPath,
+            BodyChecksum = request.BodyChecksum,
             Description = request.Description,
             IsSubTemplate = request.IsSubTemplate,
             Status = TemplateStatus.Draft,
@@ -113,7 +114,8 @@ public sealed class TemplateService : ITemplateService
             TemplateId = template.Id,
             Version = template.Version,
             Name = template.Name,
-            HtmlBody = template.HtmlBody,
+            BodyPath = template.BodyPath,
+            BodyChecksum = template.BodyChecksum,
             Channel = template.Channel,
             ChangedBy = request.ChangedBy
         };
@@ -121,7 +123,8 @@ public sealed class TemplateService : ITemplateService
 
         // Apply changes and increment version
         template.Name = request.Name;
-        template.HtmlBody = request.HtmlBody;
+        template.BodyPath = request.BodyPath;
+        template.BodyChecksum = request.BodyChecksum;
         template.Description = request.Description;
         template.Version++;
 
@@ -176,7 +179,7 @@ public sealed class TemplateService : ITemplateService
 
         // Business rule: manifest must be complete before publishing
         var manifestEntries = await _manifestService.GetByTemplateIdAsync(id, cancellationToken);
-        var validationResult = _parserService.ValidateManifestCompleteness(template.HtmlBody, manifestEntries);
+        var validationResult = _parserService.ValidateManifestCompleteness(template.BodyPath, manifestEntries);
 
         if (!validationResult.IsComplete)
         {
@@ -261,7 +264,7 @@ public sealed class TemplateService : ITemplateService
             throw new NotFoundException($"Version {fromVersion} of template", id);
 
         // Resolve 'to': use specified version snapshot, or current live version
-        string toHtmlBody;
+        string toBodyPath;
         string toName;
         int resolvedToVersion;
 
@@ -270,7 +273,7 @@ public sealed class TemplateService : ITemplateService
             if (toVersion.Value == template.Version)
             {
                 // 'to' is the current live version
-                toHtmlBody = template.HtmlBody;
+                toBodyPath = template.BodyPath;
                 toName = template.Name;
                 resolvedToVersion = template.Version;
             }
@@ -282,7 +285,7 @@ public sealed class TemplateService : ITemplateService
                 if (toEntry is null)
                     throw new NotFoundException($"Version {toVersion.Value} of template", id);
 
-                toHtmlBody = toEntry.HtmlBody;
+                toBodyPath = toEntry.BodyPath;
                 toName = toEntry.Name;
                 resolvedToVersion = toEntry.Version;
             }
@@ -290,7 +293,7 @@ public sealed class TemplateService : ITemplateService
         else
         {
             // Default: compare against current live version
-            toHtmlBody = template.HtmlBody;
+            toBodyPath = template.BodyPath;
             toName = template.Name;
             resolvedToVersion = template.Version;
         }
@@ -300,12 +303,12 @@ public sealed class TemplateService : ITemplateService
             TemplateId = id,
             FromVersion = fromVersion,
             ToVersion = resolvedToVersion,
-            FromHtmlBody = fromEntry.HtmlBody,
-            ToHtmlBody = toHtmlBody,
+            FromBodyPath = fromEntry.BodyPath,
+            ToBodyPath = toBodyPath,
             FromName = fromEntry.Name,
             ToName = toName,
             NameChanged = fromEntry.Name != toName,
-            HtmlBodyChanged = fromEntry.HtmlBody != toHtmlBody
+            BodyPathChanged = fromEntry.BodyPath != toBodyPath
         };
     }
 
@@ -333,7 +336,8 @@ public sealed class TemplateService : ITemplateService
             TemplateId = template.Id,
             Version = template.Version,
             Name = template.Name,
-            HtmlBody = template.HtmlBody,
+            BodyPath = template.BodyPath,
+            BodyChecksum = template.BodyChecksum,
             Channel = template.Channel,
             ChangedBy = changedBy
         };
@@ -341,7 +345,8 @@ public sealed class TemplateService : ITemplateService
 
         // Apply the historic content as a new version
         template.Name = historyEntry.Name;
-        template.HtmlBody = historyEntry.HtmlBody;
+        template.BodyPath = historyEntry.BodyPath;
+        template.BodyChecksum = historyEntry.BodyChecksum;
         template.Version++;
 
         await _unitOfWork.CommitAsync(cancellationToken);

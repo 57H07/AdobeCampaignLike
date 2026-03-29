@@ -182,7 +182,7 @@ public class SubTemplateResolverServiceTests : IDisposable
             Id = Guid.NewGuid(),
             Name = "regular_template",
             Channel = ChannelType.Email,
-            HtmlBody = "<p>Regular</p>",
+            BodyPath = "<p>Regular</p>",
             IsSubTemplate = false,
             Status = TemplateStatus.Draft,
             Version = 1
@@ -255,7 +255,7 @@ public class SubTemplateResolverServiceTests : IDisposable
             Id = templateAId,
             Name = "self_referencing",
             Channel = ChannelType.Email,
-            HtmlBody = "<p>Start</p>{{> self_referencing}}<p>End</p>",
+            BodyPath = "<p>Start</p>{{> self_referencing}}<p>End</p>",
             IsSubTemplate = true,
             Status = TemplateStatus.Draft,
             Version = 1
@@ -286,7 +286,7 @@ public class SubTemplateResolverServiceTests : IDisposable
             Id = idA,
             Name = "block_a",
             Channel = ChannelType.Email,
-            HtmlBody = "<p>Block A</p>{{> block_b}}",
+            BodyPath = "<p>Block A</p>{{> block_b}}",
             IsSubTemplate = true,
             Status = TemplateStatus.Draft,
             Version = 1
@@ -296,7 +296,7 @@ public class SubTemplateResolverServiceTests : IDisposable
             Id = idB,
             Name = "block_b",
             Channel = ChannelType.Email,
-            HtmlBody = "<p>Block B</p>{{> block_a}}",
+            BodyPath = "<p>Block B</p>{{> block_a}}",
             IsSubTemplate = true,
             Status = TemplateStatus.Draft,
             Version = 1
@@ -331,7 +331,7 @@ public class SubTemplateResolverServiceTests : IDisposable
                 Id = Guid.NewGuid(),
                 Name = $"chain_{i}",
                 Channel = ChannelType.Email,
-                HtmlBody = $"<p>Level {i}</p>{nextRef}",
+                BodyPath = $"<p>Level {i}</p>{nextRef}",
                 IsSubTemplate = true,
                 Status = TemplateStatus.Draft,
                 Version = 1
@@ -377,17 +377,17 @@ public class SubTemplateResolverServiceTests : IDisposable
         var templateA = new Template
         {
             Id = idA, Name = "cycle_a", Channel = ChannelType.Email,
-            HtmlBody = "{{> cycle_b}}", IsSubTemplate = true, Status = TemplateStatus.Draft, Version = 1
+            BodyPath = "{{> cycle_b}}", IsSubTemplate = true, Status = TemplateStatus.Draft, Version = 1
         };
         var templateB = new Template
         {
             Id = idB, Name = "cycle_b", Channel = ChannelType.Email,
-            HtmlBody = "{{> cycle_c}}", IsSubTemplate = true, Status = TemplateStatus.Draft, Version = 1
+            BodyPath = "{{> cycle_c}}", IsSubTemplate = true, Status = TemplateStatus.Draft, Version = 1
         };
         var templateC = new Template
         {
             Id = idC, Name = "cycle_c", Channel = ChannelType.Email,
-            HtmlBody = "{{> cycle_a}}", IsSubTemplate = true, Status = TemplateStatus.Draft, Version = 1
+            BodyPath = "{{> cycle_a}}", IsSubTemplate = true, Status = TemplateStatus.Draft, Version = 1
         };
         _context.Templates.AddRange(templateA, templateB, templateC);
         await _context.SaveChangesAsync();
@@ -407,7 +407,7 @@ public class SubTemplateResolverServiceTests : IDisposable
         var template = new Template
         {
             Id = Guid.NewGuid(), Name = "standalone", Channel = ChannelType.Email,
-            HtmlBody = "<p>No sub-templates here</p>", IsSubTemplate = true,
+            BodyPath = "<p>No sub-templates here</p>", IsSubTemplate = true,
             Status = TemplateStatus.Draft, Version = 1
         };
         _context.Templates.Add(template);
@@ -421,14 +421,14 @@ public class SubTemplateResolverServiceTests : IDisposable
     // Helpers
     // ----------------------------------------------------------------
 
-    private static Template CreateSubTemplate(string name, string htmlBody)
+    private static Template CreateSubTemplate(string name, string bodyPath)
     {
         return new Template
         {
             Id = Guid.NewGuid(),
             Name = name,
             Channel = ChannelType.Email,
-            HtmlBody = htmlBody,
+            BodyPath = bodyPath,
             IsSubTemplate = true,
             Status = TemplateStatus.Draft,
             Version = 1

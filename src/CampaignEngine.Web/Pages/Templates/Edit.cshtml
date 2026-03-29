@@ -96,9 +96,9 @@
                     </div>
 
                     <div class="mb-3">
-                        <label asp-for="Input.HtmlBody" class="form-label">HTML Body <span class="text-danger">*</span></label>
-                        <textarea asp-for="Input.HtmlBody" class="form-control font-monospace" rows="15" id="htmlBodyEditor"></textarea>
-                        <span asp-validation-for="Input.HtmlBody" class="text-danger"></span>
+                        <label asp-for="Input.BodyPath" class="form-label">Body Path <span class="text-danger">*</span></label>
+                        <input asp-for="Input.BodyPath" class="form-control" id="bodyPathEditor" />
+                        <span asp-validation-for="Input.BodyPath" class="text-danger"></span>
                     </div>
 
                     <div class="d-flex gap-2">

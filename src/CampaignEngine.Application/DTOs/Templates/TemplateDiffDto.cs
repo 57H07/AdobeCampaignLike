@@ -14,11 +14,11 @@ public class TemplateDiffDto
     /// <summary>The newer (target) version.</summary>
     public int ToVersion { get; init; }
 
-    /// <summary>HTML body of the older version.</summary>
-    public string FromHtmlBody { get; init; } = string.Empty;
+    /// <summary>Body path of the older version.</summary>
+    public string FromBodyPath { get; init; } = string.Empty;
 
-    /// <summary>HTML body of the newer version.</summary>
-    public string ToHtmlBody { get; init; } = string.Empty;
+    /// <summary>Body path of the newer version.</summary>
+    public string ToBodyPath { get; init; } = string.Empty;
 
     /// <summary>Name in the older version.</summary>
     public string FromName { get; init; } = string.Empty;
@@ -29,6 +29,6 @@ public class TemplateDiffDto
     /// <summary>Indicates whether the name changed between versions.</summary>
     public bool NameChanged { get; init; }
 
-    /// <summary>Indicates whether the HTML body changed between versions.</summary>
-    public bool HtmlBodyChanged { get; init; }
+    /// <summary>Indicates whether the body path changed between versions.</summary>
+    public bool BodyPathChanged { get; init; }
 }

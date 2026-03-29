@@ -53,7 +53,7 @@ public class TemplateVersioningTests : IDisposable
         {
             Name = "Hello Template",
             Channel = ChannelType.Email,
-            HtmlBody = "<p>Hello</p>"
+            BodyPath = "templates/hello/v1.html"
         });
 
         template.Version.Should().Be(1);
@@ -71,7 +71,7 @@ public class TemplateVersioningTests : IDisposable
         {
             Name = "Original",
             Channel = ChannelType.Email,
-            HtmlBody = "<p>v1 content</p>"
+            BodyPath = "templates/original/v1.html"
         });
 
         template.Version.Should().Be(1);
@@ -80,7 +80,7 @@ public class TemplateVersioningTests : IDisposable
         var updated = await _service.UpdateAsync(template.Id, new UpdateTemplateRequest
         {
             Name = "Updated",
-            HtmlBody = "<p>v2 content</p>"
+            BodyPath = "templates/original/v2.html"
         });
 
         // Assert
@@ -94,12 +94,12 @@ public class TemplateVersioningTests : IDisposable
         {
             Name = "Multi",
             Channel = ChannelType.Sms,
-            HtmlBody = "v1"
+            BodyPath = "templates/multi/v1.txt"
         });
 
-        await _service.UpdateAsync(template.Id, new UpdateTemplateRequest { Name = "Multi", HtmlBody = "v2" });
-        await _service.UpdateAsync(template.Id, new UpdateTemplateRequest { Name = "Multi", HtmlBody = "v3" });
-        var latest = await _service.UpdateAsync(template.Id, new UpdateTemplateRequest { Name = "Multi", HtmlBody = "v4" });
+        await _service.UpdateAsync(template.Id, new UpdateTemplateRequest { Name = "Multi", BodyPath = "templates/multi/v2.txt" });
+        await _service.UpdateAsync(template.Id, new UpdateTemplateRequest { Name = "Multi", BodyPath = "templates/multi/v3.txt" });
+        var latest = await _service.UpdateAsync(template.Id, new UpdateTemplateRequest { Name = "Multi", BodyPath = "templates/multi/v4.txt" });
 
         latest.Version.Should().Be(4);
     }
@@ -112,14 +112,14 @@ public class TemplateVersioningTests : IDisposable
         {
             Name = "Snap",
             Channel = ChannelType.Email,
-            HtmlBody = "<p>original</p>"
+            BodyPath = "templates/snap/v1.html"
         });
 
         // Act: update the template
         await _service.UpdateAsync(template.Id, new UpdateTemplateRequest
         {
             Name = "Snap Updated",
-            HtmlBody = "<p>updated</p>",
+            BodyPath = "templates/snap/v2.html",
             ChangedBy = "designer@example.com"
         });
 
@@ -130,7 +130,7 @@ public class TemplateVersioningTests : IDisposable
         var entry = history.Single();
         entry.Version.Should().Be(1);
         entry.Name.Should().Be("Snap");
-        entry.HtmlBody.Should().Be("<p>original</p>");
+        entry.BodyPath.Should().Be("templates/snap/v1.html");
         entry.TemplateId.Should().Be(template.Id);
         entry.ChangedBy.Should().Be("designer@example.com");
     }
@@ -142,11 +142,11 @@ public class TemplateVersioningTests : IDisposable
         {
             Name = "T",
             Channel = ChannelType.Email,
-            HtmlBody = "v1"
+            BodyPath = "templates/t/v1.html"
         });
 
-        await _service.UpdateAsync(template.Id, new UpdateTemplateRequest { Name = "T", HtmlBody = "v2" });
-        await _service.UpdateAsync(template.Id, new UpdateTemplateRequest { Name = "T", HtmlBody = "v3" });
+        await _service.UpdateAsync(template.Id, new UpdateTemplateRequest { Name = "T", BodyPath = "templates/t/v2.html" });
+        await _service.UpdateAsync(template.Id, new UpdateTemplateRequest { Name = "T", BodyPath = "templates/t/v3.html" });
 
         var history = await _context.TemplateHistories
             .Where(h => h.TemplateId == template.Id)
@@ -155,9 +155,9 @@ public class TemplateVersioningTests : IDisposable
 
         history.Should().HaveCount(2);
         history[0].Version.Should().Be(1);
-        history[0].HtmlBody.Should().Be("v1");
+        history[0].BodyPath.Should().Be("templates/t/v1.html");
         history[1].Version.Should().Be(2);
-        history[1].HtmlBody.Should().Be("v2");
+        history[1].BodyPath.Should().Be("templates/t/v2.html");
     }
 
     // ----------------------------------------------------------------
@@ -171,7 +171,7 @@ public class TemplateVersioningTests : IDisposable
         {
             Name = "Fresh",
             Channel = ChannelType.Email,
-            HtmlBody = "<p>new</p>"
+            BodyPath = "templates/fresh/v1.html"
         });
 
         var history = await _service.GetHistoryAsync(template.Id);
@@ -186,11 +186,11 @@ public class TemplateVersioningTests : IDisposable
         {
             Name = "Hist",
             Channel = ChannelType.Email,
-            HtmlBody = "v1"
+            BodyPath = "templates/hist/v1.html"
         });
 
-        await _service.UpdateAsync(template.Id, new UpdateTemplateRequest { Name = "Hist", HtmlBody = "v2" });
-        await _service.UpdateAsync(template.Id, new UpdateTemplateRequest { Name = "Hist", HtmlBody = "v3" });
+        await _service.UpdateAsync(template.Id, new UpdateTemplateRequest { Name = "Hist", BodyPath = "templates/hist/v2.html" });
+        await _service.UpdateAsync(template.Id, new UpdateTemplateRequest { Name = "Hist", BodyPath = "templates/hist/v3.html" });
 
         var history = await _service.GetHistoryAsync(template.Id);
 
@@ -218,24 +218,24 @@ public class TemplateVersioningTests : IDisposable
         {
             Name = "DiffMe",
             Channel = ChannelType.Email,
-            HtmlBody = "<p>original body</p>"
+            BodyPath = "templates/diffme/v1.html"
         });
 
         await _service.UpdateAsync(template.Id, new UpdateTemplateRequest
         {
             Name = "DiffMe Updated",
-            HtmlBody = "<p>updated body</p>"
+            BodyPath = "templates/diffme/v2.html"
         });
 
         var diff = await _service.GetDiffAsync(template.Id, fromVersion: 1, toVersion: null);
 
         diff.FromVersion.Should().Be(1);
         diff.ToVersion.Should().Be(2);
-        diff.FromHtmlBody.Should().Be("<p>original body</p>");
-        diff.ToHtmlBody.Should().Be("<p>updated body</p>");
+        diff.FromBodyPath.Should().Be("templates/diffme/v1.html");
+        diff.ToBodyPath.Should().Be("templates/diffme/v2.html");
         diff.FromName.Should().Be("DiffMe");
         diff.ToName.Should().Be("DiffMe Updated");
-        diff.HtmlBodyChanged.Should().BeTrue();
+        diff.BodyPathChanged.Should().BeTrue();
         diff.NameChanged.Should().BeTrue();
     }
 
@@ -246,19 +246,19 @@ public class TemplateVersioningTests : IDisposable
         {
             Name = "Same",
             Channel = ChannelType.Email,
-            HtmlBody = "<p>content</p>"
+            BodyPath = "templates/same/v1.html"
         });
 
-        // Update name only (same body)
+        // Update name only (same body path)
         await _service.UpdateAsync(template.Id, new UpdateTemplateRequest
         {
             Name = "Same",
-            HtmlBody = "<p>content</p>"
+            BodyPath = "templates/same/v1.html"
         });
 
         var diff = await _service.GetDiffAsync(template.Id, fromVersion: 1, toVersion: null);
 
-        diff.HtmlBodyChanged.Should().BeFalse();
+        diff.BodyPathChanged.Should().BeFalse();
         diff.NameChanged.Should().BeFalse();
     }
 
@@ -269,7 +269,7 @@ public class TemplateVersioningTests : IDisposable
         {
             Name = "T",
             Channel = ChannelType.Email,
-            HtmlBody = "body"
+            BodyPath = "templates/t-diff/v1.html"
         });
 
         // Version 99 does not exist
@@ -289,13 +289,13 @@ public class TemplateVersioningTests : IDisposable
         {
             Name = "Revert Test",
             Channel = ChannelType.Email,
-            HtmlBody = "<p>v1 content</p>"
+            BodyPath = "templates/revert-test/v1.html"
         });
 
         await _service.UpdateAsync(template.Id, new UpdateTemplateRequest
         {
             Name = "Revert Test",
-            HtmlBody = "<p>v2 content</p>"
+            BodyPath = "templates/revert-test/v2.html"
         });
 
         // Current version is now 2. Revert to v1.
@@ -304,7 +304,7 @@ public class TemplateVersioningTests : IDisposable
         // Assert: new version (v3) has v1 content
         reverted.Version.Should().Be(3);
         reverted.Name.Should().Be("Revert Test");
-        reverted.HtmlBody.Should().Be("<p>v1 content</p>");
+        reverted.BodyPath.Should().Be("templates/revert-test/v1.html");
     }
 
     [Fact]
@@ -315,10 +315,10 @@ public class TemplateVersioningTests : IDisposable
         {
             Name = "History Preserved",
             Channel = ChannelType.Email,
-            HtmlBody = "v1"
+            BodyPath = "templates/history-preserved/v1.html"
         });
 
-        await _service.UpdateAsync(template.Id, new UpdateTemplateRequest { Name = "History Preserved", HtmlBody = "v2" });
+        await _service.UpdateAsync(template.Id, new UpdateTemplateRequest { Name = "History Preserved", BodyPath = "templates/history-preserved/v2.html" });
 
         // Act: revert to v1 — this should create a new history entry (snapshot of v2) + new version v3
         await _service.RevertToVersionAsync(template.Id, version: 1, changedBy: "user");
@@ -331,9 +331,9 @@ public class TemplateVersioningTests : IDisposable
 
         history.Should().HaveCount(2);
         history[0].Version.Should().Be(1);
-        history[0].HtmlBody.Should().Be("v1");
+        history[0].BodyPath.Should().Be("templates/history-preserved/v1.html");
         history[1].Version.Should().Be(2);
-        history[1].HtmlBody.Should().Be("v2");
+        history[1].BodyPath.Should().Be("templates/history-preserved/v2.html");
     }
 
     [Fact]
@@ -343,7 +343,7 @@ public class TemplateVersioningTests : IDisposable
         {
             Name = "NoVer",
             Channel = ChannelType.Email,
-            HtmlBody = "body"
+            BodyPath = "templates/nover/v1.html"
         });
 
         var act = () => _service.RevertToVersionAsync(template.Id, version: 99, changedBy: null);

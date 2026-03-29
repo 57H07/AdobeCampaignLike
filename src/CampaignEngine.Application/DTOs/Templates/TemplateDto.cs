@@ -14,8 +14,11 @@ public class TemplateDto
     /// <summary>Channel type string: Email, Letter, or Sms.</summary>
     public string Channel { get; init; } = string.Empty;
 
-    /// <summary>HTML body with Scriban placeholder syntax.</summary>
-    public string HtmlBody { get; init; } = string.Empty;
+    /// <summary>Relative path from storage root to the template body file.</summary>
+    public string BodyPath { get; init; } = string.Empty;
+
+    /// <summary>SHA-256 hex checksum of the template body file (64 chars), nullable.</summary>
+    public string? BodyChecksum { get; init; }
 
     /// <summary>Template lifecycle status: Draft, Published, Archived.</summary>
     public string Status { get; init; } = string.Empty;

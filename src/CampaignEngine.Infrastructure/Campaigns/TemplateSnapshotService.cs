@@ -74,7 +74,7 @@ public sealed class TemplateSnapshotService : ITemplateSnapshotService
             // Resolve sub-templates recursively to produce the fully-flattened body
             var resolvedBody = await _subTemplateResolver.ResolveAsync(
                 template.Id,
-                template.HtmlBody,
+                template.BodyPath,
                 cancellationToken);
 
             var snapshot = new TemplateSnapshot

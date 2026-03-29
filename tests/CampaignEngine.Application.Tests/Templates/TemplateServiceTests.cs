@@ -54,7 +54,7 @@ public class TemplateServiceTests : IDisposable
         {
             Name = "Welcome Email",
             Channel = ChannelType.Email,
-            HtmlBody = "<p>Hello {{ name }}</p>",
+            BodyPath = "templates/welcome-email/v1.html",
             Description = "Welcome message"
         };
 
@@ -68,7 +68,7 @@ public class TemplateServiceTests : IDisposable
         result.Channel.Should().Be(ChannelType.Email);
         result.Status.Should().Be(TemplateStatus.Draft);
         result.Version.Should().Be(1);
-        result.HtmlBody.Should().Be("<p>Hello {{ name }}</p>");
+        result.BodyPath.Should().Be("templates/welcome-email/v1.html");
         result.Description.Should().Be("Welcome message");
     }
 
@@ -80,7 +80,7 @@ public class TemplateServiceTests : IDisposable
         {
             Name = "Newsletter",
             Channel = ChannelType.Email,
-            HtmlBody = "<p>First</p>"
+            BodyPath = "templates/newsletter/v1.html"
         };
         await _service.CreateAsync(firstRequest);
 
@@ -88,7 +88,7 @@ public class TemplateServiceTests : IDisposable
         {
             Name = "Newsletter",
             Channel = ChannelType.Email,
-            HtmlBody = "<p>Duplicate</p>"
+            BodyPath = "templates/newsletter-dup/v1.html"
         };
 
         // Act
@@ -107,13 +107,13 @@ public class TemplateServiceTests : IDisposable
         {
             Name = "Monthly Report",
             Channel = ChannelType.Email,
-            HtmlBody = "<p>Email report</p>"
+            BodyPath = "templates/monthly-report-email/v1.html"
         };
         var smsRequest = new CreateTemplateRequest
         {
             Name = "Monthly Report",
             Channel = ChannelType.Sms,
-            HtmlBody = "SMS report"
+            BodyPath = "templates/monthly-report-sms/v1.txt"
         };
 
         // Act
@@ -138,7 +138,7 @@ public class TemplateServiceTests : IDisposable
         {
             Name = "Find Me",
             Channel = ChannelType.Letter,
-            HtmlBody = "<p>Letter body</p>"
+            BodyPath = "templates/find-me/v1.docx"
         };
         var created = await _service.CreateAsync(request);
 
@@ -169,7 +169,7 @@ public class TemplateServiceTests : IDisposable
         {
             Name = "To Be Deleted",
             Channel = ChannelType.Email,
-            HtmlBody = "<p>Gone</p>"
+            BodyPath = "templates/to-be-deleted/v1.html"
         });
         await _service.DeleteAsync(created.Id);
 
@@ -188,9 +188,9 @@ public class TemplateServiceTests : IDisposable
     public async Task GetPagedAsync_ReturnsAllNonDeleted()
     {
         // Arrange
-        await _service.CreateAsync(new CreateTemplateRequest { Name = "T1", Channel = ChannelType.Email, HtmlBody = "a" });
-        await _service.CreateAsync(new CreateTemplateRequest { Name = "T2", Channel = ChannelType.Sms, HtmlBody = "b" });
-        var t3 = await _service.CreateAsync(new CreateTemplateRequest { Name = "T3", Channel = ChannelType.Email, HtmlBody = "c" });
+        await _service.CreateAsync(new CreateTemplateRequest { Name = "T1", Channel = ChannelType.Email, BodyPath = "templates/t1/v1.html" });
+        await _service.CreateAsync(new CreateTemplateRequest { Name = "T2", Channel = ChannelType.Sms, BodyPath = "templates/t2/v1.txt" });
+        var t3 = await _service.CreateAsync(new CreateTemplateRequest { Name = "T3", Channel = ChannelType.Email, BodyPath = "templates/t3/v1.html" });
         await _service.DeleteAsync(t3.Id);
 
         // Act
@@ -206,8 +206,8 @@ public class TemplateServiceTests : IDisposable
     public async Task GetPagedAsync_FilterByChannel_ReturnsMatchingOnly()
     {
         // Arrange
-        await _service.CreateAsync(new CreateTemplateRequest { Name = "EmailT", Channel = ChannelType.Email, HtmlBody = "a" });
-        await _service.CreateAsync(new CreateTemplateRequest { Name = "SmsT", Channel = ChannelType.Sms, HtmlBody = "b" });
+        await _service.CreateAsync(new CreateTemplateRequest { Name = "EmailT", Channel = ChannelType.Email, BodyPath = "templates/email-t/v1.html" });
+        await _service.CreateAsync(new CreateTemplateRequest { Name = "SmsT", Channel = ChannelType.Sms, BodyPath = "templates/sms-t/v1.txt" });
 
         // Act
         var result = await _service.GetPagedAsync(ChannelType.Email, null, 1, 50);
@@ -222,7 +222,7 @@ public class TemplateServiceTests : IDisposable
     {
         // Arrange — create 5 templates
         for (int i = 1; i <= 5; i++)
-            await _service.CreateAsync(new CreateTemplateRequest { Name = $"T{i}", Channel = ChannelType.Email, HtmlBody = $"body{i}" });
+            await _service.CreateAsync(new CreateTemplateRequest { Name = $"T{i}", Channel = ChannelType.Email, BodyPath = $"templates/t{i}/v1.html" });
 
         // Act — page 2 with pageSize 2
         var result = await _service.GetPagedAsync(null, null, 2, 2);
@@ -247,20 +247,20 @@ public class TemplateServiceTests : IDisposable
         {
             Name = "Original",
             Channel = ChannelType.Email,
-            HtmlBody = "<p>Old body</p>"
+            BodyPath = "templates/original/v1.html"
         });
 
         // Act
         var updated = await _service.UpdateAsync(created.Id, new UpdateTemplateRequest
         {
             Name = "Renamed",
-            HtmlBody = "<p>New body</p>",
+            BodyPath = "templates/original/v2.html",
             Description = "Updated description"
         });
 
         // Assert
         updated.Name.Should().Be("Renamed");
-        updated.HtmlBody.Should().Be("<p>New body</p>");
+        updated.BodyPath.Should().Be("templates/original/v2.html");
         updated.Description.Should().Be("Updated description");
         updated.Channel.Should().Be(ChannelType.Email); // Channel unchanged
     }
@@ -272,7 +272,7 @@ public class TemplateServiceTests : IDisposable
         var act = () => _service.UpdateAsync(Guid.NewGuid(), new UpdateTemplateRequest
         {
             Name = "Ghost",
-            HtmlBody = "body"
+            BodyPath = "templates/ghost/v1.html"
         });
 
         // Assert
@@ -283,14 +283,14 @@ public class TemplateServiceTests : IDisposable
     public async Task UpdateAsync_DuplicateNameInSameChannel_ThrowsValidationException()
     {
         // Arrange
-        await _service.CreateAsync(new CreateTemplateRequest { Name = "Alpha", Channel = ChannelType.Email, HtmlBody = "a" });
-        var beta = await _service.CreateAsync(new CreateTemplateRequest { Name = "Beta", Channel = ChannelType.Email, HtmlBody = "b" });
+        await _service.CreateAsync(new CreateTemplateRequest { Name = "Alpha", Channel = ChannelType.Email, BodyPath = "templates/alpha/v1.html" });
+        var beta = await _service.CreateAsync(new CreateTemplateRequest { Name = "Beta", Channel = ChannelType.Email, BodyPath = "templates/beta/v1.html" });
 
         // Act — try to rename Beta to Alpha (conflict with existing)
         var act = () => _service.UpdateAsync(beta.Id, new UpdateTemplateRequest
         {
             Name = "Alpha",
-            HtmlBody = "b"
+            BodyPath = "templates/beta/v1.html"
         });
 
         // Assert
@@ -300,19 +300,19 @@ public class TemplateServiceTests : IDisposable
     [Fact]
     public async Task UpdateAsync_SameName_DoesNotThrow()
     {
-        // Arrange — updating a template's HtmlBody with same Name should not conflict with itself
+        // Arrange — updating a template's BodyPath with same Name should not conflict with itself
         var created = await _service.CreateAsync(new CreateTemplateRequest
         {
             Name = "SameName",
             Channel = ChannelType.Email,
-            HtmlBody = "<p>Old</p>"
+            BodyPath = "templates/same-name/v1.html"
         });
 
         // Act
         var act = () => _service.UpdateAsync(created.Id, new UpdateTemplateRequest
         {
             Name = "SameName",
-            HtmlBody = "<p>New</p>"
+            BodyPath = "templates/same-name/v2.html"
         });
 
         // Assert
@@ -331,7 +331,7 @@ public class TemplateServiceTests : IDisposable
         {
             Name = "To Delete",
             Channel = ChannelType.Email,
-            HtmlBody = "<p>delete me</p>"
+            BodyPath = "templates/to-delete/v1.html"
         });
 
         // Act

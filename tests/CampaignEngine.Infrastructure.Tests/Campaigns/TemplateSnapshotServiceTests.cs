@@ -44,14 +44,14 @@ public class TemplateSnapshotServiceTests : DbContextTestBase
 
     private async Task<Template> SeedPublishedTemplateAsync(
         string name = "Test Template",
-        string htmlBody = "<p>Hello</p>",
+        string bodyPath = "templates/test/v1.html",
         ChannelType channel = ChannelType.Email)
     {
         var template = new Template
         {
             Name = name,
             Channel = channel,
-            HtmlBody = htmlBody,
+            BodyPath = bodyPath,
             Status = TemplateStatus.Published,
             Version = 1
         };
@@ -95,7 +95,7 @@ public class TemplateSnapshotServiceTests : DbContextTestBase
     public async Task CreateSnapshotsForCampaignAsync_SingleStep_CreatesOneSnapshot()
     {
         // Arrange
-        var template = await SeedPublishedTemplateAsync("Welcome Email", "<h1>Welcome</h1>");
+        var template = await SeedPublishedTemplateAsync("Welcome Email", "templates/welcome-email/v1.html");
         var campaign = await SeedCampaignWithStepsAsync(template);
 
         // Act
@@ -105,7 +105,7 @@ public class TemplateSnapshotServiceTests : DbContextTestBase
         var snapshots = Context.TemplateSnapshots.ToList();
         snapshots.Should().HaveCount(1);
         snapshots[0].Name.Should().Be("Welcome Email");
-        snapshots[0].ResolvedHtmlBody.Should().Be("<h1>Welcome</h1>");
+        snapshots[0].ResolvedHtmlBody.Should().Be("templates/welcome-email/v1.html");
         snapshots[0].OriginalTemplateId.Should().Be(template.Id);
         snapshots[0].TemplateVersion.Should().Be(1);
         snapshots[0].Channel.Should().Be(ChannelType.Email);
@@ -134,8 +134,8 @@ public class TemplateSnapshotServiceTests : DbContextTestBase
     public async Task CreateSnapshotsForCampaignAsync_MultipleStepsDifferentTemplates_CreatesOneSnapshotPerTemplate()
     {
         // Arrange
-        var emailTemplate = await SeedPublishedTemplateAsync("Email Tpl", "<p>Email</p>", ChannelType.Email);
-        var smsTemplate = await SeedPublishedTemplateAsync("SMS Tpl", "SMS body", ChannelType.Sms);
+        var emailTemplate = await SeedPublishedTemplateAsync("Email Tpl", "templates/email-tpl/v1.html", ChannelType.Email);
+        var smsTemplate = await SeedPublishedTemplateAsync("SMS Tpl", "templates/sms-tpl/v1.txt", ChannelType.Sms);
         var campaign = await SeedCampaignWithStepsAsync(emailTemplate, smsTemplate);
 
         // Act
@@ -185,8 +185,8 @@ public class TemplateSnapshotServiceTests : DbContextTestBase
     public async Task CreateSnapshotsForCampaignAsync_CallsSubTemplateResolverForEachUniqueTemplate()
     {
         // Arrange
-        var tpl1 = await SeedPublishedTemplateAsync("T1", "<p>{{> header}}</p>");
-        var tpl2 = await SeedPublishedTemplateAsync("T2", "<p>{{> footer}}</p>");
+        var tpl1 = await SeedPublishedTemplateAsync("T1", "templates/t1/v1.html");
+        var tpl2 = await SeedPublishedTemplateAsync("T2", "templates/t2/v1.html");
         var campaign = await SeedCampaignWithStepsAsync(tpl1, tpl2);
 
         // Act
@@ -194,10 +194,10 @@ public class TemplateSnapshotServiceTests : DbContextTestBase
 
         // Assert — resolver invoked once per unique template
         _resolverMock.Verify(
-            r => r.ResolveAsync(tpl1.Id, tpl1.HtmlBody, It.IsAny<CancellationToken>()),
+            r => r.ResolveAsync(tpl1.Id, tpl1.BodyPath, It.IsAny<CancellationToken>()),
             Times.Once);
         _resolverMock.Verify(
-            r => r.ResolveAsync(tpl2.Id, tpl2.HtmlBody, It.IsAny<CancellationToken>()),
+            r => r.ResolveAsync(tpl2.Id, tpl2.BodyPath, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -205,11 +205,11 @@ public class TemplateSnapshotServiceTests : DbContextTestBase
     public async Task CreateSnapshotsForCampaignAsync_StoresResolvedBodyFromSubTemplateResolver()
     {
         // Arrange
-        var template = await SeedPublishedTemplateAsync("Header Template", "<p>{{> header}}</p>");
+        var template = await SeedPublishedTemplateAsync("Header Template", "templates/header-template/v1.html");
         const string resolvedBody = "<p><header>RESOLVED HEADER</header></p>";
 
         _resolverMock
-            .Setup(r => r.ResolveAsync(template.Id, template.HtmlBody, It.IsAny<CancellationToken>()))
+            .Setup(r => r.ResolveAsync(template.Id, template.BodyPath, It.IsAny<CancellationToken>()))
             .ReturnsAsync(resolvedBody);
 
         var campaign = await SeedCampaignWithStepsAsync(template);
@@ -231,24 +231,24 @@ public class TemplateSnapshotServiceTests : DbContextTestBase
     public async Task TemplateSnapshot_IsIsolated_SubsequentTemplateEditDoesNotAffectSnapshot()
     {
         // Arrange
-        var template = await SeedPublishedTemplateAsync("Newsletter", "<p>Original content</p>");
+        var template = await SeedPublishedTemplateAsync("Newsletter", "templates/newsletter/v1.html");
         var campaign = await SeedCampaignWithStepsAsync(template);
 
         await _service.CreateSnapshotsForCampaignAsync(campaign.Id);
 
         // Verify snapshot was captured
         var snapshotBefore = Context.TemplateSnapshots.Single();
-        snapshotBefore.ResolvedHtmlBody.Should().Be("<p>Original content</p>");
+        snapshotBefore.ResolvedHtmlBody.Should().Be("templates/newsletter/v1.html");
 
         // Act — simulate template edit after scheduling
-        template.HtmlBody = "<p>UPDATED content — should not appear in snapshot</p>";
+        template.BodyPath = "templates/newsletter/v2.html";
         template.Version = 2;
         await Context.SaveChangesAsync();
 
         // Assert — reload snapshot, it should remain unchanged
         Context.ChangeTracker.Clear();
         var snapshotAfter = Context.TemplateSnapshots.Single();
-        snapshotAfter.ResolvedHtmlBody.Should().Be("<p>Original content</p>",
+        snapshotAfter.ResolvedHtmlBody.Should().Be("templates/newsletter/v1.html",
             "snapshot should be immutable after creation");
         snapshotAfter.TemplateVersion.Should().Be(1,
             "snapshot version should reflect the version at freeze time");
@@ -295,8 +295,8 @@ public class TemplateSnapshotServiceTests : DbContextTestBase
     public async Task GetSnapshotsForCampaignAsync_AfterScheduling_ReturnsSnapshotsOrderedByStepOrder()
     {
         // Arrange
-        var emailTemplate = await SeedPublishedTemplateAsync("Email Tpl", "<p>Email</p>", ChannelType.Email);
-        var smsTemplate = await SeedPublishedTemplateAsync("SMS Tpl", "SMS", ChannelType.Sms);
+        var emailTemplate = await SeedPublishedTemplateAsync("Email Tpl", "templates/email-tpl2/v1.html", ChannelType.Email);
+        var smsTemplate = await SeedPublishedTemplateAsync("SMS Tpl", "templates/sms-tpl2/v1.txt", ChannelType.Sms);
         var campaign = await SeedCampaignWithStepsAsync(emailTemplate, smsTemplate);
 
         await _service.CreateSnapshotsForCampaignAsync(campaign.Id);
@@ -314,7 +314,7 @@ public class TemplateSnapshotServiceTests : DbContextTestBase
     public async Task GetSnapshotsForCampaignAsync_TwoStepsSameTemplate_ReturnsOneSnapshot()
     {
         // Arrange — two steps sharing same template
-        var template = await SeedPublishedTemplateAsync("Shared", "<p>X</p>");
+        var template = await SeedPublishedTemplateAsync("Shared", "templates/shared/v1.html");
 
         var campaign = new Campaign { Name = $"Cam {Guid.NewGuid():N}", Status = CampaignStatus.Draft };
         Context.Campaigns.Add(campaign);
@@ -363,14 +363,15 @@ public class TemplateSnapshotServiceTests : DbContextTestBase
     public async Task GetSnapshotsForCampaignAsync_ReturnsDtoWithCorrectFields()
     {
         // Arrange
-        const string body = "<p>Newsletter body</p>";
-        var template = await SeedPublishedTemplateAsync("Newsletter v3", body, ChannelType.Email);
+        const string bodyPath = "templates/newsletter-v3/v1.html";
+        const string resolvedContent = "<p>Newsletter body</p>";
+        var template = await SeedPublishedTemplateAsync("Newsletter v3", bodyPath, ChannelType.Email);
         template.Version = 3;
         await Context.SaveChangesAsync();
 
         _resolverMock
-            .Setup(r => r.ResolveAsync(template.Id, body, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(body);
+            .Setup(r => r.ResolveAsync(template.Id, bodyPath, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(resolvedContent);
 
         var campaign = await SeedCampaignWithStepsAsync(template);
         await _service.CreateSnapshotsForCampaignAsync(campaign.Id);
@@ -385,7 +386,7 @@ public class TemplateSnapshotServiceTests : DbContextTestBase
         dto.TemplateVersion.Should().Be(3);
         dto.Name.Should().Be("Newsletter v3");
         dto.Channel.Should().Be("Email");
-        dto.ResolvedHtmlBody.Should().Be(body);
+        dto.ResolvedHtmlBody.Should().Be(resolvedContent);
         dto.CreatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
     }
 }

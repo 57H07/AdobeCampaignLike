@@ -53,7 +53,7 @@ public class CampaignServiceTests : IDisposable
         {
             Name = $"Test Template {Guid.NewGuid():N}",
             Channel = channel,
-            HtmlBody = "<p>Hello {{name}}</p>",
+            BodyPath = "templates/test/v1.html",
             Status = TemplateStatus.Published,
             Version = 1
         };
@@ -68,7 +68,7 @@ public class CampaignServiceTests : IDisposable
         {
             Name = $"Draft Template {Guid.NewGuid():N}",
             Channel = ChannelType.Email,
-            HtmlBody = "<p>Hello</p>",
+            BodyPath = "templates/draft/v1.html",
             Status = TemplateStatus.Draft,
             Version = 1
         };

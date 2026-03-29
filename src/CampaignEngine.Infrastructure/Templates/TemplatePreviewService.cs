@@ -81,7 +81,7 @@ public sealed class TemplatePreviewService : ITemplatePreviewService
         try
         {
             resolvedHtml = await _subTemplateResolver.ResolveAsync(
-                templateId, template.HtmlBody, cancellationToken);
+                templateId, template.BodyPath, cancellationToken);
         }
         catch (ValidationException ex)
         {

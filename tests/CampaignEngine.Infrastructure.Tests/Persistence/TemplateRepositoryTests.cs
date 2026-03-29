@@ -20,7 +20,7 @@ public class TemplateRepositoryTests : DbContextTestBase
             Name = "Test Email Template",
             Channel = ChannelType.Email,
             Status = TemplateStatus.Draft,
-            HtmlBody = "<p>Hello {{ name }}</p>",
+            BodyPath = "templates/test/v1.html",
             Version = 1
         };
 
@@ -35,7 +35,7 @@ public class TemplateRepositoryTests : DbContextTestBase
         retrieved!.Name.Should().Be("Test Email Template");
         retrieved.Channel.Should().Be(ChannelType.Email);
         retrieved.Status.Should().Be(TemplateStatus.Draft);
-        retrieved.HtmlBody.Should().Be("<p>Hello {{ name }}</p>");
+        retrieved.BodyPath.Should().Be("templates/test/v1.html");
     }
 
     [Fact]
@@ -47,7 +47,7 @@ public class TemplateRepositoryTests : DbContextTestBase
             Name = "Active Template",
             Channel = ChannelType.Email,
             Status = TemplateStatus.Published,
-            HtmlBody = "<p>Active</p>",
+            BodyPath = "templates/active/v1.html",
             Version = 1
         };
         var deletedTemplate = new Template
@@ -55,7 +55,7 @@ public class TemplateRepositoryTests : DbContextTestBase
             Name = "Deleted Template",
             Channel = ChannelType.Email,
             Status = TemplateStatus.Archived,
-            HtmlBody = "<p>Deleted</p>",
+            BodyPath = "templates/deleted/v1.html",
             Version = 1,
             IsDeleted = true,
             DeletedAt = DateTime.UtcNow
@@ -81,7 +81,7 @@ public class TemplateRepositoryTests : DbContextTestBase
             Name = "Active",
             Channel = ChannelType.Email,
             Status = TemplateStatus.Published,
-            HtmlBody = "<p>A</p>",
+            BodyPath = "templates/active/v1.html",
             Version = 1
         };
         var deletedTemplate = new Template
@@ -89,7 +89,7 @@ public class TemplateRepositoryTests : DbContextTestBase
             Name = "Deleted",
             Channel = ChannelType.Email,
             Status = TemplateStatus.Archived,
-            HtmlBody = "<p>D</p>",
+            BodyPath = "templates/deleted/v1.html",
             Version = 1,
             IsDeleted = true,
             DeletedAt = DateTime.UtcNow
@@ -115,7 +115,7 @@ public class TemplateRepositoryTests : DbContextTestBase
             Name = "Audit Test Template",
             Channel = ChannelType.Sms,
             Status = TemplateStatus.Draft,
-            HtmlBody = "Hello {{ name }}",
+            BodyPath = "templates/audit/v1.txt",
             Version = 1
         };
 
@@ -138,7 +138,7 @@ public class TemplateRepositoryTests : DbContextTestBase
             Name = "Template With Placeholders",
             Channel = ChannelType.Email,
             Status = TemplateStatus.Draft,
-            HtmlBody = "<p>Hello {{ firstname }}</p>",
+            BodyPath = "templates/placeholders/v1.html",
             Version = 1
         };
         Context.Templates.Add(template);

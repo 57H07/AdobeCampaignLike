@@ -27,7 +27,7 @@ public class SendRequestValidatorTests
         Name = "Test Email Template",
         Channel = ChannelType.Email,
         Status = TemplateStatus.Published,
-        HtmlBody = "<p>Hello {{ name }}</p>",
+        BodyPath = "templates/test-email/v1.html",
         PlaceholderManifests = placeholderKeys
             .Select(k => new PlaceholderManifestEntry { Key = k, Type = PlaceholderType.Scalar })
             .ToList()
@@ -39,7 +39,7 @@ public class SendRequestValidatorTests
         Name = "Test SMS Template",
         Channel = ChannelType.Sms,
         Status = TemplateStatus.Published,
-        HtmlBody = "Hello {{ name }}",
+        BodyPath = "templates/test-sms/v1.txt",
         PlaceholderManifests = placeholderKeys
             .Select(k => new PlaceholderManifestEntry { Key = k, Type = PlaceholderType.Scalar })
             .ToList()
@@ -311,7 +311,7 @@ public class SendRequestValidatorTests
             Name = "Letter Template",
             Channel = ChannelType.Letter,
             Status = TemplateStatus.Published,
-            HtmlBody = "<p>Dear {{ name }}</p>",
+            BodyPath = "templates/letter/v1.docx",
             PlaceholderManifests = new List<PlaceholderManifestEntry>
             {
                 new() { Key = "name", Type = PlaceholderType.Scalar }

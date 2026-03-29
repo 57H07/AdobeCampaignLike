@@ -4,7 +4,7 @@ namespace CampaignEngine.Application.DTOs.Templates;
 
 /// <summary>
 /// Request DTO for PUT /api/templates/{id}.
-/// Name and Channel cannot be changed — only HtmlBody and Description.
+/// Name and Channel cannot be changed — only BodyPath and Description.
 /// To rename or change channel, delete and recreate.
 /// </summary>
 public class UpdateTemplateRequest
@@ -17,10 +17,17 @@ public class UpdateTemplateRequest
     public string Name { get; set; } = string.Empty;
 
     /// <summary>
-    /// Updated HTML body of the template.
+    /// Updated relative path from storage root to the template body file.
     /// </summary>
     [Required]
-    public string HtmlBody { get; set; } = string.Empty;
+    [MaxLength(500)]
+    public string BodyPath { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Updated SHA-256 hex checksum of the template body file (64 hex characters), nullable.
+    /// </summary>
+    [MaxLength(64)]
+    public string? BodyChecksum { get; set; }
 
     /// <summary>
     /// Updated human-readable description.

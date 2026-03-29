@@ -22,10 +22,17 @@ public class CreateTemplateRequest
     public ChannelType Channel { get; set; }
 
     /// <summary>
-    /// The HTML body of the template. May contain Scriban placeholder syntax.
+    /// Relative path from storage root to the template body file (e.g., "templates/{id}/v1.docx").
     /// </summary>
     [Required]
-    public string HtmlBody { get; set; } = string.Empty;
+    [MaxLength(500)]
+    public string BodyPath { get; set; } = string.Empty;
+
+    /// <summary>
+    /// SHA-256 hex checksum of the template body file (64 hex characters), nullable.
+    /// </summary>
+    [MaxLength(64)]
+    public string? BodyChecksum { get; set; }
 
     /// <summary>
     /// Optional human-readable description of the template's purpose.

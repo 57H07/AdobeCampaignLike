@@ -144,7 +144,7 @@ else
                         </h6>
                     </div>
                     <div class="card-body">
-                        @if (!Model.Diff.NameChanged && !Model.Diff.HtmlBodyChanged)
+                        @if (!Model.Diff.NameChanged && !Model.Diff.BodyPathChanged)
                         {
                             <p class="text-muted mb-0">No differences between these versions.</p>
                         }
@@ -168,21 +168,21 @@ else
                                 </div>
                             }
 
-                            @if (Model.Diff.HtmlBodyChanged)
+                            @if (Model.Diff.BodyPathChanged)
                             {
                                 <div>
-                                    <h6>HTML Body</h6>
+                                    <h6>Body Path</h6>
                                     <div class="row g-2">
                                         <div class="col-6">
                                             <div class="p-2 bg-danger bg-opacity-10 border border-danger rounded">
                                                 <small class="text-danger fw-bold d-block mb-1">v@Model.Diff.FromVersion (before)</small>
-                                                <pre class="mb-0" style="font-size:0.75em; max-height:400px; overflow:auto; white-space:pre-wrap;">@Model.Diff.FromHtmlBody</pre>
+                                                <pre class="mb-0" style="font-size:0.75em; max-height:400px; overflow:auto; white-space:pre-wrap;">@Model.Diff.FromBodyPath</pre>
                                             </div>
                                         </div>
                                         <div class="col-6">
                                             <div class="p-2 bg-success bg-opacity-10 border border-success rounded">
                                                 <small class="text-success fw-bold d-block mb-1">v@Model.Diff.ToVersion (after)</small>
-                                                <pre class="mb-0" style="font-size:0.75em; max-height:400px; overflow:auto; white-space:pre-wrap;">@Model.Diff.ToHtmlBody</pre>
+                                                <pre class="mb-0" style="font-size:0.75em; max-height:400px; overflow:auto; white-space:pre-wrap;">@Model.Diff.ToBodyPath</pre>
                                             </div>
                                         </div>
                                     </div>

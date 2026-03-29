@@ -42,7 +42,7 @@ public class TemplateServiceIntegrationTests : DbContextTestBase
         {
             Name = "API Integration Test",
             Channel = ChannelType.Email,
-            HtmlBody = "<h1>Hello {{ recipient.name }}</h1>",
+            BodyPath = "templates/api-integration-test/v1.html",
             Description = "Integration test template"
         };
 
@@ -54,7 +54,7 @@ public class TemplateServiceIntegrationTests : DbContextTestBase
         retrieved.Should().NotBeNull();
         retrieved!.Id.Should().Be(created.Id);
         retrieved.Name.Should().Be("API Integration Test");
-        retrieved.HtmlBody.Should().Be("<h1>Hello {{ recipient.name }}</h1>");
+        retrieved.BodyPath.Should().Be("templates/api-integration-test/v1.html");
         retrieved.Status.Should().Be(TemplateStatus.Draft);
         retrieved.Version.Should().Be(1);
     }
@@ -64,21 +64,21 @@ public class TemplateServiceIntegrationTests : DbContextTestBase
     // ----------------------------------------------------------------
 
     [Fact]
-    public async Task Update_ChangesNameAndHtmlBody()
+    public async Task Update_ChangesNameAndBodyPath()
     {
         // Arrange
         var created = await _service.CreateAsync(new CreateTemplateRequest
         {
             Name = "Old Name",
             Channel = ChannelType.Letter,
-            HtmlBody = "<p>Old</p>"
+            BodyPath = "templates/old-name/v1.docx"
         });
 
         // Act
         await _service.UpdateAsync(created.Id, new UpdateTemplateRequest
         {
             Name = "New Name",
-            HtmlBody = "<p>New</p>",
+            BodyPath = "templates/new-name/v2.docx",
             Description = "Updated"
         });
 
@@ -88,7 +88,7 @@ public class TemplateServiceIntegrationTests : DbContextTestBase
         // Assert
         updated.Should().NotBeNull();
         updated!.Name.Should().Be("New Name");
-        updated.HtmlBody.Should().Be("<p>New</p>");
+        updated.BodyPath.Should().Be("templates/new-name/v2.docx");
         updated.Description.Should().Be("Updated");
     }
 
@@ -104,7 +104,7 @@ public class TemplateServiceIntegrationTests : DbContextTestBase
         {
             Name = "Soft Delete Test",
             Channel = ChannelType.Sms,
-            HtmlBody = "Plain text SMS"
+            BodyPath = "templates/soft-delete-test/v1.txt"
         });
 
         // Act
@@ -132,8 +132,8 @@ public class TemplateServiceIntegrationTests : DbContextTestBase
     public async Task GetPaged_FilterByStatus_ReturnsOnlyMatchingStatus()
     {
         // Arrange
-        await _service.CreateAsync(new CreateTemplateRequest { Name = "Draft One", Channel = ChannelType.Email, HtmlBody = "a" });
-        await _service.CreateAsync(new CreateTemplateRequest { Name = "Draft Two", Channel = ChannelType.Email, HtmlBody = "b" });
+        await _service.CreateAsync(new CreateTemplateRequest { Name = "Draft One", Channel = ChannelType.Email, BodyPath = "templates/draft-one/v1.html" });
+        await _service.CreateAsync(new CreateTemplateRequest { Name = "Draft Two", Channel = ChannelType.Email, BodyPath = "templates/draft-two/v1.html" });
 
         // Manually set one template to Published via context (bypassing service for test setup)
         var draftTwo = Context.Templates.First(t => t.Name == "Draft Two");
@@ -156,8 +156,8 @@ public class TemplateServiceIntegrationTests : DbContextTestBase
     public async Task GetPaged_FilterByChannelAndStatus_CombinesFilters()
     {
         // Arrange
-        await _service.CreateAsync(new CreateTemplateRequest { Name = "Email Draft", Channel = ChannelType.Email, HtmlBody = "a" });
-        await _service.CreateAsync(new CreateTemplateRequest { Name = "SMS Draft", Channel = ChannelType.Sms, HtmlBody = "b" });
+        await _service.CreateAsync(new CreateTemplateRequest { Name = "Email Draft", Channel = ChannelType.Email, BodyPath = "templates/email-draft/v1.html" });
+        await _service.CreateAsync(new CreateTemplateRequest { Name = "SMS Draft", Channel = ChannelType.Sms, BodyPath = "templates/sms-draft/v1.txt" });
 
         // Act
         var result = await _service.GetPagedAsync(ChannelType.Email, TemplateStatus.Draft, 1, 50);
@@ -179,7 +179,7 @@ public class TemplateServiceIntegrationTests : DbContextTestBase
         {
             Name = "Promo Newsletter",
             Channel = ChannelType.Email,
-            HtmlBody = "<p>Hello</p>"
+            BodyPath = "templates/promo-newsletter/v1.html"
         });
 
         // Act
@@ -187,7 +187,7 @@ public class TemplateServiceIntegrationTests : DbContextTestBase
         {
             Name = "Promo Newsletter",
             Channel = ChannelType.Email,
-            HtmlBody = "<p>Duplicate</p>"
+            BodyPath = "templates/promo-newsletter-dup/v1.html"
         });
 
         // Assert
@@ -202,7 +202,7 @@ public class TemplateServiceIntegrationTests : DbContextTestBase
         {
             Name = "Promo Template",
             Channel = ChannelType.Email,
-            HtmlBody = "<p>Email version</p>"
+            BodyPath = "templates/promo-email/v1.html"
         });
 
         // Act — SMS with same name should NOT throw
@@ -210,7 +210,7 @@ public class TemplateServiceIntegrationTests : DbContextTestBase
         {
             Name = "Promo Template",
             Channel = ChannelType.Sms,
-            HtmlBody = "SMS version"
+            BodyPath = "templates/promo-sms/v1.txt"
         });
 
         // Assert
@@ -227,7 +227,7 @@ public class TemplateServiceIntegrationTests : DbContextTestBase
         var act = () => _service.UpdateAsync(Guid.NewGuid(), new UpdateTemplateRequest
         {
             Name = "Ghost",
-            HtmlBody = "body"
+            BodyPath = "templates/ghost/v1.html"
         });
 
         await act.Should().ThrowAsync<NotFoundException>();

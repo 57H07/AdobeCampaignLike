@@ -124,7 +124,7 @@ public class TemplatePreviewServiceTests : IDisposable
         {
             Name = "Test Template",
             Channel = channel,
-            HtmlBody = htmlBody,
+            BodyPath = htmlBody,
             Status = TemplateStatus.Draft
         };
         _context.Templates.Add(template);

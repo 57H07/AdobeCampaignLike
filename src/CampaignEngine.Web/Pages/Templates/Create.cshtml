@@ -58,15 +58,12 @@
                     </div>
 
                     <div class="mb-3">
-                        <label asp-for="Input.HtmlBody" class="form-label">HTML Body <span class="text-danger">*</span></label>
-                        <textarea asp-for="Input.HtmlBody" class="form-control font-monospace"
-                                  rows="15" placeholder="Enter HTML body with Scriban placeholders e.g. {{ recipient.name }}"></textarea>
-                        <span asp-validation-for="Input.HtmlBody" class="text-danger"></span>
+                        <label asp-for="Input.BodyPath" class="form-label">Body Path <span class="text-danger">*</span></label>
+                        <input asp-for="Input.BodyPath" class="form-control"
+                               placeholder="e.g. templates/{id}/v1.docx" />
+                        <span asp-validation-for="Input.BodyPath" class="text-danger"></span>
                         <div class="form-text">
-                            Supports Scriban syntax: <code>{{ variable }}</code> for scalar,
-                            <code>{{ for item in list }} ... {{ end }}</code> for iteration,
-                            <code>{{ if condition }} ... {{ end }}</code> for conditionals,
-                            <code>{{&gt; sub_name}}</code> for sub-template embedding.
+                            Relative path from storage root to the template body file.
                         </div>
                     </div>
 

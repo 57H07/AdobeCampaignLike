@@ -16,9 +16,12 @@ public class TemplateHistoryConfiguration : IEntityTypeConfiguration<TemplateHis
             .IsRequired()
             .HasMaxLength(200);
 
-        builder.Property(h => h.HtmlBody)
+        builder.Property(h => h.BodyPath)
             .IsRequired()
-            .HasColumnType("nvarchar(max)");
+            .HasMaxLength(500);
+
+        builder.Property(h => h.BodyChecksum)
+            .HasMaxLength(64);
 
         builder.Property(h => h.ChangedBy)
             .HasMaxLength(200);

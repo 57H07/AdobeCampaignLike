@@ -97,7 +97,8 @@ public class TemplatesController : ControllerBase
             Id = template.Id,
             Name = template.Name,
             Channel = template.Channel.ToString(),
-            HtmlBody = template.HtmlBody,
+            BodyPath = template.BodyPath,
+            BodyChecksum = template.BodyChecksum,
             Status = template.Status.ToString(),
             Version = template.Version,
             IsSubTemplate = template.IsSubTemplate,
@@ -138,7 +139,8 @@ public class TemplatesController : ControllerBase
             Id = template.Id,
             Name = template.Name,
             Channel = template.Channel.ToString(),
-            HtmlBody = template.HtmlBody,
+            BodyPath = template.BodyPath,
+            BodyChecksum = template.BodyChecksum,
             Status = template.Status.ToString(),
             Version = template.Version,
             IsSubTemplate = template.IsSubTemplate,
@@ -186,7 +188,8 @@ public class TemplatesController : ControllerBase
             Id = template.Id,
             Name = template.Name,
             Channel = template.Channel.ToString(),
-            HtmlBody = template.HtmlBody,
+            BodyPath = template.BodyPath,
+            BodyChecksum = template.BodyChecksum,
             Status = template.Status.ToString(),
             Version = template.Version,
             IsSubTemplate = template.IsSubTemplate,
@@ -259,7 +262,8 @@ public class TemplatesController : ControllerBase
             Id = template.Id,
             Name = template.Name,
             Channel = template.Channel.ToString(),
-            HtmlBody = template.HtmlBody,
+            BodyPath = template.BodyPath,
+            BodyChecksum = template.BodyChecksum,
             Status = template.Status.ToString(),
             Version = template.Version,
             IsSubTemplate = template.IsSubTemplate,
@@ -301,7 +305,8 @@ public class TemplatesController : ControllerBase
             Id = template.Id,
             Name = template.Name,
             Channel = template.Channel.ToString(),
-            HtmlBody = template.HtmlBody,
+            BodyPath = template.BodyPath,
+            BodyChecksum = template.BodyChecksum,
             Status = template.Status.ToString(),
             Version = template.Version,
             IsSubTemplate = template.IsSubTemplate,
@@ -472,7 +477,7 @@ public class TemplatesController : ControllerBase
         var template = await _templateService.GetByIdAsync(id, cancellationToken);
         if (template is null) return NotFound();
 
-        var result = _parserService.ExtractPlaceholders(template.HtmlBody);
+        var result = _parserService.ExtractPlaceholders(template.BodyPath);
         return Ok(result);
     }
 
@@ -498,7 +503,7 @@ public class TemplatesController : ControllerBase
         if (template is null) return NotFound();
 
         var manifestEntries = await _manifestService.GetByTemplateIdAsync(id, cancellationToken);
-        var result = _parserService.ValidateManifestCompleteness(template.HtmlBody, manifestEntries);
+        var result = _parserService.ValidateManifestCompleteness(template.BodyPath, manifestEntries);
         return Ok(result);
     }
 
@@ -546,7 +551,7 @@ public class TemplatesController : ControllerBase
         var template = await _templateService.GetByIdAsync(id, cancellationToken);
         if (template is null) return NotFound();
 
-        var references = _subTemplateResolver.ExtractReferences(template.HtmlBody);
+        var references = _subTemplateResolver.ExtractReferences(template.BodyPath);
         return Ok(new SubTemplateReferencesResult
         {
             TemplateId = id,
@@ -579,7 +584,7 @@ public class TemplatesController : ControllerBase
 
         try
         {
-            var resolvedBody = await _subTemplateResolver.ResolveAsync(id, template.HtmlBody, cancellationToken);
+            var resolvedBody = await _subTemplateResolver.ResolveAsync(id, template.BodyPath, cancellationToken);
             return Ok(new SubTemplateResolveResult
             {
                 TemplateId = id,
@@ -782,7 +787,8 @@ public class TemplatesController : ControllerBase
             Id = template.Id,
             Name = template.Name,
             Channel = template.Channel.ToString(),
-            HtmlBody = template.HtmlBody,
+            BodyPath = template.BodyPath,
+            BodyChecksum = template.BodyChecksum,
             Status = template.Status.ToString(),
             Version = template.Version,
             IsSubTemplate = template.IsSubTemplate,

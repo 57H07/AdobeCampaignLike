@@ -45,7 +45,7 @@ public class CreateTemplateModel : PageModel
             {
                 Name = Input.Name,
                 Channel = (ChannelType)Input.Channel,
-                HtmlBody = Input.HtmlBody,
+                BodyPath = Input.BodyPath,
                 Description = string.IsNullOrWhiteSpace(Input.Description) ? null : Input.Description,
                 IsSubTemplate = Input.IsSubTemplate
             };
@@ -75,8 +75,9 @@ public class CreateTemplateInputModel
     [MaxLength(500, ErrorMessage = "Description must not exceed 500 characters.")]
     public string? Description { get; set; }
 
-    [Required(ErrorMessage = "HTML body is required.")]
-    public string HtmlBody { get; set; } = string.Empty;
+    [Required(ErrorMessage = "Body path is required.")]
+    [MaxLength(500, ErrorMessage = "Body path must not exceed 500 characters.")]
+    public string BodyPath { get; set; } = string.Empty;
 
     /// <summary>
     /// When checked, this template is a reusable sub-template block

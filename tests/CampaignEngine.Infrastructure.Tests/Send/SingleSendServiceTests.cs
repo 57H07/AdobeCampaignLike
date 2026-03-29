@@ -91,7 +91,7 @@ public class SingleSendServiceTests : DbContextTestBase
             Name = "Test Email Template",
             Channel = ChannelType.Email,
             Status = TemplateStatus.Published,
-            HtmlBody = "<p>Hello {{ name }}</p>",
+            BodyPath = "templates/test-email/v1.html",
             PlaceholderManifests = placeholderKeys
                 .Select(k => new PlaceholderManifestEntry { Key = k, Type = PlaceholderType.Scalar })
                 .ToList()
@@ -108,7 +108,7 @@ public class SingleSendServiceTests : DbContextTestBase
             Name = "Draft Email Template",
             Channel = ChannelType.Email,
             Status = TemplateStatus.Draft,
-            HtmlBody = "<p>Draft</p>",
+            BodyPath = "templates/draft-email/v1.html",
             PlaceholderManifests = new List<PlaceholderManifestEntry>()
         };
         Context.Templates.Add(template);
