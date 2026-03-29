@@ -123,7 +123,7 @@ public class LetterDispatcher : IChannelDispatcher
             };
 
             var processingResult = await postProcessor.ProcessAsync(
-                request.Content,
+                request.Content!,
                 context,
                 cancellationToken);
 

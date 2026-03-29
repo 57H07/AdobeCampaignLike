@@ -102,14 +102,15 @@ public class SmsDispatcher : IChannelDispatcher
         // ----------------------------------------------------------------
         // 3. Message truncation (BR-2)
         // ----------------------------------------------------------------
-        var message = TruncateMessage(request.Content, _smsOptions.MaxMessageLength);
+        var content = request.Content ?? string.Empty;
+        var message = TruncateMessage(content, _smsOptions.MaxMessageLength);
 
-        if (message.Length < request.Content.Length)
+        if (message.Length < content.Length)
         {
             _logger.LogInformation(
                 "SMS message truncated from {Original} to {Max} characters. " +
                 "CampaignId={CampaignId}",
-                request.Content.Length,
+                content.Length,
                 _smsOptions.MaxMessageLength,
                 request.CampaignId);
         }

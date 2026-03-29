@@ -179,7 +179,7 @@ public class EmailDispatcher : IChannelDispatcher
 
     private MimeEntity BuildBody(DispatchRequest request)
     {
-        var htmlPart = BuildHtmlPart(request.Content);
+        var htmlPart = BuildHtmlPart(request.Content ?? string.Empty);
 
         if (request.Attachments.Count == 0)
         {
