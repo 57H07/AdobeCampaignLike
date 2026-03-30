@@ -1,10 +1,12 @@
 using CampaignEngine.Application.Interfaces;
 using CampaignEngine.Application.Interfaces.Repositories;
+using CampaignEngine.Application.Interfaces.Storage;
 using CampaignEngine.Infrastructure.ApiKeys;
 using CampaignEngine.Infrastructure.Attachments;
 using CampaignEngine.Infrastructure.Batch;
 using CampaignEngine.Infrastructure.Campaigns;
 using CampaignEngine.Infrastructure.Configuration;
+using CampaignEngine.Infrastructure.Storage;
 using CampaignEngine.Infrastructure.DataSources;
 using Microsoft.Extensions.Options;
 using CampaignEngine.Infrastructure.Dispatch;
@@ -295,6 +297,15 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IFilterAstTranslator, FilterAstTranslator>();
         services.AddScoped<IFilterExpressionValidator, FilterExpressionValidator>();
         services.AddScoped<IDataSourcePreviewService, DataSourcePreviewService>();
+
+        // ----------------------------------------------------------------
+        // US-002: Template body file-system store
+        // Singleton: stateless, wraps pure file-system calls.
+        // ITemplateBodyStore is consumed by Application services via the interface.
+        // ----------------------------------------------------------------
+        services.Configure<TemplateBodyStoreOptions>(
+            configuration.GetSection(TemplateBodyStoreOptions.SectionName));
+        services.AddSingleton<ITemplateBodyStore, FileSystemTemplateBodyStore>();
 
         // ----------------------------------------------------------------
         // Attachment management (US-028)
