@@ -596,7 +596,8 @@
 > Implement the core rendering engine for DOCX template processing: run merging, scalar replacement, collection rendering, and conditional blocks.
 
 #### [US-013] - XML run merging with smart-quote normalization
-**Status:** 🟡 TODO
+**Status:** 🔵 IN PROGRESS
+**Start date:** 2026-03-30
 **Priority:** 🔴 High
 **Complexity:** L
 **Epic:** Epic 3
