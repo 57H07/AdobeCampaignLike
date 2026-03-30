@@ -57,8 +57,9 @@ public sealed class TemplateStorageStartupValidator : IHostedService
     /// <summary>
     /// Validates that <paramref name="rootPath"/> is non-empty, exists, and is writable.
     /// Throws <see cref="InvalidOperationException"/> on the first failing check.
+    /// Exposed as public for unit-test accessibility without requiring InternalsVisibleTo.
     /// </summary>
-    internal void ValidateRootPath(string rootPath)
+    public void ValidateRootPath(string rootPath)
     {
         // TASK-004-04: Check path is not null or empty
         if (string.IsNullOrWhiteSpace(rootPath))
