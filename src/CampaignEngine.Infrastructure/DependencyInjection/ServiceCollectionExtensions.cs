@@ -18,6 +18,7 @@ using CampaignEngine.Infrastructure.Persistence.Security;
 using CampaignEngine.Infrastructure.Persistence.Seed;
 using CampaignEngine.Infrastructure.Rendering;
 using CampaignEngine.Infrastructure.Rendering.PostProcessors;
+using CampaignEngine.Infrastructure.Startup;
 using CampaignEngine.Infrastructure.Templates;
 using DinkToPdf;
 using DinkToPdf.Contracts;
@@ -316,6 +317,16 @@ public static class ServiceCollectionExtensions
         services.Configure<TemplateBodyStoreOptions>(
             configuration.GetSection(TemplateBodyStoreOptions.SectionName));
         services.AddSingleton<ITemplateBodyStore, FileSystemTemplateBodyStore>();
+
+        // ----------------------------------------------------------------
+        // US-004: Template storage root startup validation
+        // TemplateStorageOptions: bound from "TemplateStorage" section in appsettings.json.
+        // TemplateStorageStartupValidator: IHostedService that validates RootPath before
+        // the HTTP server accepts any requests (BR-1 + BR-2).
+        // ----------------------------------------------------------------
+        services.Configure<TemplateStorageOptions>(
+            configuration.GetSection(TemplateStorageOptions.SectionName));
+        services.AddHostedService<TemplateStorageStartupValidator>();
 
         // ----------------------------------------------------------------
         // Attachment management (US-028)
