@@ -1,5 +1,6 @@
 using CampaignEngine.Application.DependencyInjection;
 using CampaignEngine.Infrastructure.DependencyInjection;
+using CampaignEngine.Infrastructure.Persistence.Seed;
 using CampaignEngine.Web.Middleware;
 using CampaignEngine.Web.OpenApi;
 using Hangfire;
@@ -67,6 +68,12 @@ try
     builder.Services.AddHttpContextAccessor();
 
     var app = builder.Build();
+
+    // ----------------------------------------------------------------
+    // Database seeding (US-026): seed roles and default admin on every startup.
+    // AdminSeeder is idempotent — skips if admin user already exists.
+    // ----------------------------------------------------------------
+    await app.SeedAdminAsync();
 
     // ----------------------------------------------------------------
     // Middleware pipeline

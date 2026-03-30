@@ -99,6 +99,16 @@ public static class ServiceCollectionExtensions
         services.AddScoped<DatabaseSeeder>();
 
         // ----------------------------------------------------------------
+        // Default admin seeder (all environments, US-026)
+        // Registers roles and creates the default admin account on first startup.
+        // Call host.SeedAdminAsync() in Program.cs after migrations.
+        // Credentials configured via DefaultAdmin section in appsettings.json.
+        // ----------------------------------------------------------------
+        services.Configure<DefaultAdminOptions>(
+            configuration.GetSection(DefaultAdminOptions.SectionName));
+        services.AddScoped<AdminSeeder>();
+
+        // ----------------------------------------------------------------
         // Template renderer — Scriban implementation (stateless, thread-safe, sandboxed)
         // Registered as Singleton: stateless by design, expensive parse is per-call, not per-instance.
         // ----------------------------------------------------------------
