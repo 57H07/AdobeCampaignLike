@@ -214,8 +214,9 @@
 ---
 
 #### [US-004] - Configurable storage root with startup validation
-**Status:** 🔵 IN PROGRESS
+**Status:** ✅ DONE
 **Start date:** 2026-03-30
+**End date:** 2026-03-30
 **Priority:** 🔴 High
 **Complexity:** S
 **Epic:** Epic 1
@@ -228,21 +229,21 @@
 > F-104 + F-104b: Storage root configured via `appsettings.json` (`TemplateStorage:RootPath`). Startup check implemented as `IHostedService` that throws if path is missing, does not exist, or is not writable.
 
 **Acceptance criteria:**
-- [ ] `appsettings.json` has `TemplateStorage:RootPath` setting
-- [ ] `IHostedService` validates storage root at startup
-- [ ] Application fails to start if `RootPath` is null/empty
-- [ ] Application fails to start if `RootPath` does not exist
-- [ ] Application fails to start if `RootPath` is not writable
-- [ ] Clear error message logged on validation failure
+- [x] `appsettings.json` has `TemplateStorage:RootPath` setting ✅
+- [x] `IHostedService` validates storage root at startup ✅
+- [x] Application fails to start if `RootPath` is null/empty ✅
+- [x] Application fails to start if `RootPath` does not exist ✅
+- [x] Application fails to start if `RootPath` is not writable ✅
+- [x] Clear error message logged on validation failure ✅
 
 **Technical tasks:**
-- [ ] `TASK-004-01` - **[Config]** Add `TemplateStorage` section to `appsettings.json`
-- [ ] `TASK-004-02` - **[Class]** Create `TemplateStorageOptions` class with `RootPath` property
-- [ ] `TASK-004-03` - **[HostedService]** Create `TemplateStorageStartupValidator : IHostedService`
-- [ ] `TASK-004-04` - **[Validation]** Check path exists (`Directory.Exists`)
-- [ ] `TASK-004-05` - **[Validation]** Check path writable (attempt temp file write)
-- [ ] `TASK-004-06` - **[DI]** Register hosted service in `Program.cs`
-- [ ] `TASK-004-07` - **[Test]** Unit tests for validation logic
+- [x] `TASK-004-01` - **[Config]** Add `TemplateStorage` section to `appsettings.json` ✅ 2026-03-30
+- [x] `TASK-004-02` - **[Class]** Create `TemplateStorageOptions` class with `RootPath` property ✅ 2026-03-30
+- [x] `TASK-004-03` - **[HostedService]** Create `TemplateStorageStartupValidator : IHostedService` ✅ 2026-03-30
+- [x] `TASK-004-04` - **[Validation]** Check path exists (`Directory.Exists`) ✅ 2026-03-30
+- [x] `TASK-004-05` - **[Validation]** Check path writable (attempt temp file write) ✅ 2026-03-30
+- [x] `TASK-004-06` - **[DI]** Register hosted service in `Program.cs` ✅ 2026-03-30
+- [x] `TASK-004-07` - **[Test]** Unit tests for validation logic ✅ 2026-03-30
 
 **Business rules:**
 1. Validation runs before any web requests are accepted
