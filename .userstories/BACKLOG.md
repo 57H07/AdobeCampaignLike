@@ -304,7 +304,8 @@
 ---
 
 #### [US-006] - DOCX binary body storage
-**Status:** 🟡 TODO
+**Status:** 🔵 IN PROGRESS
+**Start date:** 2026-03-30
 **Priority:** 🔴 High
 **Complexity:** S
 **Epic:** Epic 1
