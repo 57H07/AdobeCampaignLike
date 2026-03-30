@@ -1150,7 +1150,8 @@
 > Ongoing technical improvements, infrastructure work, and maintenance tasks that keep the codebase healthy and the application operational.
 
 #### [US-026] - Initialize database with a default admin user
-**Status:** 🟡 TODO
+**Status:** 🔵 IN PROGRESS
+**Start date:** 2026-03-30
 **Priority:** 🔴 High
 **Complexity:** S
 **Epic:** Epic 6
