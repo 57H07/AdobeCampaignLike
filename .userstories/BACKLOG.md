@@ -1017,7 +1017,8 @@
 ---
 
 #### [US-023] - LetterDispatcher DOCX file drop
-**Status:** 🟡 TODO
+**Status:** 🔵 IN PROGRESS
+**Start date:** 2026-03-30
 **Priority:** 🔴 High
 **Complexity:** M
 **Epic:** Epic 4
