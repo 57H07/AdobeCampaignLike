@@ -1018,8 +1018,9 @@
 ---
 
 #### [US-023] - LetterDispatcher DOCX file drop
-**Status:** 🔵 IN PROGRESS
+**Status:** ✅ DONE
 **Start date:** 2026-03-30
+**End date:** 2026-03-30
 **Priority:** 🔴 High
 **Complexity:** M
 **Epic:** Epic 4
@@ -1032,26 +1033,26 @@
 > F-403: Rewritten `LetterDispatcher` accepts `DispatchRequest.BinaryContent` and writes one `.docx` file per recipient via `PrintProviderFileDropHandler`. No PDF consolidation, no CSV manifest, no `FlushBatchAsync`. Delete `LetterPostProcessor` and DinkToPdf references.
 
 **Acceptance criteria:**
-- [ ] `LetterDispatcher.SendAsync` accepts `DispatchRequest` with `BinaryContent`
-- [ ] Writes one `.docx` file via `PrintProviderFileDropHandler`
-- [ ] File naming: `{campaignId}_{recipientId}_{timestamp}.docx`
-- [ ] Returns `DispatchResult.Success` on successful write
-- [ ] Returns `DispatchResult.Fail` if `BinaryContent` is null/empty
-- [ ] Disabled channel returns failure without writing
-- [ ] I/O failure throws `LetterDispatchException` (transient, retriable)
-- [ ] Old `LetterPostProcessor` removed from codebase
-- [ ] DinkToPdf/wkhtmltox references removed from Letter channel
+- [x] `LetterDispatcher.SendAsync` accepts `DispatchRequest` with `BinaryContent` ✅
+- [x] Writes one `.docx` file via `PrintProviderFileDropHandler` ✅
+- [x] File naming: `{campaignId}_{recipientId}_{timestamp}.docx` ✅
+- [x] Returns `DispatchResult.Success` on successful write ✅
+- [x] Returns `DispatchResult.Fail` if `BinaryContent` is null/empty ✅
+- [x] Disabled channel returns failure without writing ✅
+- [x] I/O failure throws `LetterDispatchException` (transient, retriable) ✅
+- [x] Old `LetterPostProcessor` removed from codebase ✅
+- [x] DinkToPdf/wkhtmltox references removed from Letter channel ✅
 
 **Technical tasks:**
-- [ ] `TASK-023-01` - **[Service]** Rewrite `LetterDispatcher.SendAsync` for DOCX
-- [ ] `TASK-023-02` - **[Handler]** Wire to `PrintProviderFileDropHandler.WriteFileAsync`
-- [ ] `TASK-023-03` - **[Naming]** Implement file naming convention
-- [ ] `TASK-023-04` - **[Validation]** Check `BinaryContent` not null/empty
-- [ ] `TASK-023-05` - **[Exception]** Map I/O failures to `LetterDispatchException`
-- [ ] `TASK-023-06` - **[Cleanup]** Remove `LetterPostProcessor` class
-- [ ] `TASK-023-07` - **[Cleanup]** Remove DinkToPdf package reference from Letter channel
-- [ ] `TASK-023-08` - **[Cleanup]** Remove `FlushBatchAsync` logic
-- [ ] `TASK-023-09` - **[Test]** Unit tests per F-404 coverage requirements
+- [x] `TASK-023-01` - **[Service]** Rewrite `LetterDispatcher.SendAsync` for DOCX ✅ 2026-03-30
+- [x] `TASK-023-02` - **[Handler]** Wire to `PrintProviderFileDropHandler.WriteFileAsync` ✅ 2026-03-30
+- [x] `TASK-023-03` - **[Naming]** Implement file naming convention ✅ 2026-03-30
+- [x] `TASK-023-04` - **[Validation]** Check `BinaryContent` not null/empty ✅ 2026-03-30
+- [x] `TASK-023-05` - **[Exception]** Map I/O failures to `LetterDispatchException` ✅ 2026-03-30
+- [x] `TASK-023-06` - **[Cleanup]** Remove `LetterPostProcessor` class ✅ 2026-03-30
+- [x] `TASK-023-07` - **[Cleanup]** Remove DinkToPdf package reference from Letter channel ✅ 2026-03-30
+- [x] `TASK-023-08` - **[Cleanup]** Remove `FlushBatchAsync` logic ✅ 2026-03-30
+- [x] `TASK-023-09` - **[Test]** Unit tests per F-404 coverage requirements ✅ 2026-03-30
 
 **Business rules:**
 1. One `SendAsync` call = one DOCX file written
