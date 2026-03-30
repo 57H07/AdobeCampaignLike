@@ -29,8 +29,7 @@ public static class AdminSeederExtensions
         catch (Exception ex)
         {
             var logger = services.GetRequiredService<ILogger<AdminSeeder>>();
-            logger.LogError(ex, "An error occurred while seeding the default admin user.");
-            throw;
+            logger.LogError(ex, "An error occurred while seeding the default admin user. The application will continue but may require manual admin setup.");
         }
     }
 }

@@ -110,7 +110,7 @@ public sealed class FileSystemTemplateBodyStore : ITemplateBodyStore
     public Task<Stream> ReadAsync(string path, CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(path))
-            throw new TemplateBodyNotFoundException(path);
+            return Task.FromException<Stream>(new TemplateBodyNotFoundException(path));
 
         var fullPath = ResolveFull(path);
 
