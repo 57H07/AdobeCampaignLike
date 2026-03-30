@@ -597,8 +597,9 @@
 > Implement the core rendering engine for DOCX template processing: run merging, scalar replacement, collection rendering, and conditional blocks.
 
 #### [US-013] - XML run merging with smart-quote normalization
-**Status:** 🔵 IN PROGRESS
+**Status:** ✅ DONE
 **Start date:** 2026-03-30
+**End date:** 2026-03-30
 **Priority:** 🔴 High
 **Complexity:** L
 **Epic:** Epic 3
@@ -611,25 +612,25 @@
 > F-301: `DocxRunMerger` merges split `<w:r>` runs, preserves `<w:bookmarkStart>`, `<w:bookmarkEnd>`, `<w:rPr>`, normalizes smart quotes (`"` `"` → `"`). Must traverse main body + HeaderPart + FooterPart.
 
 **Acceptance criteria:**
-- [ ] `DocxRunMerger` traverses main document body, all HeaderParts, all FooterParts
-- [ ] Adjacent `<w:r>` elements with identical `<w:rPr>` are merged
-- [ ] Bookmark elements (`<w:bookmarkStart>`, `<w:bookmarkEnd>`) preserved during merge
-- [ ] Smart quotes normalized: `"` `"` → `"` (U+201C/U+201D → U+0022)
-- [ ] Split placeholder `{{ first` + `Name }}` recognized after merge
-- [ ] Edge case: bookmarks inside split placeholder discarded (documented)
+- [x] `DocxRunMerger` traverses main document body, all HeaderParts, all FooterParts ✅
+- [x] Adjacent `<w:r>` elements with identical `<w:rPr>` are merged ✅
+- [x] Bookmark elements (`<w:bookmarkStart>`, `<w:bookmarkEnd>`) preserved during merge ✅
+- [x] Smart quotes normalized: `"` `"` → `"` (U+201C/U+201D → U+0022) ✅
+- [x] Split placeholder `{{ first` + `Name }}` recognized after merge ✅
+- [x] Edge case: bookmarks inside split placeholder discarded (documented) ✅
 
 **Technical tasks:**
-- [ ] `TASK-013-01` - **[Class]** Create `DocxRunMerger` in `Infrastructure/Rendering/`
-- [ ] `TASK-013-02` - **[Method]** Implement `MergeRuns(WordprocessingDocument doc)`
-- [ ] `TASK-013-03` - **[Traversal]** Traverse main document body paragraphs
-- [ ] `TASK-013-04` - **[Traversal]** Traverse HeaderPart XML for all sections
-- [ ] `TASK-013-05` - **[Traversal]** Traverse FooterPart XML for all sections
-- [ ] `TASK-013-06` - **[Merge]** Merge adjacent runs with same `<w:rPr>`
-- [ ] `TASK-013-07` - **[Normalization]** Apply smart-quote normalization (U+201C/U+201D → U+0022)
-- [ ] `TASK-013-08` - **[Preservation]** Preserve bookmark elements during merge
-- [ ] `TASK-013-09` - **[Test]** Unit tests with fragmented placeholder fixtures
-- [ ] `TASK-013-10` - **[Test]** Unit tests for headers/footers traversal
-- [ ] `TASK-013-11` - **[Test]** Unit tests for smart-quote normalization
+- [x] `TASK-013-01` - **[Class]** Create `DocxRunMerger` in `Infrastructure/Rendering/` ✅ 2026-03-30
+- [x] `TASK-013-02` - **[Method]** Implement `MergeRuns(WordprocessingDocument doc)` ✅ 2026-03-30
+- [x] `TASK-013-03` - **[Traversal]** Traverse main document body paragraphs ✅ 2026-03-30
+- [x] `TASK-013-04` - **[Traversal]** Traverse HeaderPart XML for all sections ✅ 2026-03-30
+- [x] `TASK-013-05` - **[Traversal]** Traverse FooterPart XML for all sections ✅ 2026-03-30
+- [x] `TASK-013-06` - **[Merge]** Merge adjacent runs with same `<w:rPr>` ✅ 2026-03-30
+- [x] `TASK-013-07` - **[Normalization]** Apply smart-quote normalization (U+201C/U+201D → U+0022) ✅ 2026-03-30
+- [x] `TASK-013-08` - **[Preservation]** Preserve bookmark elements during merge ✅ 2026-03-30
+- [x] `TASK-013-09` - **[Test]** Unit tests with fragmented placeholder fixtures ✅ 2026-03-30
+- [x] `TASK-013-10` - **[Test]** Unit tests for headers/footers traversal ✅ 2026-03-30
+- [x] `TASK-013-11` - **[Test]** Unit tests for smart-quote normalization ✅ 2026-03-30
 
 **Business rules:**
 1. Merge only consecutive runs with identical formatting
