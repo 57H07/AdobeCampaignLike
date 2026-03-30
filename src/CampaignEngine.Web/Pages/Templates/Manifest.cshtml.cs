@@ -1,6 +1,7 @@
 using CampaignEngine.Application.DependencyInjection;
 using CampaignEngine.Application.DTOs.Templates;
 using CampaignEngine.Application.Interfaces;
+using CampaignEngine.Application.Interfaces.Storage;
 using CampaignEngine.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -20,15 +21,18 @@ public class TemplateManifestModel : PageModel
     private readonly ITemplateService _templateService;
     private readonly IPlaceholderManifestService _manifestService;
     private readonly IPlaceholderParserService _parserService;
+    private readonly ITemplateBodyStore _bodyStore;
 
     public TemplateManifestModel(
         ITemplateService templateService,
         IPlaceholderManifestService manifestService,
-        IPlaceholderParserService parserService)
+        IPlaceholderParserService parserService,
+        ITemplateBodyStore bodyStore)
     {
         _templateService = templateService;
         _manifestService = manifestService;
         _parserService = parserService;
+        _bodyStore = bodyStore;
     }
 
     public Guid TemplateId { get; private set; }
@@ -57,7 +61,9 @@ public class TemplateManifestModel : PageModel
         TemplateName = template.Name;
 
         var entries = await _manifestService.GetByTemplateIdAsync(id);
-        ValidationResult = _parserService.ValidateManifestCompleteness(template.BodyPath, entries);
+        // US-007 TASK-007-03: Load HTML content from file store before manifest validation.
+        var bodyContent = await _bodyStore.ReadAllTextAsync(template.BodyPath);
+        ValidationResult = _parserService.ValidateManifestCompleteness(bodyContent, entries);
 
         Entries = entries.Select(e => new ManifestEntryInputModel
         {
@@ -86,7 +92,8 @@ public class TemplateManifestModel : PageModel
         if (!ModelState.IsValid)
         {
             var current = await _manifestService.GetByTemplateIdAsync(id);
-            ValidationResult = _parserService.ValidateManifestCompleteness(template.BodyPath, current);
+            var invalidBodyContent = await _bodyStore.ReadAllTextAsync(template.BodyPath);
+            ValidationResult = _parserService.ValidateManifestCompleteness(invalidBodyContent, current);
             return Page();
         }
 
@@ -101,7 +108,8 @@ public class TemplateManifestModel : PageModel
             }).ToList();
 
             var saved = await _manifestService.ReplaceManifestAsync(id, requests);
-            ValidationResult = _parserService.ValidateManifestCompleteness(template.BodyPath, saved);
+            var savedBodyContent = await _bodyStore.ReadAllTextAsync(template.BodyPath);
+            ValidationResult = _parserService.ValidateManifestCompleteness(savedBodyContent, saved);
 
             SuccessMessage = $"Placeholder manifest saved. {saved.Count} entr{(saved.Count == 1 ? "y" : "ies")} declared.";
 
@@ -125,14 +133,16 @@ public class TemplateManifestModel : PageModel
         {
             ModelState.AddModelError(string.Empty, ex.Message);
             var current = await _manifestService.GetByTemplateIdAsync(id);
-            ValidationResult = _parserService.ValidateManifestCompleteness(template.BodyPath, current);
+            var errBodyContent = await _bodyStore.ReadAllTextAsync(template.BodyPath);
+            ValidationResult = _parserService.ValidateManifestCompleteness(errBodyContent, current);
             return Page();
         }
         catch (Exception ex)
         {
             ErrorMessage = $"Failed to save manifest: {ex.Message}";
             var current = await _manifestService.GetByTemplateIdAsync(id);
-            ValidationResult = _parserService.ValidateManifestCompleteness(template.BodyPath, current);
+            var exBodyContent = await _bodyStore.ReadAllTextAsync(template.BodyPath);
+            ValidationResult = _parserService.ValidateManifestCompleteness(exBodyContent, current);
             return Page();
         }
     }

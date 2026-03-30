@@ -116,9 +116,21 @@ public sealed class TemplateService : ITemplateService
                 "DOCX file stored for new template: Id={TemplateId}, Path={Path}",
                 template.Id, docxPath);
         }
+        // US-007 TASK-007-01: When an HTML stream is provided for Email/SMS, generate the
+        // conventional path and persist the file.
+        else if (request.HtmlContent is not null)
+        {
+            var htmlPath = HtmlFilePathHelper.Build(template.Id, initialVersion);
+            await _bodyStore.WriteAsync(htmlPath, request.HtmlContent, cancellationToken);
+            template.BodyPath = htmlPath;
+
+            _logger.LogInformation(
+                "HTML file stored for new template: Id={TemplateId}, Path={Path}",
+                template.Id, htmlPath);
+        }
         else
         {
-            // Non-DOCX channels (Email/SMS): caller supplies BodyPath directly.
+            // No file stream supplied: caller supplies BodyPath directly (legacy / non-file channels).
             template.BodyPath = request.BodyPath;
         }
 
@@ -181,6 +193,19 @@ public sealed class TemplateService : ITemplateService
                 "DOCX file versioned for template: Id={TemplateId}, NewVersion={Version}, Path={Path}",
                 template.Id, template.Version, docxPath);
         }
+        // US-007 TASK-007-02: When a replacement HTML stream is provided for Email/SMS, write it
+        // under the new version number. The previous file is left in place (audit requirement).
+        else if (request.HtmlContent is not null)
+        {
+            var htmlPath = HtmlFilePathHelper.Build(template.Id, template.Version);
+            await _bodyStore.WriteAsync(htmlPath, request.HtmlContent, cancellationToken);
+            template.BodyPath = htmlPath;
+            template.BodyChecksum = request.BodyChecksum;
+
+            _logger.LogInformation(
+                "HTML file versioned for template: Id={TemplateId}, NewVersion={Version}, Path={Path}",
+                template.Id, template.Version, htmlPath);
+        }
         else
         {
             // No new file supplied: keep existing path; only metadata fields were updated.
@@ -234,9 +259,19 @@ public sealed class TemplateService : ITemplateService
         if (template is null)
             throw new NotFoundException(nameof(Template), id);
 
+        // Domain entity enforces: only Draft templates can be published.
+        // Check state BEFORE manifest validation so DomainException propagates for non-Draft templates
+        // without requiring manifest/body-store to be set up (cleaner failure for non-Draft cases).
+        if (template.Status != TemplateStatus.Draft)
+            throw new DomainException(
+                $"Template '{template.Name}' cannot be published: current status is '{template.Status}'. " +
+                "Only Draft templates can be published.");
+
         // Business rule: manifest must be complete before publishing
+        // US-007 TASK-007-03: Load HTML body from file store before placeholder validation.
         var manifestEntries = await _manifestService.GetByTemplateIdAsync(id, cancellationToken);
-        var validationResult = _parserService.ValidateManifestCompleteness(template.BodyPath, manifestEntries);
+        var bodyContent = await _bodyStore.ReadAllTextAsync(template.BodyPath, cancellationToken);
+        var validationResult = _parserService.ValidateManifestCompleteness(bodyContent, manifestEntries);
 
         if (!validationResult.IsComplete)
         {
@@ -247,7 +282,7 @@ public sealed class TemplateService : ITemplateService
                 "All placeholders used in the template HTML must be declared in the manifest before publishing.");
         }
 
-        // Domain entity enforces: only Draft templates can be published
+        // Transition to Published (state already validated above)
         template.Publish();
 
         await _unitOfWork.CommitAsync(cancellationToken);

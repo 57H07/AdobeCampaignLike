@@ -1,6 +1,7 @@
 using System.Text.RegularExpressions;
 using CampaignEngine.Application.Interfaces;
 using CampaignEngine.Application.Interfaces.Repositories;
+using CampaignEngine.Application.Interfaces.Storage;
 using CampaignEngine.Domain.Common;
 using CampaignEngine.Domain.Exceptions;
 
@@ -34,13 +35,16 @@ public sealed class SubTemplateResolverService : ISubTemplateResolverService
         RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
     private readonly ITemplateRepository _templateRepository;
+    private readonly ITemplateBodyStore _bodyStore;
     private readonly IAppLogger<SubTemplateResolverService> _logger;
 
     public SubTemplateResolverService(
         ITemplateRepository templateRepository,
+        ITemplateBodyStore bodyStore,
         IAppLogger<SubTemplateResolverService> logger)
     {
         _templateRepository = templateRepository;
+        _bodyStore = bodyStore;
         _logger = logger;
     }
 
@@ -142,10 +146,27 @@ public sealed class SubTemplateResolverService : ISubTemplateResolverService
                 throw circularEx;
             }
 
+            // US-007 TASK-007-03: Load sub-template body content from file store.
+            // BodyPath is a relative file path (e.g. templates/{id}/v1.html);
+            // read the actual HTML content before recursing.
+            string subTemplateHtml;
+            try
+            {
+                subTemplateHtml = await _bodyStore.ReadAllTextAsync(subTemplate.BodyPath, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(
+                    "Failed to load body for sub-template '{Name}' (Id={SubTemplateId}) from store: {Error}. " +
+                    "Placeholder left unresolved.",
+                    subTemplate.Name, subTemplate.Id, ex.Message);
+                continue;
+            }
+
             // Recurse: resolve the sub-template's body before embedding
             var subChain = new List<Guid>(visitedChain) { subTemplate.Id };
             var resolvedSubBody = await ResolveRecursiveAsync(
-                subTemplate.BodyPath,
+                subTemplateHtml,
                 subChain,
                 depth + 1,
                 cancellationToken);
@@ -191,7 +212,20 @@ public sealed class SubTemplateResolverService : ISubTemplateResolverService
 
         if (template is not null)
         {
-            var references = ExtractReferences(template.BodyPath);
+            // US-007 TASK-007-03: Load body content from store before extracting references.
+            string bodyHtml;
+            try
+            {
+                bodyHtml = await _bodyStore.ReadAllTextAsync(template.BodyPath, cancellationToken);
+            }
+            catch
+            {
+                // If the body cannot be read, skip circular reference detection for this template.
+                currentPath.Pop();
+                return;
+            }
+
+            var references = ExtractReferences(bodyHtml);
             foreach (var reference in references)
             {
                 var subTemplate = await _templateRepository.GetSubTemplateByNameAsync(reference.Name, cancellationToken);

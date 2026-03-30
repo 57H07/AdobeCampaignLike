@@ -56,4 +56,16 @@ public class UpdateTemplateRequest
     /// replacement occurs — only metadata fields are updated).
     /// </summary>
     public Stream? DocxContent { get; set; }
+
+    /// <summary>
+    /// Optional UTF-8 HTML content stream for Email/SMS channel updates.
+    ///
+    /// US-007 TASK-007-02: When provided, the service writes the file as the next version
+    /// using the convention <c>templates/{templateId}/v{newVersion}.html</c> and updates
+    /// <see cref="BodyPath"/> automatically.
+    /// When null, the existing <see cref="BodyPath"/> value is used as-is (no file
+    /// replacement occurs — only metadata fields are updated).
+    /// For Letter channel this property should be null.
+    /// </summary>
+    public Stream? HtmlContent { get; set; }
 }

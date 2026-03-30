@@ -2,6 +2,7 @@ using CampaignEngine.Application.DTOs.Dispatch;
 using CampaignEngine.Application.DTOs.Send;
 using CampaignEngine.Application.Interfaces;
 using CampaignEngine.Application.Interfaces.Repositories;
+using CampaignEngine.Application.Interfaces.Storage;
 using CampaignEngine.Application.Models;
 using CampaignEngine.Domain.Enums;
 using CampaignEngine.Domain.Exceptions;
@@ -29,6 +30,7 @@ public sealed class SingleSendService : ISingleSendService
 
     private readonly ITemplateRepository _templateRepository;
     private readonly ITemplateRenderer _templateRenderer;
+    private readonly ITemplateBodyStore _bodyStore;
     private readonly IChannelDispatcherRegistry _dispatcherRegistry;
     private readonly ISendRequestValidator _validator;
     private readonly ISendLogService _sendLogService;
@@ -37,6 +39,7 @@ public sealed class SingleSendService : ISingleSendService
     public SingleSendService(
         ITemplateRepository templateRepository,
         ITemplateRenderer templateRenderer,
+        ITemplateBodyStore bodyStore,
         IChannelDispatcherRegistry dispatcherRegistry,
         ISendRequestValidator validator,
         ISendLogService sendLogService,
@@ -44,6 +47,7 @@ public sealed class SingleSendService : ISingleSendService
     {
         _templateRepository = templateRepository;
         _templateRenderer = templateRenderer;
+        _bodyStore = bodyStore;
         _dispatcherRegistry = dispatcherRegistry;
         _validator = validator;
         _sendLogService = sendLogService;
@@ -93,7 +97,9 @@ public sealed class SingleSendService : ISingleSendService
         }
 
         // ----------------------------------------------------------------
-        // Step 3: Render template with provided data
+        // Step 3: Load template HTML body from file store, then render
+        // US-007 TASK-007-03: Email/SMS bodies are stored as .html files;
+        // read content from ITemplateBodyStore before passing to Scriban renderer.
         // ----------------------------------------------------------------
         var context = new TemplateContext
         {
@@ -101,10 +107,26 @@ public sealed class SingleSendService : ISingleSendService
             HtmlEncodeValues = request.Channel != ChannelType.Sms
         };
 
+        string templateBody;
+        try
+        {
+            templateBody = await _bodyStore.ReadAllTextAsync(template.BodyPath, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "Failed to load template body from store. TrackingId={TrackingId}, TemplateId={TemplateId}, BodyPath={BodyPath}",
+                trackingId, request.TemplateId, template.BodyPath);
+
+            return SendResponse.Fail(trackingId, request.Channel,
+                $"Failed to load template body: {ex.Message}");
+        }
+
         string renderedContent;
         try
         {
-            renderedContent = await _templateRenderer.RenderAsync(template.BodyPath, context, cancellationToken);
+            renderedContent = await _templateRenderer.RenderAsync(templateBody, context, cancellationToken);
         }
         catch (Exception ex)
         {

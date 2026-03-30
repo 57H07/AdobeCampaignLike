@@ -43,6 +43,7 @@ public interface ITemplateBodyStore
     /// </exception>
     Task<Stream> ReadAsync(string path, CancellationToken ct = default);
 
+
     /// <summary>
     /// Persists the content from <paramref name="content"/> to the specified path in the
     /// backing store, creating or overwriting any existing file at that location.

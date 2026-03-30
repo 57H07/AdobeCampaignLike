@@ -1,6 +1,7 @@
 using CampaignEngine.Application.DependencyInjection;
 using CampaignEngine.Application.DTOs.Templates;
 using CampaignEngine.Application.Interfaces;
+using CampaignEngine.Application.Interfaces.Storage;
 using CampaignEngine.Domain.Enums;
 using CampaignEngine.Domain.Exceptions;
 using Microsoft.AspNetCore.Authorization;
@@ -25,6 +26,7 @@ public class TemplatesController : ControllerBase
     private readonly ISubTemplateResolverService _subTemplateResolver;
     private readonly ICurrentUserService _currentUserService;
     private readonly ITemplatePreviewService _previewService;
+    private readonly ITemplateBodyStore _bodyStore;
 
     public TemplatesController(
         ITemplateService templateService,
@@ -32,7 +34,8 @@ public class TemplatesController : ControllerBase
         IPlaceholderParserService parserService,
         ISubTemplateResolverService subTemplateResolver,
         ICurrentUserService currentUserService,
-        ITemplatePreviewService previewService)
+        ITemplatePreviewService previewService,
+        ITemplateBodyStore bodyStore)
     {
         _templateService = templateService;
         _manifestService = manifestService;
@@ -40,6 +43,7 @@ public class TemplatesController : ControllerBase
         _subTemplateResolver = subTemplateResolver;
         _currentUserService = currentUserService;
         _previewService = previewService;
+        _bodyStore = bodyStore;
     }
 
     // ----------------------------------------------------------------
@@ -609,7 +613,9 @@ public class TemplatesController : ControllerBase
         var template = await _templateService.GetByIdAsync(id, cancellationToken);
         if (template is null) return NotFound();
 
-        var result = _parserService.ExtractPlaceholders(template.BodyPath);
+        // US-007 TASK-007-03: Load HTML content from file store before parsing.
+        var bodyContent = await _bodyStore.ReadAllTextAsync(template.BodyPath, cancellationToken);
+        var result = _parserService.ExtractPlaceholders(bodyContent);
         return Ok(result);
     }
 
@@ -635,7 +641,9 @@ public class TemplatesController : ControllerBase
         if (template is null) return NotFound();
 
         var manifestEntries = await _manifestService.GetByTemplateIdAsync(id, cancellationToken);
-        var result = _parserService.ValidateManifestCompleteness(template.BodyPath, manifestEntries);
+        // US-007 TASK-007-03: Load HTML content from file store before placeholder validation.
+        var bodyContent = await _bodyStore.ReadAllTextAsync(template.BodyPath, cancellationToken);
+        var result = _parserService.ValidateManifestCompleteness(bodyContent, manifestEntries);
         return Ok(result);
     }
 
@@ -683,7 +691,9 @@ public class TemplatesController : ControllerBase
         var template = await _templateService.GetByIdAsync(id, cancellationToken);
         if (template is null) return NotFound();
 
-        var references = _subTemplateResolver.ExtractReferences(template.BodyPath);
+        // US-007 TASK-007-03: Load HTML content from file store before reference extraction.
+        var bodyContent = await _bodyStore.ReadAllTextAsync(template.BodyPath, cancellationToken);
+        var references = _subTemplateResolver.ExtractReferences(bodyContent);
         return Ok(new SubTemplateReferencesResult
         {
             TemplateId = id,
@@ -716,7 +726,9 @@ public class TemplatesController : ControllerBase
 
         try
         {
-            var resolvedBody = await _subTemplateResolver.ResolveAsync(id, template.BodyPath, cancellationToken);
+            // US-007 TASK-007-03: Load HTML content from file store before sub-template resolution.
+            var bodyContent = await _bodyStore.ReadAllTextAsync(template.BodyPath, cancellationToken);
+            var resolvedBody = await _subTemplateResolver.ResolveAsync(id, bodyContent, cancellationToken);
             return Ok(new SubTemplateResolveResult
             {
                 TemplateId = id,

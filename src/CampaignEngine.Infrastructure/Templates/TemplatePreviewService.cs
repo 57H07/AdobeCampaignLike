@@ -2,6 +2,7 @@ using CampaignEngine.Application.DTOs.DataSources;
 using CampaignEngine.Application.DTOs.Templates;
 using CampaignEngine.Application.Interfaces;
 using CampaignEngine.Application.Interfaces.Repositories;
+using CampaignEngine.Application.Interfaces.Storage;
 using CampaignEngine.Application.Models;
 using CampaignEngine.Domain.Enums;
 using CampaignEngine.Domain.Exceptions;
@@ -36,6 +37,7 @@ public sealed class TemplatePreviewService : ITemplatePreviewService
     private readonly ITemplateRenderer _renderer;
     private readonly IPlaceholderParserService _parserService;
     private readonly IChannelPostProcessorRegistry _postProcessorRegistry;
+    private readonly ITemplateBodyStore _bodyStore;
     private readonly IAppLogger<TemplatePreviewService> _logger;
 
     public TemplatePreviewService(
@@ -44,6 +46,7 @@ public sealed class TemplatePreviewService : ITemplatePreviewService
         IConnectionStringEncryptor encryptor,
         IDataSourceConnectorRegistry connectorRegistry,
         ISubTemplateResolverService subTemplateResolver,
+        ITemplateBodyStore bodyStore,
         ITemplateRenderer renderer,
         IPlaceholderParserService parserService,
         IChannelPostProcessorRegistry postProcessorRegistry,
@@ -54,6 +57,7 @@ public sealed class TemplatePreviewService : ITemplatePreviewService
         _encryptor = encryptor;
         _connectorRegistry = connectorRegistry;
         _subTemplateResolver = subTemplateResolver;
+        _bodyStore = bodyStore;
         _renderer = renderer;
         _parserService = parserService;
         _postProcessorRegistry = postProcessorRegistry;
@@ -75,13 +79,29 @@ public sealed class TemplatePreviewService : ITemplatePreviewService
             throw new NotFoundException("Template", templateId);
 
         // ----------------------------------------------------------------
-        // 2. Resolve sub-templates recursively
+        // 2. Load HTML body from file store, then resolve sub-templates recursively
+        // US-007 TASK-007-03: Email/SMS bodies are stored as .html files; load content first.
         // ----------------------------------------------------------------
+        string htmlBody;
+        try
+        {
+            htmlBody = await _bodyStore.ReadAllTextAsync(template.BodyPath, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "Preview for Template {TemplateId}: failed to load body from store — {Error}",
+                templateId, ex.Message);
+            return FailResult(templateId, template.Channel.ToString(),
+                $"Failed to load template body: {ex.Message}");
+        }
+
         string resolvedHtml;
         try
         {
             resolvedHtml = await _subTemplateResolver.ResolveAsync(
-                templateId, template.BodyPath, cancellationToken);
+                templateId, htmlBody, cancellationToken);
         }
         catch (ValidationException ex)
         {

@@ -63,4 +63,16 @@ public class CreateTemplateRequest
     /// For non-Letter channels (Email / SMS) this property should be null.
     /// </summary>
     public Stream? DocxContent { get; set; }
+
+    /// <summary>
+    /// Optional UTF-8 HTML content stream to persist on the server for Email/SMS channels.
+    ///
+    /// US-007 TASK-007-01: When provided (Email or SMS channel), the service generates the
+    /// storage path following the convention <c>templates/{templateId}/v{version}.html</c>
+    /// and writes the bytes via <see cref="Interfaces.Storage.ITemplateBodyStore"/>.
+    /// The <see cref="BodyPath"/> property is then set automatically; callers should
+    /// leave it empty when supplying this stream.
+    /// For Letter channel this property should be null.
+    /// </summary>
+    public Stream? HtmlContent { get; set; }
 }
