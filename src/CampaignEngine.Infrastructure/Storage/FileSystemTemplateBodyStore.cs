@@ -197,6 +197,53 @@ public sealed class FileSystemTemplateBodyStore : ITemplateBodyStore
     }
 
     // ----------------------------------------------------------------
+    // CopyAsync — US-005 TASK-005-02
+    // ----------------------------------------------------------------
+
+    /// <inheritdoc />
+    public Task CopyAsync(
+        string sourcePath,
+        string destinationPath,
+        CancellationToken ct = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(sourcePath);
+        ArgumentException.ThrowIfNullOrWhiteSpace(destinationPath);
+
+        var fullSource = ResolveFull(sourcePath);
+
+        if (!File.Exists(fullSource))
+        {
+            _logger.LogDebug(
+                "CopyAsync: source file not found (no-op): {Source}", fullSource);
+            return Task.CompletedTask;
+        }
+
+        var fullDestination = ResolveFull(destinationPath);
+        var destinationDirectory = Path.GetDirectoryName(fullDestination)!;
+
+        try
+        {
+            Directory.CreateDirectory(destinationDirectory);
+            File.Copy(fullSource, fullDestination, overwrite: true);
+
+            _logger.LogInformation(
+                "Template body copied: Source={Source}, Destination={Destination}",
+                fullSource, fullDestination);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "Failed to copy template body from {Source} to {Destination}",
+                fullSource, fullDestination);
+
+            throw new TemplateBodyCorruptedException(destinationPath, ex);
+        }
+
+        return Task.CompletedTask;
+    }
+
+    // ----------------------------------------------------------------
     // Helpers
     // ----------------------------------------------------------------
 

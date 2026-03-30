@@ -6,6 +6,7 @@ using CampaignEngine.Domain.Entities;
 using CampaignEngine.Domain.Enums;
 using CampaignEngine.Domain.Exceptions;
 using Mapster;
+using Microsoft.EntityFrameworkCore;
 
 namespace CampaignEngine.Infrastructure.Templates;
 
@@ -103,39 +104,64 @@ public sealed class TemplateService : ITemplateService
             Version = initialVersion
         };
 
-        // US-006 TASK-006-01/03/04: When a DOCX stream is provided, generate the
-        // conventional path and persist the file. The directory is created automatically
-        // by FileSystemTemplateBodyStore.WriteAsync (TASK-006-04).
-        if (request.DocxContent is not null)
-        {
-            var docxPath = DocxFilePathHelper.Build(template.Id, initialVersion);
-            await _bodyStore.WriteAsync(docxPath, request.DocxContent, cancellationToken);
-            template.BodyPath = docxPath;
+        // US-005 TASK-005-01/04: Atomic write pattern — file is written first, then the
+        // DB transaction commits. On DB failure the newly written file is deleted synchronously
+        // to prevent orphaned files. File path is tracked so cleanup knows what to remove.
+        string? writtenFilePath = null;
 
-            _logger.LogInformation(
-                "DOCX file stored for new template: Id={TemplateId}, Path={Path}",
-                template.Id, docxPath);
-        }
-        // US-007 TASK-007-01: When an HTML stream is provided for Email/SMS, generate the
-        // conventional path and persist the file.
-        else if (request.HtmlContent is not null)
+        try
         {
-            var htmlPath = HtmlFilePathHelper.Build(template.Id, initialVersion);
-            await _bodyStore.WriteAsync(htmlPath, request.HtmlContent, cancellationToken);
-            template.BodyPath = htmlPath;
+            // US-006 TASK-006-01/03/04: When a DOCX stream is provided, generate the
+            // conventional path and persist the file. The directory is created automatically
+            // by FileSystemTemplateBodyStore.WriteAsync (TASK-006-04).
+            if (request.DocxContent is not null)
+            {
+                var docxPath = DocxFilePathHelper.Build(template.Id, initialVersion);
+                await _bodyStore.WriteAsync(docxPath, request.DocxContent, cancellationToken);
+                writtenFilePath = docxPath;
+                template.BodyPath = docxPath;
 
-            _logger.LogInformation(
-                "HTML file stored for new template: Id={TemplateId}, Path={Path}",
-                template.Id, htmlPath);
+                _logger.LogInformation(
+                    "DOCX file stored for new template: Id={TemplateId}, Path={Path}",
+                    template.Id, docxPath);
+            }
+            // US-007 TASK-007-01: When an HTML stream is provided for Email/SMS, generate the
+            // conventional path and persist the file.
+            else if (request.HtmlContent is not null)
+            {
+                var htmlPath = HtmlFilePathHelper.Build(template.Id, initialVersion);
+                await _bodyStore.WriteAsync(htmlPath, request.HtmlContent, cancellationToken);
+                writtenFilePath = htmlPath;
+                template.BodyPath = htmlPath;
+
+                _logger.LogInformation(
+                    "HTML file stored for new template: Id={TemplateId}, Path={Path}",
+                    template.Id, htmlPath);
+            }
+            else
+            {
+                // No file stream supplied: caller supplies BodyPath directly (legacy / non-file channels).
+                template.BodyPath = request.BodyPath;
+            }
+
+            await _templateRepository.AddAsync(template, cancellationToken);
+            await _unitOfWork.CommitAsync(cancellationToken);
         }
-        else
+        catch (Exception)
         {
-            // No file stream supplied: caller supplies BodyPath directly (legacy / non-file channels).
-            template.BodyPath = request.BodyPath;
-        }
+            // US-005 TASK-005-04: On DB commit failure, delete the newly written file
+            // synchronously to avoid leaving orphaned files on disk.
+            if (writtenFilePath is not null)
+            {
+                _logger.LogWarning(
+                    "DB commit failed after file write — deleting orphaned file: {Path}",
+                    writtenFilePath);
 
-        await _templateRepository.AddAsync(template, cancellationToken);
-        await _unitOfWork.CommitAsync(cancellationToken);
+                await _bodyStore.DeleteAsync(writtenFilePath, CancellationToken.None);
+            }
+
+            throw;
+        }
 
         _logger.LogInformation(
             "Template created: Id={TemplateId}, Name={Name}, Channel={Channel}",
@@ -179,41 +205,103 @@ public sealed class TemplateService : ITemplateService
         if (request.IsSubTemplate.HasValue)
             template.IsSubTemplate = request.IsSubTemplate.Value;
 
-        // US-006 TASK-006-02: When a replacement DOCX stream is provided, write it
-        // under the new version number. The previous file is left in place
-        // (history is never deleted — audit requirement).
-        if (request.DocxContent is not null)
-        {
-            var docxPath = DocxFilePathHelper.Build(template.Id, template.Version);
-            await _bodyStore.WriteAsync(docxPath, request.DocxContent, cancellationToken);
-            template.BodyPath = docxPath;
-            template.BodyChecksum = request.BodyChecksum;
+        // US-005 TASK-005-02/04: Atomic update pattern — copy previous file to history first,
+        // then write the new file, then commit the DB. On DB failure the newly written file
+        // is deleted synchronously to prevent orphaned files.
+        string? writtenFilePath = null;
 
-            _logger.LogInformation(
-                "DOCX file versioned for template: Id={TemplateId}, NewVersion={Version}, Path={Path}",
-                template.Id, template.Version, docxPath);
-        }
-        // US-007 TASK-007-02: When a replacement HTML stream is provided for Email/SMS, write it
-        // under the new version number. The previous file is left in place (audit requirement).
-        else if (request.HtmlContent is not null)
+        try
         {
-            var htmlPath = HtmlFilePathHelper.Build(template.Id, template.Version);
-            await _bodyStore.WriteAsync(htmlPath, request.HtmlContent, cancellationToken);
-            template.BodyPath = htmlPath;
-            template.BodyChecksum = request.BodyChecksum;
+            // US-006 TASK-006-02: When a replacement DOCX stream is provided, write it
+            // under the new version number. The previous file is copied to history before writing.
+            if (request.DocxContent is not null)
+            {
+                // US-005 TASK-005-02: Copy previous body to history/v{n}.docx (audit trail).
+                if (!string.IsNullOrWhiteSpace(snapshot.BodyPath))
+                {
+                    var historyPath = TemplateHistoryFilePathHelper.Build(
+                        template.Id, snapshot.Version, snapshot.BodyPath);
+                    await _bodyStore.CopyAsync(snapshot.BodyPath, historyPath, cancellationToken);
+                }
 
-            _logger.LogInformation(
-                "HTML file versioned for template: Id={TemplateId}, NewVersion={Version}, Path={Path}",
-                template.Id, template.Version, htmlPath);
+                var docxPath = DocxFilePathHelper.Build(template.Id, template.Version);
+                await _bodyStore.WriteAsync(docxPath, request.DocxContent, cancellationToken);
+                writtenFilePath = docxPath;
+                template.BodyPath = docxPath;
+                template.BodyChecksum = request.BodyChecksum;
+
+                _logger.LogInformation(
+                    "DOCX file versioned for template: Id={TemplateId}, NewVersion={Version}, Path={Path}",
+                    template.Id, template.Version, docxPath);
+            }
+            // US-007 TASK-007-02: When a replacement HTML stream is provided for Email/SMS, write it
+            // under the new version number. The previous file is copied to history before writing.
+            else if (request.HtmlContent is not null)
+            {
+                // US-005 TASK-005-02: Copy previous body to history/v{n}.html (audit trail).
+                if (!string.IsNullOrWhiteSpace(snapshot.BodyPath))
+                {
+                    var historyPath = TemplateHistoryFilePathHelper.Build(
+                        template.Id, snapshot.Version, snapshot.BodyPath);
+                    await _bodyStore.CopyAsync(snapshot.BodyPath, historyPath, cancellationToken);
+                }
+
+                var htmlPath = HtmlFilePathHelper.Build(template.Id, template.Version);
+                await _bodyStore.WriteAsync(htmlPath, request.HtmlContent, cancellationToken);
+                writtenFilePath = htmlPath;
+                template.BodyPath = htmlPath;
+                template.BodyChecksum = request.BodyChecksum;
+
+                _logger.LogInformation(
+                    "HTML file versioned for template: Id={TemplateId}, NewVersion={Version}, Path={Path}",
+                    template.Id, template.Version, htmlPath);
+            }
+            else
+            {
+                // No new file supplied: keep existing path; only metadata fields were updated.
+                template.BodyPath = request.BodyPath;
+                template.BodyChecksum = request.BodyChecksum;
+            }
+
+            // US-005 TASK-005-02: Catch DbUpdateConcurrencyException (rowversion mismatch)
+            // and map it to ConcurrencyException so GlobalExceptionMiddleware returns HTTP 409.
+            try
+            {
+                await _unitOfWork.CommitAsync(cancellationToken);
+            }
+            catch (DbUpdateConcurrencyException ex)
+            {
+                throw new ConcurrencyException(
+                    $"Template '{template.Name}' was modified by another request. " +
+                    "Reload the template and retry your update.",
+                    ex);
+            }
         }
-        else
+        catch (ConcurrencyException)
         {
-            // No new file supplied: keep existing path; only metadata fields were updated.
-            template.BodyPath = request.BodyPath;
-            template.BodyChecksum = request.BodyChecksum;
-        }
+            // US-005 TASK-005-04: Clean up newly written file on concurrency conflict too.
+            if (writtenFilePath is not null)
+            {
+                _logger.LogWarning(
+                    "Concurrency conflict after file write — deleting orphaned file: {Path}",
+                    writtenFilePath);
 
-        await _unitOfWork.CommitAsync(cancellationToken);
+                await _bodyStore.DeleteAsync(writtenFilePath, CancellationToken.None);
+            }
+
+            throw;
+        }
+        catch (Exception) when (writtenFilePath is not null)
+        {
+            // US-005 TASK-005-04: On any other DB commit failure, delete the newly written file
+            // synchronously to avoid leaving orphaned files on disk.
+            _logger.LogWarning(
+                "DB commit failed after file write — deleting orphaned file: {Path}",
+                writtenFilePath);
+
+            await _bodyStore.DeleteAsync(writtenFilePath, CancellationToken.None);
+            throw;
+        }
 
         _logger.LogInformation(
             "Template updated: Id={TemplateId}, Name={Name}, Version={Version}",

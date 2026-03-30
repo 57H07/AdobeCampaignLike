@@ -78,4 +78,20 @@ public interface ITemplateBodyStore
     /// file may already have been removed.
     /// </remarks>
     Task DeleteAsync(string path, CancellationToken ct = default);
+
+    /// <summary>
+    /// Copies the file at <paramref name="sourcePath"/> to <paramref name="destinationPath"/>,
+    /// creating the destination directory if it does not already exist.
+    /// </summary>
+    /// <param name="sourcePath">
+    /// The logical storage path of the source file.
+    /// Must not be <see langword="null"/>, empty, or whitespace-only.
+    /// If the source file does not exist the operation is a no-op (no exception is thrown).
+    /// </param>
+    /// <param name="destinationPath">
+    /// The logical storage path at which the copy should be written.
+    /// Must not be <see langword="null"/>, empty, or whitespace-only.
+    /// </param>
+    /// <param name="ct">A token that can be used to cancel the operation.</param>
+    Task CopyAsync(string sourcePath, string destinationPath, CancellationToken ct = default);
 }

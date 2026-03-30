@@ -40,6 +40,8 @@ public class GlobalExceptionMiddleware
                 (HttpStatusCode.NotFound, "Resource Not Found", notFound.Message),
             ValidationException validation =>
                 (HttpStatusCode.BadRequest, "Validation Error", validation.Message),
+            ConcurrencyException concurrency =>
+                (HttpStatusCode.Conflict, "Concurrency Conflict", concurrency.Message),
             DomainException domain =>
                 (HttpStatusCode.UnprocessableEntity, "Business Rule Violation", domain.Message),
             _ =>
