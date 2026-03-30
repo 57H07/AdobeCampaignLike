@@ -1,6 +1,7 @@
 using CampaignEngine.Application.DTOs.Dispatch;
 using CampaignEngine.Application.DTOs.Send;
 using CampaignEngine.Application.Interfaces;
+using CampaignEngine.Application.Interfaces.Storage;
 using CampaignEngine.Application.Services;
 using CampaignEngine.Domain.Entities;
 using CampaignEngine.Domain.Enums;
@@ -54,10 +55,30 @@ public class SingleSendServiceTests : DbContextTestBase
     // Helpers — build a configured service instance
     // ----------------------------------------------------------------
 
+    /// <summary>
+    /// Creates a body store mock that returns the path as HTML content (identity mapping).
+    /// This allows tests to seed templates with BodyPath = htmlBody and have the body store
+    /// return that HTML, enabling Scriban rendering to work with the seeded content.
+    /// US-007 TASK-007-03.
+    /// </summary>
+    private static Mock<ITemplateBodyStore> CreateBodyStoreMock(string? fixedContent = null)
+    {
+        var mock = new Mock<ITemplateBodyStore>();
+        // The default interface ReadAllTextAsync calls ReadAsync, so mock ReadAsync.
+        mock.Setup(s => s.ReadAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((string path, CancellationToken _) =>
+            {
+                var content = fixedContent ?? "Hello {{ name }}!";
+                return (Stream)new MemoryStream(System.Text.Encoding.UTF8.GetBytes(content));
+            });
+        return mock;
+    }
+
     private SingleSendService BuildService(
         IChannelDispatcher? dispatcher = null,
         ISendRequestValidator? validator = null,
-        ISendLogService? sendLogService = null)
+        ISendLogService? sendLogService = null,
+        ITemplateBodyStore? bodyStore = null)
     {
         var emailDispatcher = dispatcher ?? LocalMockDispatcher.Success(ChannelType.Email);
         var registry = new ChannelDispatcherRegistry([emailDispatcher]);
@@ -66,10 +87,12 @@ public class SingleSendServiceTests : DbContextTestBase
         var val = validator ?? new SendRequestValidator();
         var logService = sendLogService ?? CreateRealSendLogService();
         var logger = new Mock<IAppLogger<SingleSendService>>();
+        var store = bodyStore ?? CreateBodyStoreMock().Object;
 
         return new SingleSendService(
             new TemplateRepository(Context),
             renderer,
+            store,
             registry,
             val,
             logService,
@@ -331,8 +354,9 @@ public class SingleSendServiceTests : DbContextTestBase
         var logService = CreateRealSendLogService();
         var logger = new Mock<IAppLogger<SingleSendService>>();
 
+        var bodyStore = CreateBodyStoreMock().Object;
         var sut = new SingleSendService(
-            new TemplateRepository(Context), renderer, emptyRegistry, validator, logService, logger.Object);
+            new TemplateRepository(Context), renderer, bodyStore, emptyRegistry, validator, logService, logger.Object);
 
         var request = new SendRequest
         {

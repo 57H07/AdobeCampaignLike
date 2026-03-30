@@ -35,6 +35,12 @@ public class TemplateLifecycleTests : IDisposable
         _manifestServiceMock = new Mock<IPlaceholderManifestService>();
         _parserServiceMock = new Mock<IPlaceholderParserService>();
         var bodyStore = new Mock<ITemplateBodyStore>();
+        // US-007 TASK-007-03: ReadAsync must be set up so ReadAllTextAsync (extension method)
+        // can successfully load the template body for placeholder manifest validation.
+        bodyStore
+            .Setup(s => s.ReadAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((string path, CancellationToken _) =>
+                (Stream)new MemoryStream(System.Text.Encoding.UTF8.GetBytes(path ?? string.Empty)));
         var templateRepository = new TemplateRepository(_context);
         var unitOfWork = new UnitOfWork(_context);
 
@@ -157,7 +163,7 @@ public class TemplateLifecycleTests : IDisposable
     }
 
     [Fact]
-    public async Task PublishAsync_AlreadyPublishedTemplate_ThrowsValidationException()
+    public async Task PublishAsync_AlreadyPublishedTemplate_ThrowsDomainException()
     {
         // Arrange — set up a template and publish it
         var template = await _service.CreateAsync(new CreateTemplateRequest
@@ -175,13 +181,13 @@ public class TemplateLifecycleTests : IDisposable
         // Act — attempt to publish again
         var act = () => _service.PublishAsync(template.Id);
 
-        // Assert
-        await act.Should().ThrowAsync<ValidationException>()
+        // Assert — domain entity enforces state-machine invariant via DomainException
+        await act.Should().ThrowAsync<DomainException>()
             .WithMessage("*cannot be published*current status is 'Published'*");
     }
 
     [Fact]
-    public async Task PublishAsync_ArchivedTemplate_ThrowsValidationException()
+    public async Task PublishAsync_ArchivedTemplate_ThrowsDomainException()
     {
         // Arrange
         var template = await _service.CreateAsync(new CreateTemplateRequest
@@ -198,8 +204,8 @@ public class TemplateLifecycleTests : IDisposable
         // Act — attempt to publish an archived template
         var act = () => _service.PublishAsync(template.Id);
 
-        // Assert
-        await act.Should().ThrowAsync<ValidationException>()
+        // Assert — domain entity enforces state-machine invariant via DomainException
+        await act.Should().ThrowAsync<DomainException>()
             .WithMessage("*cannot be published*current status is 'Archived'*");
     }
 
@@ -259,7 +265,7 @@ public class TemplateLifecycleTests : IDisposable
     }
 
     [Fact]
-    public async Task ArchiveAsync_AlreadyArchivedTemplate_ThrowsValidationException()
+    public async Task ArchiveAsync_AlreadyArchivedTemplate_ThrowsDomainException()
     {
         // Arrange
         var template = await _service.CreateAsync(new CreateTemplateRequest
@@ -277,8 +283,8 @@ public class TemplateLifecycleTests : IDisposable
         // Act — attempt to archive again
         var act = () => _service.ArchiveAsync(template.Id);
 
-        // Assert
-        await act.Should().ThrowAsync<ValidationException>()
+        // Assert — domain entity enforces state-machine invariant via DomainException
+        await act.Should().ThrowAsync<DomainException>()
             .WithMessage("*already Archived*");
     }
 
@@ -330,8 +336,8 @@ public class TemplateLifecycleTests : IDisposable
         // Act — attempt to publish (should fail because template is Archived)
         var act = () => _service.PublishAsync(template.Id);
 
-        // Assert
-        await act.Should().ThrowAsync<ValidationException>()
+        // Assert — domain entity enforces state-machine invariant via DomainException
+        await act.Should().ThrowAsync<DomainException>()
             .WithMessage("*cannot be published*");
     }
 
