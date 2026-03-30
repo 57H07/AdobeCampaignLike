@@ -305,8 +305,9 @@
 ---
 
 #### [US-006] - DOCX binary body storage
-**Status:** 🔵 IN PROGRESS
+**Status:** ✅ DONE
 **Start date:** 2026-03-30
+**End date:** 2026-03-30
 **Priority:** 🔴 High
 **Complexity:** S
 **Epic:** Epic 1
@@ -319,18 +320,18 @@
 > F-106: DOCX binary storage. File naming convention: `{storageRoot}/templates/{templateId}/v{version}.docx`
 
 **Acceptance criteria:**
-- [ ] DOCX files stored in `templates/{templateId}/v{version}.docx`
-- [ ] Directory structure auto-created on first upload
-- [ ] File path is relative (excludes storage root)
-- [ ] DOCX files preserved with correct MIME type metadata
+- [x] DOCX files stored in `templates/{templateId}/v{version}.docx` ✅
+- [x] Directory structure auto-created on first upload ✅
+- [x] File path is relative (excludes storage root) ✅
+- [x] DOCX files preserved with correct MIME type metadata ✅
 
 **Technical tasks:**
-- [ ] `TASK-006-01` - **[Service]** Update `TemplateService.CreateAsync` to save DOCX files
-- [ ] `TASK-006-02` - **[Service]** Update `TemplateService.UpdateAsync` to version DOCX files
-- [ ] `TASK-006-03` - **[Naming]** Implement file naming convention helper
-- [ ] `TASK-006-04` - **[Directory]** Auto-create template directory on upload
-- [ ] `TASK-006-05` - **[Test]** Unit tests for DOCX file storage
-- [ ] `TASK-006-06` - **[Test]** Integration test for version increment
+- [x] `TASK-006-01` - **[Service]** Update `TemplateService.CreateAsync` to save DOCX files ✅ 2026-03-30
+- [x] `TASK-006-02` - **[Service]** Update `TemplateService.UpdateAsync` to version DOCX files ✅ 2026-03-30
+- [x] `TASK-006-03` - **[Naming]** Implement file naming convention helper ✅ 2026-03-30
+- [x] `TASK-006-04` - **[Directory]** Auto-create template directory on upload ✅ 2026-03-30
+- [x] `TASK-006-05` - **[Test]** Unit tests for DOCX file storage ✅ 2026-03-30
+- [x] `TASK-006-06` - **[Test]** Integration test for version increment ✅ 2026-03-30
 
 **Business rules:**
 1. File naming convention is strict: `v{version}.docx` (1-based)
