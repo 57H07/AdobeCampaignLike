@@ -122,8 +122,9 @@
 ---
 
 #### [US-002] - FileSystemTemplateBodyStore implementation
-**Status:** 🔵 IN PROGRESS
+**Status:** ✅ DONE
 **Start date:** 2026-03-30
+**End date:** 2026-03-30
 **Priority:** 🔴 High
 **Complexity:** M
 **Epic:** Epic 1
@@ -136,21 +137,21 @@
 > F-101: File-system storage for template bodies (HTML for Email/SMS, DOCX for Letter) decouples binary payloads from relational data.
 
 **Acceptance criteria:**
-- [ ] `FileSystemTemplateBodyStore` implements `ITemplateBodyStore`
-- [ ] Constructor accepts storage root path via dependency injection
-- [ ] `WriteAsync` writes stream to file atomically
-- [ ] `ReadAsync` throws correct exceptions for missing/corrupt files
-- [ ] `DeleteAsync` removes file if exists (no-op if missing)
-- [ ] All I/O exceptions wrapped in appropriate custom exceptions
+- [x] `FileSystemTemplateBodyStore` implements `ITemplateBodyStore` ✅
+- [x] Constructor accepts storage root path via dependency injection ✅
+- [x] `WriteAsync` writes stream to file atomically ✅
+- [x] `ReadAsync` throws correct exceptions for missing/corrupt files ✅
+- [x] `DeleteAsync` removes file if exists (no-op if missing) ✅
+- [x] All I/O exceptions wrapped in appropriate custom exceptions ✅
 
 **Technical tasks:**
-- [ ] `TASK-002-01` - **[Class]** Create `FileSystemTemplateBodyStore` in `Infrastructure/Storage/`
-- [ ] `TASK-002-02` - **[Method]** Implement `WriteAsync` with atomic write (temp file + rename)
-- [ ] `TASK-002-03` - **[Method]** Implement `ReadAsync` with exception mapping
-- [ ] `TASK-002-04` - **[Method]** Implement `DeleteAsync` with safe file deletion
-- [ ] `TASK-002-05` - **[Config]** Add storage root path to DI container
-- [ ] `TASK-002-06` - **[Test]** Unit tests for write/read/delete operations
-- [ ] `TASK-002-07` - **[Test]** Unit tests for exception scenarios
+- [x] `TASK-002-01` - **[Class]** Create `FileSystemTemplateBodyStore` in `Infrastructure/Storage/` ✅ 2026-03-30
+- [x] `TASK-002-02` - **[Method]** Implement `WriteAsync` with atomic write (temp file + rename) ✅ 2026-03-30
+- [x] `TASK-002-03` - **[Method]** Implement `ReadAsync` with exception mapping ✅ 2026-03-30
+- [x] `TASK-002-04` - **[Method]** Implement `DeleteAsync` with safe file deletion ✅ 2026-03-30
+- [x] `TASK-002-05` - **[Config]** Add storage root path to DI container ✅ 2026-03-30
+- [x] `TASK-002-06` - **[Test]** Unit tests for write/read/delete operations ✅ 2026-03-30
+- [x] `TASK-002-07` - **[Test]** Unit tests for exception scenarios ✅ 2026-03-30
 
 **Business rules:**
 1. Use atomic file operations (write to temp, then move)
