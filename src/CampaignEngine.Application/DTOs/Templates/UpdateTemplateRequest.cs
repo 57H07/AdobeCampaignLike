@@ -46,4 +46,14 @@ public class UpdateTemplateRequest
     /// </summary>
     [MaxLength(200)]
     public string? ChangedBy { get; set; }
+
+    /// <summary>
+    /// Optional binary content of the replacement DOCX file.
+    /// When provided, the service writes the file as the next version using the
+    /// convention <c>templates/{templateId}/v{newVersion}.docx</c> and updates
+    /// <see cref="BodyPath"/> automatically.
+    /// When null, the existing <see cref="BodyPath"/> value is used as-is (no file
+    /// replacement occurs — only metadata fields are updated).
+    /// </summary>
+    public Stream? DocxContent { get; set; }
 }

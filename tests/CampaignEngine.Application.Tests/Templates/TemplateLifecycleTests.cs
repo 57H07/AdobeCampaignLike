@@ -1,5 +1,6 @@
 using CampaignEngine.Application.DTOs.Templates;
 using CampaignEngine.Application.Interfaces;
+using CampaignEngine.Application.Interfaces.Storage;
 using CampaignEngine.Domain.Entities;
 using CampaignEngine.Domain.Enums;
 using CampaignEngine.Domain.Exceptions;
@@ -33,6 +34,7 @@ public class TemplateLifecycleTests : IDisposable
         var logger = new Mock<IAppLogger<TemplateService>>();
         _manifestServiceMock = new Mock<IPlaceholderManifestService>();
         _parserServiceMock = new Mock<IPlaceholderParserService>();
+        var bodyStore = new Mock<ITemplateBodyStore>();
         var templateRepository = new TemplateRepository(_context);
         var unitOfWork = new UnitOfWork(_context);
 
@@ -41,7 +43,8 @@ public class TemplateLifecycleTests : IDisposable
             unitOfWork,
             logger.Object,
             _manifestServiceMock.Object,
-            _parserServiceMock.Object);
+            _parserServiceMock.Object,
+            bodyStore.Object);
     }
 
     public void Dispose()

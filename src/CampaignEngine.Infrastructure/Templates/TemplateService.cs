@@ -1,6 +1,7 @@
 using CampaignEngine.Application.DTOs.Templates;
 using CampaignEngine.Application.Interfaces;
 using CampaignEngine.Application.Interfaces.Repositories;
+using CampaignEngine.Application.Interfaces.Storage;
 using CampaignEngine.Domain.Entities;
 using CampaignEngine.Domain.Enums;
 using CampaignEngine.Domain.Exceptions;
@@ -15,6 +16,9 @@ namespace CampaignEngine.Infrastructure.Templates;
 ///   - Template name must be unique within the same channel.
 ///   - Soft delete sets IsDeleted flag; record is preserved for audit.
 ///   - Status lifecycle: Draft → Published → Archived (one-way, no reversal).
+///   - DOCX file storage: when a DocxContent stream is supplied on create/update,
+///     the file is persisted via ITemplateBodyStore using the naming convention
+///     templates/{templateId}/v{version}.docx (US-006).
 /// </summary>
 public sealed class TemplateService : ITemplateService
 {
@@ -23,19 +27,22 @@ public sealed class TemplateService : ITemplateService
     private readonly IAppLogger<TemplateService> _logger;
     private readonly IPlaceholderManifestService _manifestService;
     private readonly IPlaceholderParserService _parserService;
+    private readonly ITemplateBodyStore _bodyStore;
 
     public TemplateService(
         ITemplateRepository templateRepository,
         IUnitOfWork unitOfWork,
         IAppLogger<TemplateService> logger,
         IPlaceholderManifestService manifestService,
-        IPlaceholderParserService parserService)
+        IPlaceholderParserService parserService,
+        ITemplateBodyStore bodyStore)
     {
         _templateRepository = templateRepository;
         _unitOfWork = unitOfWork;
         _logger = logger;
         _manifestService = manifestService;
         _parserService = parserService;
+        _bodyStore = bodyStore;
     }
 
     /// <inheritdoc />
@@ -82,17 +89,38 @@ public sealed class TemplateService : ITemplateService
 
         await EnsureNameUniqueAsync(request.Name, request.Channel, null, cancellationToken);
 
+        // US-006 TASK-006-01: Build the template entity first so its ID is available
+        // for DOCX path generation (ID is a client-side Guid, not a DB identity).
+        const int initialVersion = 1;
         var template = new Template
         {
             Name = request.Name,
             Channel = request.Channel,
-            BodyPath = request.BodyPath,
             BodyChecksum = request.BodyChecksum,
             Description = request.Description,
             IsSubTemplate = request.IsSubTemplate,
             Status = TemplateStatus.Draft,
-            Version = 1
+            Version = initialVersion
         };
+
+        // US-006 TASK-006-01/03/04: When a DOCX stream is provided, generate the
+        // conventional path and persist the file. The directory is created automatically
+        // by FileSystemTemplateBodyStore.WriteAsync (TASK-006-04).
+        if (request.DocxContent is not null)
+        {
+            var docxPath = DocxFilePathHelper.Build(template.Id, initialVersion);
+            await _bodyStore.WriteAsync(docxPath, request.DocxContent, cancellationToken);
+            template.BodyPath = docxPath;
+
+            _logger.LogInformation(
+                "DOCX file stored for new template: Id={TemplateId}, Path={Path}",
+                template.Id, docxPath);
+        }
+        else
+        {
+            // Non-DOCX channels (Email/SMS): caller supplies BodyPath directly.
+            template.BodyPath = request.BodyPath;
+        }
 
         await _templateRepository.AddAsync(template, cancellationToken);
         await _unitOfWork.CommitAsync(cancellationToken);
@@ -133,13 +161,32 @@ public sealed class TemplateService : ITemplateService
 
         // Apply changes and increment version
         template.Name = request.Name;
-        template.BodyPath = request.BodyPath;
-        template.BodyChecksum = request.BodyChecksum;
         template.Description = request.Description;
         template.Version++;
 
         if (request.IsSubTemplate.HasValue)
             template.IsSubTemplate = request.IsSubTemplate.Value;
+
+        // US-006 TASK-006-02: When a replacement DOCX stream is provided, write it
+        // under the new version number. The previous file is left in place
+        // (history is never deleted — audit requirement).
+        if (request.DocxContent is not null)
+        {
+            var docxPath = DocxFilePathHelper.Build(template.Id, template.Version);
+            await _bodyStore.WriteAsync(docxPath, request.DocxContent, cancellationToken);
+            template.BodyPath = docxPath;
+            template.BodyChecksum = request.BodyChecksum;
+
+            _logger.LogInformation(
+                "DOCX file versioned for template: Id={TemplateId}, NewVersion={Version}, Path={Path}",
+                template.Id, template.Version, docxPath);
+        }
+        else
+        {
+            // No new file supplied: keep existing path; only metadata fields were updated.
+            template.BodyPath = request.BodyPath;
+            template.BodyChecksum = request.BodyChecksum;
+        }
 
         await _unitOfWork.CommitAsync(cancellationToken);
 

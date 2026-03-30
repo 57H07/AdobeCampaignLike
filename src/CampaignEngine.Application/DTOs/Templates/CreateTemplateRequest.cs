@@ -52,4 +52,15 @@ public class CreateTemplateRequest
     /// Leave null when the file size is not known or not applicable.
     /// </summary>
     public long? FileSizeBytes { get; set; }
+
+    /// <summary>
+    /// Optional binary content of the DOCX file to persist on the server.
+    /// When provided (Letter channel uploads), the service generates the storage path
+    /// following the convention <c>templates/{templateId}/v{version}.docx</c> and
+    /// writes the bytes via <see cref="Interfaces.Storage.ITemplateBodyStore"/>.
+    /// The <see cref="BodyPath"/> property is then set automatically; callers should
+    /// leave it empty when supplying this stream.
+    /// For non-Letter channels (Email / SMS) this property should be null.
+    /// </summary>
+    public Stream? DocxContent { get; set; }
 }

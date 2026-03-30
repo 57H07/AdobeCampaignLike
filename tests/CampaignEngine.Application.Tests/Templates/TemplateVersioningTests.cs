@@ -1,5 +1,6 @@
 using CampaignEngine.Application.DTOs.Templates;
 using CampaignEngine.Application.Interfaces;
+using CampaignEngine.Application.Interfaces.Storage;
 using CampaignEngine.Domain.Enums;
 using CampaignEngine.Domain.Exceptions;
 using CampaignEngine.Infrastructure.Persistence;
@@ -30,10 +31,12 @@ public class TemplateVersioningTests : IDisposable
         var logger = new Mock<IAppLogger<TemplateService>>();
         var manifestService = new Mock<IPlaceholderManifestService>();
         var parserService = new Mock<IPlaceholderParserService>();
+        var bodyStore = new Mock<ITemplateBodyStore>();
         var templateRepository = new TemplateRepository(_context);
         var unitOfWork = new UnitOfWork(_context);
         _service = new TemplateService(
-            templateRepository, unitOfWork, logger.Object, manifestService.Object, parserService.Object);
+            templateRepository, unitOfWork, logger.Object, manifestService.Object, parserService.Object,
+            bodyStore.Object);
     }
 
     public void Dispose()
