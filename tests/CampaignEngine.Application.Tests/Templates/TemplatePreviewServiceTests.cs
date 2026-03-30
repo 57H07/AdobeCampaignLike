@@ -1,6 +1,7 @@
 using CampaignEngine.Application.DTOs.DataSources;
 using CampaignEngine.Application.DTOs.Templates;
 using CampaignEngine.Application.Interfaces;
+using CampaignEngine.Application.Interfaces.Storage;
 using CampaignEngine.Application.Models;
 using CampaignEngine.Domain.Entities;
 using CampaignEngine.Domain.Enums;
@@ -24,6 +25,7 @@ public class TemplatePreviewServiceTests : IDisposable
     private readonly Mock<IDataSourceConnector> _connectorMock;
     private readonly Mock<IDataSourceConnectorRegistry> _connectorRegistryMock;
     private readonly Mock<ISubTemplateResolverService> _subTemplateResolverMock;
+    private readonly Mock<ITemplateBodyStore> _bodyStoreMock;
     private readonly Mock<ITemplateRenderer> _rendererMock;
     private readonly Mock<IPlaceholderParserService> _parserMock;
     private readonly Mock<IChannelPostProcessorRegistry> _postProcessorRegistryMock;
@@ -45,6 +47,15 @@ public class TemplatePreviewServiceTests : IDisposable
             .Setup(r => r.GetConnector(It.IsAny<CampaignEngine.Domain.Enums.DataSourceType>()))
             .Returns(_connectorMock.Object);
         _subTemplateResolverMock = new Mock<ISubTemplateResolverService>();
+
+        // US-007 TASK-007-03: ITemplateBodyStore mock returns path value as stream content.
+        // Tests seed templates with BodyPath = htmlBody, so reading that path yields the HTML.
+        _bodyStoreMock = new Mock<ITemplateBodyStore>();
+        _bodyStoreMock
+            .Setup(s => s.ReadAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((string path, CancellationToken _) =>
+                (Stream)new MemoryStream(System.Text.Encoding.UTF8.GetBytes(path ?? string.Empty)));
+
         _rendererMock = new Mock<ITemplateRenderer>();
         _parserMock = new Mock<IPlaceholderParserService>();
         _postProcessorRegistryMock = new Mock<IChannelPostProcessorRegistry>();
@@ -59,6 +70,7 @@ public class TemplatePreviewServiceTests : IDisposable
             _encryptorMock.Object,
             _connectorRegistryMock.Object,
             _subTemplateResolverMock.Object,
+            _bodyStoreMock.Object,
             _rendererMock.Object,
             _parserMock.Object,
             _postProcessorRegistryMock.Object,

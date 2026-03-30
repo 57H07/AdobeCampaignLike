@@ -11,7 +11,6 @@
   <ItemGroup>
     <PackageReference Include="coverlet.collector" Version="6.0.2" />
     <PackageReference Include="Dapper" Version="2.1.66" />
-    <PackageReference Include="DinkToPdf" Version="1.0.8" />
     <PackageReference Include="FluentAssertions" Version="6.12.2" />
     <PackageReference Include="HtmlAgilityPack" Version="1.11.70" />
     <PackageReference Include="MailKit" Version="4.9.0" />

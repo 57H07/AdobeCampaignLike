@@ -6,17 +6,11 @@ using Microsoft.Extensions.Options;
 namespace CampaignEngine.Infrastructure.Dispatch;
 
 /// <summary>
-/// Writes consolidated PDF batch files and optional CSV manifests to a configured
-/// output directory (UNC share or local path).
+/// Writes DOCX files (one per recipient) to a configured output directory (UNC share or local path).
 ///
-/// TASK-021-04: Print provider file drop handler.
+/// TASK-023-02: Print provider file drop handler for DOCX.
 ///
-/// Open Question Q5: Print provider format is unresolved.
-/// This implementation uses a simple file drop (write to directory).
-/// If the provider requires API upload instead, replace WriteAsync with an HTTP call.
-///
-/// File naming convention (BR-4): CAMPAIGN_{campaignId}_{timestamp}_{batchNumber}.pdf
-/// Manifest naming:               CAMPAIGN_{campaignId}_{timestamp}_{batchNumber}_manifest.csv
+/// File naming convention (US-023 BR): {campaignId}_{recipientId}_{timestamp}.docx
 /// </summary>
 public class PrintProviderFileDropHandler
 {
@@ -32,24 +26,24 @@ public class PrintProviderFileDropHandler
     }
 
     /// <summary>
-    /// Writes a PDF batch and optional manifest to the output directory.
-    /// Returns the full path of the written PDF file.
+    /// Writes a single DOCX file for one recipient to the output directory.
+    /// Returns the full path of the written file.
+    ///
+    /// TASK-023-02/03: One DOCX file per recipient, named {campaignId}_{recipientId}_{timestamp}.docx.
     ///
     /// Throws <see cref="LetterDispatchException"/> on I/O failure (always transient —
     /// a retry may succeed once the share is accessible again).
     /// </summary>
-    /// <param name="pdfBytes">Consolidated PDF batch bytes.</param>
-    /// <param name="manifestCsv">Optional CSV manifest content. Written when <see cref="LetterOptions.GenerateManifest"/> is true.</param>
+    /// <param name="docxBytes">DOCX file bytes.</param>
     /// <param name="campaignId">Campaign identifier used in the file name.</param>
-    /// <param name="batchNumber">Batch sequence number (1-based), appended to the file name.</param>
+    /// <param name="recipientId">Recipient identifier used in the file name.</param>
     /// <param name="timestamp">Timestamp used in the file name. Defaults to UtcNow when null.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>Full path of the written PDF file.</returns>
-    public virtual async Task<string> WriteAsync(
-        byte[] pdfBytes,
-        string? manifestCsv,
+    /// <returns>Full path of the written DOCX file.</returns>
+    public virtual async Task<string> WriteFileAsync(
+        byte[] docxBytes,
         Guid campaignId,
-        int batchNumber,
+        string recipientId,
         DateTime? timestamp = null,
         CancellationToken cancellationToken = default)
     {
@@ -62,45 +56,33 @@ public class PrintProviderFileDropHandler
         }
 
         var ts = (timestamp ?? DateTime.UtcNow).ToString("yyyyMMddHHmmss");
-        var prefix = _options.FileNamePrefix ?? "CAMPAIGN";
-        var baseName = $"{prefix}_{campaignId:N}_{ts}_{batchNumber:D3}";
+
+        // Sanitize recipient ID to avoid path traversal or invalid file name characters.
+        var safeRecipientId = SanitizeFileName(recipientId);
+        var fileName = $"{campaignId:N}_{safeRecipientId}_{ts}.docx";
 
         try
         {
             // Ensure output directory exists (creates all intermediate directories).
             EnsureDirectoryExists(_options.OutputDirectory);
 
-            var pdfPath = Path.Combine(_options.OutputDirectory, $"{baseName}.pdf");
+            var filePath = Path.Combine(_options.OutputDirectory, fileName);
 
             _logger.LogInformation(
-                "Writing PDF batch file. Path={PdfPath} SizeBytes={Size} CampaignId={CampaignId} Batch={BatchNumber}",
-                pdfPath,
-                pdfBytes.Length,
+                "Writing DOCX file. Path={FilePath} SizeBytes={Size} CampaignId={CampaignId} RecipientId={RecipientId}",
+                filePath,
+                docxBytes.Length,
                 campaignId,
-                batchNumber);
+                recipientId);
 
-            await File.WriteAllBytesAsync(pdfPath, pdfBytes, cancellationToken);
-
-            // Write manifest alongside the PDF when enabled and content is provided.
-            if (_options.GenerateManifest && !string.IsNullOrEmpty(manifestCsv))
-            {
-                var manifestPath = Path.Combine(_options.OutputDirectory, $"{baseName}_manifest.csv");
-
-                _logger.LogDebug(
-                    "Writing CSV manifest. Path={ManifestPath} CampaignId={CampaignId} Batch={BatchNumber}",
-                    manifestPath,
-                    campaignId,
-                    batchNumber);
-
-                await File.WriteAllTextAsync(manifestPath, manifestCsv, cancellationToken);
-            }
+            await File.WriteAllBytesAsync(filePath, docxBytes, cancellationToken);
 
             _logger.LogInformation(
-                "PDF batch file written successfully. Path={PdfPath} CampaignId={CampaignId}",
-                pdfPath,
+                "DOCX file written successfully. Path={FilePath} CampaignId={CampaignId}",
+                filePath,
                 campaignId);
 
-            return pdfPath;
+            return filePath;
         }
         catch (LetterDispatchException)
         {
@@ -114,13 +96,14 @@ public class PrintProviderFileDropHandler
         {
             _logger.LogError(
                 ex,
-                "Failed to write PDF batch file to output directory '{Directory}'. CampaignId={CampaignId}",
+                "Failed to write DOCX file to output directory '{Directory}'. CampaignId={CampaignId} RecipientId={RecipientId}",
                 _options.OutputDirectory,
-                campaignId);
+                campaignId,
+                recipientId);
 
             // I/O failures are treated as transient — the share may be temporarily unavailable.
             throw new LetterDispatchException(
-                $"Failed to write PDF file to '{_options.OutputDirectory}': {ex.Message}",
+                $"Failed to write DOCX file to '{_options.OutputDirectory}': {ex.Message}",
                 ex,
                 isTransient: true);
         }
@@ -129,5 +112,24 @@ public class PrintProviderFileDropHandler
     private static void EnsureDirectoryExists(string directory)
     {
         Directory.CreateDirectory(directory);
+    }
+
+    /// <summary>
+    /// Replaces characters that are invalid in file names with underscores.
+    /// </summary>
+    private static string SanitizeFileName(string name)
+    {
+        if (string.IsNullOrEmpty(name))
+            return "unknown";
+
+        var invalid = Path.GetInvalidFileNameChars();
+        var chars = name.ToCharArray();
+        for (var i = 0; i < chars.Length; i++)
+        {
+            if (Array.IndexOf(invalid, chars[i]) >= 0)
+                chars[i] = '_';
+        }
+
+        return new string(chars);
     }
 }

@@ -18,10 +18,9 @@ using CampaignEngine.Infrastructure.Persistence.Security;
 using CampaignEngine.Infrastructure.Persistence.Seed;
 using CampaignEngine.Infrastructure.Rendering;
 using CampaignEngine.Infrastructure.Rendering.PostProcessors;
+using CampaignEngine.Infrastructure.Send;
 using CampaignEngine.Infrastructure.Startup;
 using CampaignEngine.Infrastructure.Templates;
-using DinkToPdf;
-using DinkToPdf.Contracts;
 using Hangfire;
 using Hangfire.SqlServer;
 using Microsoft.AspNetCore.Identity;
@@ -120,27 +119,17 @@ public static class ServiceCollectionExtensions
         // Strategy pattern: each channel registers its IChannelPostProcessor implementation.
         // The registry resolves the correct processor at runtime based on ChannelType.
         //
-        // DinkToPdf (Letter channel):
-        //   Requires libwkhtmltox.dll (x64) in the application root on Windows.
-        //   Download: https://wkhtmltopdf.org/downloads.html
-        //   The SynchronizedConverter is Singleton (thread-safe via internal lock).
+        // Note: LetterPostProcessor (DinkToPdf / wkhtmltopdf) removed in US-023 —
+        // Letter channel now uses pre-rendered DOCX bytes (BinaryContent) without
+        // any HTML-to-PDF conversion step.
         // ----------------------------------------------------------------
-        services.Configure<LetterPostProcessorOptions>(
-            configuration.GetSection(LetterPostProcessorOptions.SectionName));
-
-        // DinkToPdf converter: Singleton — SynchronizedConverter serializes native calls.
-        services.AddSingleton<IConverter>(new SynchronizedConverter(new PdfTools()));
 
         // Post-processor implementations (Scoped — safe to use scoped logger)
         services.AddScoped<IChannelPostProcessor, EmailPostProcessor>();
-        services.AddScoped<IChannelPostProcessor, LetterPostProcessor>();
         services.AddScoped<IChannelPostProcessor, SmsPostProcessor>();
 
         // Registry resolves IChannelPostProcessor by ChannelType at runtime.
         services.AddScoped<IChannelPostProcessorRegistry, ChannelPostProcessorRegistry>();
-
-        // PDF consolidation (PdfSharp — pure .NET, no native deps)
-        services.AddScoped<IPdfConsolidationService, PdfConsolidationService>();
 
         // Channel dispatcher registry — resolves dispatchers by ChannelType via DI strategy pattern.
         // Register as scoped so it can aggregate scoped IChannelDispatcher instances.
@@ -148,6 +137,9 @@ public static class ServiceCollectionExtensions
 
         // Send log service — SEND_LOG is the source of truth for all dispatch activity.
         services.AddScoped<ISendLogService, SendLogService>();
+
+        // Single send service — orchestrates template resolution, rendering, and dispatch (US-007 TASK-007-03).
+        services.AddScoped<ISingleSendService, SingleSendService>();
 
         // ----------------------------------------------------------------
         // US-029: CC/BCC resolution services
@@ -229,7 +221,8 @@ public static class ServiceCollectionExtensions
             sp.GetRequiredService<IRateLimitMetricsService>(),
             sp.GetRequiredService<IAppLogger<ThrottledChannelDispatcher>>()));
 
-        // US-021: LetterDispatcher — handles ChannelType.Letter sends via PDF generation + file drop.
+        // US-023: LetterDispatcher (rewritten) — writes one DOCX per recipient via PrintProviderFileDropHandler.
+        // Accepts DispatchRequest.BinaryContent (pre-rendered DOCX bytes) — no PDF conversion.
         // PrintProviderFileDropHandler is registered separately so it can be overridden in tests.
         // Letter channel is unlimited (TokensPerSecond = 0) per BR-1, so ThrottledChannelDispatcher
         // delegates to NoOpRateLimiter and adds zero overhead.

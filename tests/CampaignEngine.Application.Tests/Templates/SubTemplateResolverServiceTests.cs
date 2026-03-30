@@ -1,4 +1,5 @@
 using CampaignEngine.Application.Interfaces;
+using CampaignEngine.Application.Interfaces.Storage;
 using CampaignEngine.Domain.Entities;
 using CampaignEngine.Domain.Enums;
 using CampaignEngine.Domain.Exceptions;
@@ -15,6 +16,9 @@ namespace CampaignEngine.Application.Tests.Templates;
 ///   - ExtractReferences: parse {{> name}} syntax
 ///   - ResolveAsync: recursive substitution up to MaxDepth
 ///   - Circular reference detection (ValidateNoCircularReferencesAsync and ResolveAsync)
+///
+/// US-007: ITemplateBodyStore is mocked to return the BodyPath string as content
+/// (preserving existing test data where BodyPath holds the HTML for simplicity).
 /// </summary>
 public class SubTemplateResolverServiceTests : IDisposable
 {
@@ -30,8 +34,17 @@ public class SubTemplateResolverServiceTests : IDisposable
         _context = new CampaignEngineDbContext(options);
 
         var templateRepository = new TemplateRepository(_context);
+
+        // US-007 TASK-007-03: ITemplateBodyStore mock that returns the path string
+        // itself as stream content — tests store HTML directly in BodyPath.
+        var bodyStoreMock = new Mock<ITemplateBodyStore>();
+        bodyStoreMock
+            .Setup(s => s.ReadAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((string path, CancellationToken _) =>
+                (Stream)new MemoryStream(System.Text.Encoding.UTF8.GetBytes(path ?? string.Empty)));
+
         var logger = new Mock<IAppLogger<SubTemplateResolverService>>();
-        _service = new SubTemplateResolverService(templateRepository, logger.Object);
+        _service = new SubTemplateResolverService(templateRepository, bodyStoreMock.Object, logger.Object);
     }
 
     public void Dispose()

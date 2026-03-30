@@ -1,41 +1,39 @@
 using CampaignEngine.Application.DTOs.Dispatch;
-using CampaignEngine.Application.Interfaces;
-using CampaignEngine.Application.Models;
 using CampaignEngine.Domain.Enums;
 using CampaignEngine.Domain.Exceptions;
 using CampaignEngine.Infrastructure.Configuration;
 using CampaignEngine.Infrastructure.Dispatch;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
-using PdfSharp.Pdf;
-using PdfSharp.Pdf.IO;
 
 namespace CampaignEngine.Infrastructure.Tests.Dispatch;
 
 /// <summary>
-/// Unit tests for LetterDispatcher.
+/// Unit tests for the rewritten LetterDispatcher (US-023 / F-403).
 ///
-/// TASK-021-06: PDF generation tests.
-/// TASK-021-07: Consolidation tests (verify page order and batch splitting).
+/// TASK-023-09: Unit tests per F-404 coverage requirements.
 ///
-/// Uses:
-/// - MockLetterPostProcessorRegistry — returns configurable PDF bytes or throws.
-/// - MockPdfConsolidationService    — wraps PdfConsolidationService for integration-style tests.
-/// - NoOpFileDropHandler            — captures written batches without touching the file system.
+/// Coverage:
+///   - Happy path: valid BinaryContent → success + file written
+///   - Channel disabled → permanent failure, no file written
+///   - Null BinaryContent → permanent failure, no file written
+///   - Empty BinaryContent → permanent failure, no file written
+///   - File naming convention: {campaignId}_{recipientId}_{timestamp}.docx
+///   - I/O failure → LetterDispatchException (transient)
+///   - Message ID format: LETTER-{campaignId}-{recipientId}
+///   - Channel property returns Letter
+///
+/// Uses NoOpLetterFileDropHandler to capture writes without touching disk.
+/// Uses FailingLetterFileDropHandler to simulate I/O failures.
 /// </summary>
 public class LetterDispatcherTests
 {
-    // ----------------------------------------------------------------
-    // Default options
-    // ----------------------------------------------------------------
+    private static readonly byte[] ValidDocxBytes = [0x50, 0x4B, 0x03, 0x04, 0x14, 0x00]; // DOCX/ZIP magic bytes
 
     private static readonly LetterOptions DefaultOptions = new()
     {
         IsEnabled = true,
-        OutputDirectory = "/tmp/letters-test",
-        MaxPagesPerBatch = 500,
-        GenerateManifest = true,
-        FileNamePrefix = "CAMPAIGN"
+        OutputDirectory = "/tmp/letters-test"
     };
 
     // ----------------------------------------------------------------
@@ -43,33 +41,22 @@ public class LetterDispatcherTests
     // ----------------------------------------------------------------
 
     private static LetterDispatcher CreateDispatcher(
-        MockLetterPostProcessorRegistry? registry = null,
-        MockPdfConsolidationService? consolidation = null,
-        PrintProviderFileDropHandler? fileDropHandler = null,
+        NoOpLetterFileDropHandler? fileDropHandler = null,
         LetterOptions? options = null)
     {
-        var reg = registry ?? new MockLetterPostProcessorRegistry(
-            PostProcessingResult.Binary(CreateMinimalPdf(1)));
-        var cons = consolidation ?? new MockPdfConsolidationService(500);
-        var drop = fileDropHandler ?? new NoOpFileDropHandler(options ?? DefaultOptions);
-        var opts = Options.Create(options ?? DefaultOptions);
-
-        return new LetterDispatcher(
-            reg,
-            cons,
-            drop,
-            opts,
-            NullLogger<LetterDispatcher>.Instance);
+        var opts = options ?? DefaultOptions;
+        var drop = fileDropHandler ?? new NoOpLetterFileDropHandler(opts);
+        return new LetterDispatcher(drop, Options.Create(opts), NullLogger<LetterDispatcher>.Instance);
     }
 
     private static DispatchRequest BuildRequest(
+        byte[]? binaryContent = null,
         string? recipientId = null,
         string? displayName = null,
-        string? content = null,
         Guid? campaignId = null) => new()
     {
         Channel = ChannelType.Letter,
-        Content = content ?? "<html><body><p>Dear {{ Name }}, your letter.</p></body></html>",
+        BinaryContent = binaryContent ?? ValidDocxBytes,
         CampaignId = campaignId ?? Guid.NewGuid(),
         Recipient = new RecipientInfo
         {
@@ -90,11 +77,11 @@ public class LetterDispatcherTests
     }
 
     // ----------------------------------------------------------------
-    // TASK-021-06: PDF generation — happy path
+    // TASK-023-01/04: Happy path — valid BinaryContent
     // ----------------------------------------------------------------
 
     [Fact]
-    public async Task SendAsync_ValidRequest_ReturnsSuccess()
+    public async Task SendAsync_ValidBinaryContent_ReturnsSuccess()
     {
         var dispatcher = CreateDispatcher();
         var result = await dispatcher.SendAsync(BuildRequest());
@@ -104,10 +91,22 @@ public class LetterDispatcherTests
     }
 
     [Fact]
-    public async Task SendAsync_ValidRequest_MessageIdContainsCampaignId()
+    public async Task SendAsync_ValidBinaryContent_WritesOneFile()
+    {
+        var fileDropHandler = new NoOpLetterFileDropHandler(DefaultOptions);
+        var dispatcher = CreateDispatcher(fileDropHandler: fileDropHandler);
+
+        await dispatcher.SendAsync(BuildRequest());
+
+        fileDropHandler.WrittenFiles.Should().HaveCount(1);
+    }
+
+    [Fact]
+    public async Task SendAsync_ValidBinaryContent_MessageIdContainsCampaignId()
     {
         var campaignId = Guid.NewGuid();
         var dispatcher = CreateDispatcher();
+
         var result = await dispatcher.SendAsync(BuildRequest(campaignId: campaignId));
 
         result.Success.Should().BeTrue();
@@ -115,30 +114,152 @@ public class LetterDispatcherTests
     }
 
     [Fact]
-    public async Task SendAsync_ValidRequest_AccumulatesOneEntry()
+    public async Task SendAsync_ValidBinaryContent_MessageIdContainsRecipientId()
     {
         var dispatcher = CreateDispatcher();
-        await dispatcher.SendAsync(BuildRequest());
 
-        dispatcher.AccumulatedCount.Should().Be(1);
-    }
+        var result = await dispatcher.SendAsync(BuildRequest(recipientId: "REC-007"));
 
-    [Fact]
-    public async Task SendAsync_ThreeRecipients_AccumulatesThreeEntries()
-    {
-        var dispatcher = CreateDispatcher();
-        var campaignId = Guid.NewGuid();
-
-        for (var i = 1; i <= 3; i++)
-        {
-            await dispatcher.SendAsync(BuildRequest(recipientId: $"REC-{i:D3}", campaignId: campaignId));
-        }
-
-        dispatcher.AccumulatedCount.Should().Be(3);
+        result.Success.Should().BeTrue();
+        result.MessageId.Should().Contain("REC-007");
     }
 
     // ----------------------------------------------------------------
-    // TASK-021-06: PDF generation — channel disabled
+    // TASK-023-03: File naming convention
+    // ----------------------------------------------------------------
+
+    [Fact]
+    public async Task SendAsync_ValidRequest_FileNameContainsCampaignId()
+    {
+        var campaignId = Guid.NewGuid();
+        var fileDropHandler = new NoOpLetterFileDropHandler(DefaultOptions);
+        var dispatcher = CreateDispatcher(fileDropHandler: fileDropHandler);
+
+        await dispatcher.SendAsync(BuildRequest(campaignId: campaignId));
+
+        var writtenFile = fileDropHandler.WrittenFiles.Single();
+        writtenFile.CampaignId.Should().Be(campaignId);
+    }
+
+    [Fact]
+    public async Task SendAsync_ValidRequest_FileNameContainsRecipientId()
+    {
+        var fileDropHandler = new NoOpLetterFileDropHandler(DefaultOptions);
+        var dispatcher = CreateDispatcher(fileDropHandler: fileDropHandler);
+
+        await dispatcher.SendAsync(BuildRequest(recipientId: "REC-042"));
+
+        var writtenFile = fileDropHandler.WrittenFiles.Single();
+        writtenFile.RecipientId.Should().Be("REC-042");
+    }
+
+    [Fact]
+    public async Task SendAsync_ValidRequest_FileNameHasDocxExtension()
+    {
+        var fileDropHandler = new NoOpLetterFileDropHandler(DefaultOptions);
+        var dispatcher = CreateDispatcher(fileDropHandler: fileDropHandler);
+
+        await dispatcher.SendAsync(BuildRequest());
+
+        var writtenFile = fileDropHandler.WrittenFiles.Single();
+        writtenFile.FilePath.Should().EndWith(".docx");
+    }
+
+    [Fact]
+    public async Task SendAsync_TwoRecipients_WritesTwoFiles()
+    {
+        var fileDropHandler = new NoOpLetterFileDropHandler(DefaultOptions);
+        var dispatcher = CreateDispatcher(fileDropHandler: fileDropHandler);
+        var campaignId = Guid.NewGuid();
+
+        await dispatcher.SendAsync(BuildRequest(recipientId: "REC-001", campaignId: campaignId));
+        await dispatcher.SendAsync(BuildRequest(recipientId: "REC-002", campaignId: campaignId));
+
+        fileDropHandler.WrittenFiles.Should().HaveCount(2);
+    }
+
+    // ----------------------------------------------------------------
+    // TASK-023-04: Validation — null BinaryContent
+    // ----------------------------------------------------------------
+
+    [Fact]
+    public async Task SendAsync_NullBinaryContent_ReturnsPermanentFailure()
+    {
+        var dispatcher = CreateDispatcher();
+        var request = new DispatchRequest
+        {
+            Channel = ChannelType.Letter,
+            BinaryContent = null,
+            CampaignId = Guid.NewGuid(),
+            Recipient = new RecipientInfo { ExternalRef = "REC-001", DisplayName = "Alice" }
+        };
+
+        var result = await dispatcher.SendAsync(request);
+
+        result.Success.Should().BeFalse();
+        result.IsTransientFailure.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task SendAsync_NullBinaryContent_WritesNoFiles()
+    {
+        var fileDropHandler = new NoOpLetterFileDropHandler(DefaultOptions);
+        var dispatcher = CreateDispatcher(fileDropHandler: fileDropHandler);
+        var request = new DispatchRequest
+        {
+            Channel = ChannelType.Letter,
+            BinaryContent = null,
+            CampaignId = Guid.NewGuid(),
+            Recipient = new RecipientInfo { ExternalRef = "REC-001", DisplayName = "Alice" }
+        };
+
+        await dispatcher.SendAsync(request);
+
+        fileDropHandler.WrittenFiles.Should().BeEmpty();
+    }
+
+    // ----------------------------------------------------------------
+    // TASK-023-04: Validation — empty BinaryContent
+    // ----------------------------------------------------------------
+
+    [Fact]
+    public async Task SendAsync_EmptyBinaryContent_ReturnsPermanentFailure()
+    {
+        var dispatcher = CreateDispatcher();
+        var request = new DispatchRequest
+        {
+            Channel = ChannelType.Letter,
+            BinaryContent = Array.Empty<byte>(),
+            CampaignId = Guid.NewGuid(),
+            Recipient = new RecipientInfo { ExternalRef = "REC-001", DisplayName = "Alice" }
+        };
+
+        var result = await dispatcher.SendAsync(request);
+
+        result.Success.Should().BeFalse();
+        result.IsTransientFailure.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task SendAsync_EmptyBinaryContent_WritesNoFiles()
+    {
+        var fileDropHandler = new NoOpLetterFileDropHandler(DefaultOptions);
+        var dispatcher = CreateDispatcher(fileDropHandler: fileDropHandler);
+        var request = new DispatchRequest
+        {
+            Channel = ChannelType.Letter,
+            BinaryContent = Array.Empty<byte>(),
+            CampaignId = Guid.NewGuid(),
+            Recipient = new RecipientInfo { ExternalRef = "REC-001", DisplayName = "Alice" }
+        };
+
+        await dispatcher.SendAsync(request);
+
+        fileDropHandler.WrittenFiles.Should().BeEmpty();
+    }
+
+    // ----------------------------------------------------------------
+    // Disabled channel
     // ----------------------------------------------------------------
 
     [Fact]
@@ -154,363 +275,49 @@ public class LetterDispatcherTests
         result.ErrorDetail.Should().Contain("disabled");
     }
 
-    // ----------------------------------------------------------------
-    // TASK-021-06: PDF generation — empty content
-    // ----------------------------------------------------------------
-
     [Fact]
-    public async Task SendAsync_EmptyContent_ReturnsPermanentFailure()
+    public async Task SendAsync_ChannelDisabled_WritesNoFiles()
     {
-        var dispatcher = CreateDispatcher();
-        var result = await dispatcher.SendAsync(BuildRequest(content: string.Empty));
+        var opts = new LetterOptions { IsEnabled = false, OutputDirectory = "/tmp" };
+        var fileDropHandler = new NoOpLetterFileDropHandler(opts);
+        var dispatcher = CreateDispatcher(fileDropHandler: fileDropHandler, options: opts);
 
-        result.Success.Should().BeFalse();
-        result.IsTransientFailure.Should().BeFalse();
-        result.ErrorDetail.Should().Contain("empty");
-    }
+        await dispatcher.SendAsync(BuildRequest());
 
-    [Fact]
-    public async Task SendAsync_WhitespaceContent_ReturnsPermanentFailure()
-    {
-        var dispatcher = CreateDispatcher();
-        var result = await dispatcher.SendAsync(BuildRequest(content: "   "));
-
-        result.Success.Should().BeFalse();
-        result.IsTransientFailure.Should().BeFalse();
+        fileDropHandler.WrittenFiles.Should().BeEmpty();
     }
 
     // ----------------------------------------------------------------
-    // TASK-021-06: PDF generation — post-processor error handling
+    // TASK-023-05: I/O failure maps to LetterDispatchException (transient)
     // ----------------------------------------------------------------
 
     [Fact]
-    public async Task SendAsync_PostProcessorThrowsTransient_ReturnsTransientFailure()
+    public async Task SendAsync_IoFailure_ThrowsLetterDispatchException()
     {
-        var registry = new MockLetterPostProcessorRegistry(
-            exception: new PostProcessingException("DinkToPdf timeout", channel: "Letter", isTransient: true));
-        var dispatcher = CreateDispatcher(registry: registry);
+        var fileDropHandler = new FailingLetterFileDropHandler(DefaultOptions);
+        var dispatcher = new LetterDispatcher(
+            fileDropHandler,
+            Options.Create(DefaultOptions),
+            NullLogger<LetterDispatcher>.Instance);
 
-        var result = await dispatcher.SendAsync(BuildRequest());
+        var act = async () => await dispatcher.SendAsync(BuildRequest());
 
-        result.Success.Should().BeFalse();
-        result.IsTransientFailure.Should().BeTrue();
+        await act.Should().ThrowAsync<LetterDispatchException>();
     }
 
     [Fact]
-    public async Task SendAsync_PostProcessorThrowsPermanent_ReturnsPermanentFailure()
+    public async Task SendAsync_IoFailure_ExceptionIsTransient()
     {
-        var registry = new MockLetterPostProcessorRegistry(
-            exception: new PostProcessingException("Invalid HTML", channel: "Letter", isTransient: false));
-        var dispatcher = CreateDispatcher(registry: registry);
-
-        var result = await dispatcher.SendAsync(BuildRequest());
-
-        result.Success.Should().BeFalse();
-        result.IsTransientFailure.Should().BeFalse();
-    }
-
-    [Fact]
-    public async Task SendAsync_PostProcessorReturnsEmptyBytes_ReturnsTransientFailure()
-    {
-        var registry = new MockLetterPostProcessorRegistry(
-            PostProcessingResult.Binary(Array.Empty<byte>()));
-        var dispatcher = CreateDispatcher(registry: registry);
-
-        var result = await dispatcher.SendAsync(BuildRequest());
-
-        result.Success.Should().BeFalse();
-        result.IsTransientFailure.Should().BeTrue();
-    }
-
-    [Fact]
-    public async Task SendAsync_CancellationRequested_ReturnsTransientFailure()
-    {
-        var cts = new CancellationTokenSource();
-        var registry = new MockLetterPostProcessorRegistry(
-            exception: new OperationCanceledException("Cancelled"));
-        var dispatcher = CreateDispatcher(registry: registry);
-
-        var result = await dispatcher.SendAsync(BuildRequest(), cts.Token);
-
-        result.Success.Should().BeFalse();
-        result.IsTransientFailure.Should().BeTrue();
-    }
-
-    // ----------------------------------------------------------------
-    // TASK-021-07: Consolidation — page order verification
-    // ----------------------------------------------------------------
-
-    [Fact]
-    public async Task FlushBatchAsync_NoAccumulatedPdfs_ReturnsEmptyList()
-    {
-        var campaignId = Guid.NewGuid();
-        var fileDropHandler = new NoOpFileDropHandler(DefaultOptions);
-        var dispatcher = CreateDispatcher(fileDropHandler: fileDropHandler);
-
-        var paths = await dispatcher.FlushBatchAsync(campaignId);
-
-        paths.Should().BeEmpty();
-        fileDropHandler.WrittenBatches.Should().BeEmpty();
-    }
-
-    [Fact]
-    public async Task FlushBatchAsync_SingleRecipient_WritesOneBatch()
-    {
-        var campaignId = Guid.NewGuid();
-        var fileDropHandler = new NoOpFileDropHandler(DefaultOptions);
-
-        var pdfBytes = CreateMinimalPdf(1);
-        var registry = new MockLetterPostProcessorRegistry(PostProcessingResult.Binary(pdfBytes));
-        var consolidation = new MockPdfConsolidationService(500);
-        var dispatcher = CreateDispatcher(registry, consolidation, fileDropHandler);
-
-        await dispatcher.SendAsync(BuildRequest(campaignId: campaignId));
-        var paths = await dispatcher.FlushBatchAsync(campaignId);
-
-        paths.Should().HaveCount(1);
-        fileDropHandler.WrittenBatches.Should().HaveCount(1);
-    }
-
-    [Fact]
-    public async Task FlushBatchAsync_AfterFlush_AccumulatorCleared()
-    {
-        var campaignId = Guid.NewGuid();
-        var dispatcher = CreateDispatcher();
-
-        await dispatcher.SendAsync(BuildRequest(campaignId: campaignId));
-        await dispatcher.FlushBatchAsync(campaignId);
-
-        dispatcher.AccumulatedCount.Should().Be(0);
-    }
-
-    [Fact]
-    public async Task FlushBatchAsync_BatchFileNameContainsCampaignId()
-    {
-        var campaignId = Guid.NewGuid();
-        var fileDropHandler = new NoOpFileDropHandler(DefaultOptions);
-        var dispatcher = CreateDispatcher(fileDropHandler: fileDropHandler);
-
-        await dispatcher.SendAsync(BuildRequest(campaignId: campaignId));
-        var paths = await dispatcher.FlushBatchAsync(campaignId);
-
-        paths.Should().HaveCount(1);
-        // The file name (passed as written path) should contain campaign ID
-        fileDropHandler.WrittenBatches.First().CampaignId.Should().Be(campaignId);
-    }
-
-    [Fact]
-    public async Task FlushBatchAsync_ManifestCsvGenerated_WhenEnabled()
-    {
-        var campaignId = Guid.NewGuid();
-        var options = new LetterOptions { IsEnabled = true, OutputDirectory = "/tmp", GenerateManifest = true };
-        var fileDropHandler = new NoOpFileDropHandler(options);
-        var dispatcher = CreateDispatcher(fileDropHandler: fileDropHandler, options: options);
-
-        await dispatcher.SendAsync(BuildRequest(recipientId: "REC-001", campaignId: campaignId));
-        await dispatcher.FlushBatchAsync(campaignId);
-
-        fileDropHandler.WrittenBatches.First().ManifestCsv.Should().NotBeNullOrEmpty();
-        fileDropHandler.WrittenBatches.First().ManifestCsv.Should().Contain("REC-001");
-    }
-
-    [Fact]
-    public async Task FlushBatchAsync_ManifestNotGenerated_WhenDisabled()
-    {
-        var campaignId = Guid.NewGuid();
-        var options = new LetterOptions { IsEnabled = true, OutputDirectory = "/tmp", GenerateManifest = false };
-        var fileDropHandler = new NoOpFileDropHandler(options);
-        var dispatcher = CreateDispatcher(fileDropHandler: fileDropHandler, options: options);
-
-        await dispatcher.SendAsync(BuildRequest(campaignId: campaignId));
-        await dispatcher.FlushBatchAsync(campaignId);
-
-        fileDropHandler.WrittenBatches.First().ManifestCsv.Should().BeNull();
-    }
-
-    // ----------------------------------------------------------------
-    // TASK-021-07: Consolidation — page order (insertion order preserved)
-    // ----------------------------------------------------------------
-
-    [Fact]
-    public async Task FlushBatchAsync_MultipleRecipients_ManifestPreservesOrder()
-    {
-        var campaignId = Guid.NewGuid();
-        var capturer = new ManifestCapturingFileDropHandler(DefaultOptions);
-        var dispatcher = CreateDispatcher(
-            fileDropHandler: capturer,
-            options: DefaultOptions);
-
-        for (var i = 1; i <= 3; i++)
-        {
-            await dispatcher.SendAsync(BuildRequest(
-                recipientId: $"REC-{i:D3}",
-                campaignId: campaignId));
-        }
-
-        await dispatcher.FlushBatchAsync(campaignId);
-
-        var csv = capturer.LastManifestCsv;
-        csv.Should().NotBeNull();
-
-        // Verify recipient IDs appear in order
-        var indexRec001 = csv!.IndexOf("REC-001", StringComparison.Ordinal);
-        var indexRec002 = csv.IndexOf("REC-002", StringComparison.Ordinal);
-        var indexRec003 = csv.IndexOf("REC-003", StringComparison.Ordinal);
-
-        indexRec001.Should().BeLessThan(indexRec002, "REC-001 should appear before REC-002 in manifest");
-        indexRec002.Should().BeLessThan(indexRec003, "REC-002 should appear before REC-003 in manifest");
-    }
-
-    [Fact]
-    public async Task FlushBatchAsync_ManifestContainsDisplayName()
-    {
-        var campaignId = Guid.NewGuid();
-        var capturer = new ManifestCapturingFileDropHandler(DefaultOptions);
-        var dispatcher = CreateDispatcher(fileDropHandler: capturer, options: DefaultOptions);
-
-        await dispatcher.SendAsync(BuildRequest(
-            recipientId: "REC-001",
-            displayName: "Jean-Pierre Dupont",
-            campaignId: campaignId));
-        await dispatcher.FlushBatchAsync(campaignId);
-
-        capturer.LastManifestCsv.Should().Contain("Jean-Pierre Dupont");
-    }
-
-    [Fact]
-    public async Task FlushBatchAsync_ManifestHasHeader()
-    {
-        var campaignId = Guid.NewGuid();
-        var capturer = new ManifestCapturingFileDropHandler(DefaultOptions);
-        var dispatcher = CreateDispatcher(fileDropHandler: capturer, options: DefaultOptions);
-
-        await dispatcher.SendAsync(BuildRequest(campaignId: campaignId));
-        await dispatcher.FlushBatchAsync(campaignId);
-
-        capturer.LastManifestCsv.Should().StartWith("SequenceInBatch");
-    }
-
-    // ----------------------------------------------------------------
-    // TASK-021-07: Consolidation — batch splitting
-    // ----------------------------------------------------------------
-
-    [Fact]
-    public async Task FlushBatchAsync_10Recipients_MergedIntoSingleBatch()
-    {
-        var campaignId = Guid.NewGuid();
-        var fileDropHandler = new NoOpFileDropHandler(DefaultOptions);
-        var pdfBytes = CreateMinimalPdf(1); // 1 page per recipient
-        var registry = new MockLetterPostProcessorRegistry(PostProcessingResult.Binary(pdfBytes));
-        var consolidation = new MockPdfConsolidationService(500);
-        var dispatcher = CreateDispatcher(registry, consolidation, fileDropHandler);
-
-        for (var i = 1; i <= 10; i++)
-        {
-            await dispatcher.SendAsync(BuildRequest(recipientId: $"REC-{i:D3}", campaignId: campaignId));
-        }
-
-        var paths = await dispatcher.FlushBatchAsync(campaignId);
-
-        // 10 pages < 500 max → single batch
-        paths.Should().HaveCount(1);
-    }
-
-    // ----------------------------------------------------------------
-    // Manifest generator unit tests (TASK-021-05)
-    // ----------------------------------------------------------------
-
-    [Fact]
-    public void ManifestGenerator_EmptyEntries_ReturnsNull()
-    {
-        var result = LetterManifestGenerator.BuildCsv([]);
-        result.Should().BeNull();
-    }
-
-    [Fact]
-    public void ManifestGenerator_SingleEntry_ContainsHeader()
-    {
-        var entries = new List<LetterManifestEntry>
-        {
-            new("REC-001", "Alice", 1, 2, "CAMPAIGN_batch_001.pdf")
-        };
-
-        var csv = LetterManifestGenerator.BuildCsv(entries);
-
-        csv.Should().StartWith("SequenceInBatch,RecipientId,DisplayName,PageCount,BatchFileName");
-    }
-
-    [Fact]
-    public void ManifestGenerator_SingleEntry_ContainsRecipientData()
-    {
-        var entries = new List<LetterManifestEntry>
-        {
-            new("REC-001", "Alice Smith", 1, 2, "CAMPAIGN_001.pdf")
-        };
-
-        var csv = LetterManifestGenerator.BuildCsv(entries);
-
-        csv.Should().Contain("REC-001");
-        csv.Should().Contain("Alice Smith");
-        csv.Should().Contain("CAMPAIGN_001.pdf");
-    }
-
-    [Fact]
-    public void ManifestGenerator_FieldWithComma_EscapedWithQuotes()
-    {
-        var entries = new List<LetterManifestEntry>
-        {
-            new("REC-001", "Smith, Alice", 1, 1, "batch.pdf")
-        };
-
-        var csv = LetterManifestGenerator.BuildCsv(entries);
-
-        csv.Should().Contain("\"Smith, Alice\"");
-    }
-
-    [Fact]
-    public void ManifestGenerator_FieldWithQuote_EscapedByDoubling()
-    {
-        var entries = new List<LetterManifestEntry>
-        {
-            new("REC-001", "O\"Brien", 1, 1, "batch.pdf")
-        };
-
-        var csv = LetterManifestGenerator.BuildCsv(entries);
-
-        csv.Should().Contain("\"O\"\"Brien\"");
-    }
-
-    [Fact]
-    public void ManifestGenerator_MultipleEntries_AllIncluded()
-    {
-        var entries = new List<LetterManifestEntry>
-        {
-            new("REC-001", "Alice", 1, 1, "batch.pdf"),
-            new("REC-002", "Bob", 2, 2, "batch.pdf"),
-            new("REC-003", "Charlie", 3, 1, "batch.pdf"),
-        };
-
-        var csv = LetterManifestGenerator.BuildCsv(entries);
-
-        csv.Should().Contain("REC-001");
-        csv.Should().Contain("REC-002");
-        csv.Should().Contain("REC-003");
-    }
-
-    // ----------------------------------------------------------------
-    // Helpers
-    // ----------------------------------------------------------------
-
-    private static byte[] CreateMinimalPdf(int pageCount = 1)
-    {
-        var doc = new PdfDocument();
-        for (var i = 0; i < pageCount; i++)
-            doc.AddPage();
-
-        using var ms = new MemoryStream();
-        doc.Save(ms, closeStream: false);
-        doc.Dispose();
-        return ms.ToArray();
+        var fileDropHandler = new FailingLetterFileDropHandler(DefaultOptions);
+        var dispatcher = new LetterDispatcher(
+            fileDropHandler,
+            Options.Create(DefaultOptions),
+            NullLogger<LetterDispatcher>.Instance);
+
+        var ex = await Assert.ThrowsAsync<LetterDispatchException>(
+            () => dispatcher.SendAsync(BuildRequest()));
+
+        ex.IsTransient.Should().BeTrue();
     }
 }
 
@@ -519,181 +326,49 @@ public class LetterDispatcherTests
 // ================================================================
 
 /// <summary>
-/// Mock IChannelPostProcessorRegistry that returns a configured Letter post-processor.
-/// Can be configured to return a result or throw an exception.
+/// File drop handler that captures written files in memory without touching the file system.
 /// </summary>
-internal class MockLetterPostProcessorRegistry : IChannelPostProcessorRegistry
+internal sealed class NoOpLetterFileDropHandler : PrintProviderFileDropHandler
 {
-    private readonly PostProcessingResult? _result;
-    private readonly Exception? _exception;
+    public record WrittenFile(Guid CampaignId, string RecipientId, byte[] DocxBytes, string FilePath);
+    public List<WrittenFile> WrittenFiles { get; } = [];
 
-    public MockLetterPostProcessorRegistry(PostProcessingResult result)
-    {
-        _result = result;
-    }
-
-    public MockLetterPostProcessorRegistry(Exception exception)
-    {
-        _exception = exception;
-    }
-
-    public IEnumerable<ChannelType> RegisteredChannels => [ChannelType.Letter];
-
-    public bool HasProcessor(ChannelType channel) => channel == ChannelType.Letter;
-
-    public IChannelPostProcessor GetProcessor(ChannelType channel)
-    {
-        return new MockLetterPostProcessor(_result, _exception);
-    }
-}
-
-internal sealed class MockLetterPostProcessor : IChannelPostProcessor
-{
-    private readonly PostProcessingResult? _result;
-    private readonly Exception? _exception;
-
-    public ChannelType Channel => ChannelType.Letter;
-
-    public MockLetterPostProcessor(PostProcessingResult? result, Exception? exception)
-    {
-        _result = result;
-        _exception = exception;
-    }
-
-    public Task<PostProcessingResult> ProcessAsync(
-        string renderedHtml,
-        PostProcessingContext? context = null,
-        CancellationToken cancellationToken = default)
-    {
-        if (_exception is not null)
-            throw _exception;
-
-        return Task.FromResult(_result!);
-    }
-}
-
-/// <summary>
-/// Mock IPdfConsolidationService that uses PdfSharp for realistic consolidation
-/// (supports page count verification in tests).
-/// </summary>
-internal sealed class MockPdfConsolidationService : IPdfConsolidationService
-{
-    public int MaxPagesPerBatch { get; }
-
-    public MockPdfConsolidationService(int maxPagesPerBatch = 500)
-    {
-        MaxPagesPerBatch = maxPagesPerBatch;
-    }
-
-    public Task<IReadOnlyList<byte[]>> ConsolidateAsync(
-        IEnumerable<byte[]> pdfDocuments,
-        CancellationToken cancellationToken = default)
-    {
-        var docs = pdfDocuments?.ToList() ?? [];
-
-        if (docs.Count == 0)
-            return Task.FromResult<IReadOnlyList<byte[]>>(Array.Empty<byte[]>());
-
-        // Simple pass-through: merge all into a single batch
-        // (for realistic batching tests, use PdfConsolidationService directly)
-        var batches = new List<byte[]>();
-        var current = new PdfDocument();
-        var pageCount = 0;
-
-        foreach (var pdfBytes in docs)
-        {
-            if (pdfBytes is null || pdfBytes.Length == 0) continue;
-
-            PdfDocument? source = null;
-            try
-            {
-                var ms = new MemoryStream(pdfBytes);
-                source = PdfReader.Open(ms, PdfDocumentOpenMode.Import);
-            }
-            catch
-            {
-                continue;
-            }
-
-            using (source)
-            {
-                for (var i = 0; i < source.PageCount; i++)
-                {
-                    if (pageCount >= MaxPagesPerBatch)
-                    {
-                        batches.Add(SaveDoc(current));
-                        current = new PdfDocument();
-                        pageCount = 0;
-                    }
-
-                    current.AddPage(source.Pages[i]);
-                    pageCount++;
-                }
-            }
-        }
-
-        if (pageCount > 0)
-            batches.Add(SaveDoc(current));
-
-        current.Dispose();
-
-        return Task.FromResult<IReadOnlyList<byte[]>>(batches);
-    }
-
-    private static byte[] SaveDoc(PdfDocument doc)
-    {
-        using var ms = new MemoryStream();
-        doc.Save(ms, closeStream: false);
-        return ms.ToArray();
-    }
-}
-
-/// <summary>
-/// File drop handler that captures written batches in memory instead of writing to disk.
-/// </summary>
-internal sealed class NoOpFileDropHandler : PrintProviderFileDropHandler
-{
-    public record WrittenBatch(Guid CampaignId, int BatchNumber, byte[] PdfBytes, string? ManifestCsv);
-    public List<WrittenBatch> WrittenBatches { get; } = [];
-
-    public NoOpFileDropHandler(LetterOptions options)
+    public NoOpLetterFileDropHandler(LetterOptions options)
         : base(Options.Create(options), NullLogger<PrintProviderFileDropHandler>.Instance)
     { }
 
-    public override Task<string> WriteAsync(
-        byte[] pdfBytes,
-        string? manifestCsv,
+    public override Task<string> WriteFileAsync(
+        byte[] docxBytes,
         Guid campaignId,
-        int batchNumber,
+        string recipientId,
         DateTime? timestamp = null,
         CancellationToken cancellationToken = default)
     {
-        WrittenBatches.Add(new WrittenBatch(campaignId, batchNumber, pdfBytes, manifestCsv));
-        var fakePath = Path.Combine("test-output", $"CAMPAIGN_{campaignId:N}_{batchNumber:D3}.pdf");
-        return Task.FromResult(fakePath);
+        var ts = (timestamp ?? DateTime.UtcNow).ToString("yyyyMMddHHmmss");
+        var filePath = Path.Combine("test-output", $"{campaignId:N}_{recipientId}_{ts}.docx");
+        WrittenFiles.Add(new WrittenFile(campaignId, recipientId, docxBytes, filePath));
+        return Task.FromResult(filePath);
     }
 }
 
 /// <summary>
-/// File drop handler that captures the last manifest CSV for assertion.
+/// File drop handler that always throws a LetterDispatchException (transient) to simulate I/O failures.
 /// </summary>
-internal sealed class ManifestCapturingFileDropHandler : PrintProviderFileDropHandler
+internal sealed class FailingLetterFileDropHandler : PrintProviderFileDropHandler
 {
-    public string? LastManifestCsv { get; private set; }
-
-    public ManifestCapturingFileDropHandler(LetterOptions options)
+    public FailingLetterFileDropHandler(LetterOptions options)
         : base(Options.Create(options), NullLogger<PrintProviderFileDropHandler>.Instance)
     { }
 
-    public override Task<string> WriteAsync(
-        byte[] pdfBytes,
-        string? manifestCsv,
+    public override Task<string> WriteFileAsync(
+        byte[] docxBytes,
         Guid campaignId,
-        int batchNumber,
+        string recipientId,
         DateTime? timestamp = null,
         CancellationToken cancellationToken = default)
     {
-        LastManifestCsv = manifestCsv;
-        return Task.FromResult($"CAMPAIGN_{campaignId:N}_{batchNumber:D3}.pdf");
+        throw new LetterDispatchException(
+            $"Simulated I/O failure writing DOCX for recipient '{recipientId}'.",
+            isTransient: true);
     }
 }
