@@ -1150,8 +1150,9 @@
 > Ongoing technical improvements, infrastructure work, and maintenance tasks that keep the codebase healthy and the application operational.
 
 #### [US-026] - Initialize database with a default admin user
-**Status:** 🔵 IN PROGRESS
+**Status:** ✅ DONE
 **Start date:** 2026-03-30
+**End date:** 2026-03-30
 **Priority:** 🔴 High
 **Complexity:** S
 **Epic:** Epic 6
@@ -1165,18 +1166,18 @@
 > On a fresh deployment the application has no users, making it impossible to log in or configure the system. A default admin account seeded at startup removes this bootstrap problem.
 
 **Acceptance criteria:**
-- [ ] A default admin user is created on application startup if no admin exists
-- [ ] Credentials (username/email + password) are configurable via `appsettings.json` or environment variables
-- [ ] Default admin is assigned the Administrator role
-- [ ] Seeding is idempotent — re-running does not create duplicate accounts
-- [ ] Default credentials are documented and a warning is logged at startup if defaults are still in use
+- [x] A default admin user is created on application startup if no admin exists ✅
+- [x] Credentials (username/email + password) are configurable via `appsettings.json` or environment variables ✅
+- [x] Default admin is assigned the Administrator role ✅
+- [x] Seeding is idempotent — re-running does not create duplicate accounts ✅
+- [x] Default credentials are documented and a warning is logged at startup if defaults are still in use ✅
 
 **Technical tasks:**
-- [ ] `TASK-026-01` - **[Config]** Add `DefaultAdmin` section to `appsettings.json` (email, password, username)
-- [ ] `TASK-026-02` - **[Model]** Create `DatabaseSeeder` service in Infrastructure layer
-- [ ] `TASK-026-03` - **[Script]** Implement idempotent seeding logic using `IIdentityService`
-- [ ] `TASK-026-04` - **[CI]** Register and invoke `DatabaseSeeder` in `Program.cs` after migrations
-- [ ] `TASK-026-05` - **[Test]** Unit tests for seeder: no-op when admin already exists, creates admin when absent
+- [x] `TASK-026-01` - **[Config]** Add `DefaultAdmin` section to `appsettings.json` (email, password, username) ✅ 2026-03-30
+- [x] `TASK-026-02` - **[Model]** Create `DatabaseSeeder` service in Infrastructure layer ✅ 2026-03-30
+- [x] `TASK-026-03` - **[Script]** Implement idempotent seeding logic using `IIdentityService` ✅ 2026-03-30
+- [x] `TASK-026-04` - **[CI]** Register and invoke `DatabaseSeeder` in `Program.cs` after migrations ✅ 2026-03-30
+- [x] `TASK-026-05` - **[Test]** Unit tests for seeder: no-op when admin already exists, creates admin when absent ✅ 2026-03-30
 
 **Dependencies:** None
 **Estimation:** 1-2 days
