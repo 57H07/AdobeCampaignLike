@@ -259,7 +259,8 @@
 ---
 
 #### [US-005] - Atomic file write with concurrency guard
-**Status:** 🟡 TODO
+**Status:** 🔵 IN PROGRESS
+**Start date:** 2026-03-30
 **Priority:** 🔴 High
 **Complexity:** L
 **Epic:** Epic 1
