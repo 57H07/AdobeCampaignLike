@@ -259,8 +259,9 @@
 ---
 
 #### [US-005] - Atomic file write with concurrency guard
-**Status:** 🔵 IN PROGRESS
+**Status:** ✅ DONE
 **Start date:** 2026-03-30
+**End date:** 2026-03-31
 **Priority:** 🔴 High
 **Complexity:** L
 **Epic:** Epic 1
@@ -273,22 +274,22 @@
 > F-105: Write file first, commit path to DB; on DB failure, delete orphaned file in same request. On update, copy previous body to `history/v{n}.docx` before writing new version. EF Core `rowversion` prevents concurrent writes; second writer gets HTTP 409.
 
 **Acceptance criteria:**
-- [ ] File is written before DB transaction commits
-- [ ] On DB commit failure, file is deleted synchronously
-- [ ] On template update, previous body is copied to `history/v{n}.docx`
-- [ ] `TemplateService.UpdateAsync` uses EF optimistic concurrency
-- [ ] Concurrent update attempts return HTTP 409 Conflict
-- [ ] `DbUpdateConcurrencyException` translated to appropriate response
+- [x] File is written before DB transaction commits ✅
+- [x] On DB commit failure, file is deleted synchronously ✅
+- [x] On template update, previous body is copied to `history/v{n}.docx` ✅
+- [x] `TemplateService.UpdateAsync` uses EF optimistic concurrency ✅
+- [x] Concurrent update attempts return HTTP 409 Conflict ✅
+- [x] `DbUpdateConcurrencyException` translated to appropriate response ✅
 
 **Technical tasks:**
-- [ ] `TASK-005-01` - **[Service]** Update `TemplateService.CreateAsync` with atomic write pattern
-- [ ] `TASK-005-02` - **[Service]** Update `TemplateService.UpdateAsync` with history copy + concurrency check
-- [ ] `TASK-005-03` - **[Exception]** Add exception handler for `DbUpdateConcurrencyException`
-- [ ] `TASK-005-04` - **[Cleanup]** Implement synchronous orphaned-file deletion on DB failure
-- [ ] `TASK-005-05` - **[Test]** Unit tests for create success path
-- [ ] `TASK-005-06` - **[Test]** Unit tests for DB failure → file cleanup
-- [ ] `TASK-005-07` - **[Test]** Unit tests for concurrent update → 409 response
-- [ ] `TASK-005-08` - **[Test]** Integration test for update with history copy
+- [x] `TASK-005-01` - **[Service]** Update `TemplateService.CreateAsync` with atomic write pattern ✅ 2026-03-30
+- [x] `TASK-005-02` - **[Service]** Update `TemplateService.UpdateAsync` with history copy + concurrency check ✅ 2026-03-30
+- [x] `TASK-005-03` - **[Exception]** Add exception handler for `DbUpdateConcurrencyException` ✅ 2026-03-30
+- [x] `TASK-005-04` - **[Cleanup]** Implement synchronous orphaned-file deletion on DB failure ✅ 2026-03-30
+- [x] `TASK-005-05` - **[Test]** Unit tests for create success path ✅ 2026-03-30
+- [x] `TASK-005-06` - **[Test]** Unit tests for DB failure → file cleanup ✅ 2026-03-30
+- [x] `TASK-005-07` - **[Test]** Unit tests for concurrent update → 409 response ✅ 2026-03-30
+- [x] `TASK-005-08` - **[Test]** Integration test for update with history copy ✅ 2026-03-30
 
 **Business rules:**
 1. File write happens inside try-catch; DB commit inside using block
