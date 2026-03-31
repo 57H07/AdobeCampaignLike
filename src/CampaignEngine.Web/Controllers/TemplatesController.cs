@@ -231,7 +231,7 @@ public class TemplatesController : ControllerBase
     }
 
     // ================================================================
-    // Letter Channel Upload Endpoints (US-010)
+    // Letter Channel Upload Endpoints (US-011)
     // ================================================================
 
     /// <summary>
@@ -239,11 +239,13 @@ public class TemplatesController : ControllerBase
     /// Maximum file size is 10 MB (10,485,760 bytes).
     /// </summary>
     /// <remarks>
-    /// Business rules:
+    /// Business rules (F-205):
+    /// - Required parts: name (max 200 chars), file (binary DOCX).
+    /// - Optional part: description (max 500 chars).
     /// - File must not exceed 10 MB (F-204).
     /// - Template name must be unique within the Letter channel.
     /// - New templates start in Draft status.
-    /// - Only Designer and Admin roles can create templates.
+    /// - Only Designer and Admin roles can create templates (CampaignManager excluded).
     /// </remarks>
     [HttpPost("letter")]
     [RequestSizeLimit(10_485_760)]
@@ -251,6 +253,7 @@ public class TemplatesController : ControllerBase
     [Consumes("multipart/form-data")]
     [ProducesResponseType(typeof(TemplateDto), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
     [ProducesResponseType(StatusCodes.Status413RequestEntityTooLarge)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -260,6 +263,16 @@ public class TemplatesController : ControllerBase
         [FromForm] string? description = null,
         CancellationToken cancellationToken = default)
     {
+        // Validate required parts
+        if (string.IsNullOrWhiteSpace(name))
+            return BadRequest(new { error = "The name field is required." });
+
+        if (name.Length > 200)
+            return BadRequest(new { error = "The name field must not exceed 200 characters." });
+
+        if (description is not null && description.Length > 500)
+            return BadRequest(new { error = "The description field must not exceed 500 characters." });
+
         if (file is null)
             return BadRequest(new { error = "A DOCX file is required." });
 
@@ -268,33 +281,41 @@ public class TemplatesController : ControllerBase
             return StatusCode(StatusCodes.Status413RequestEntityTooLarge,
                 new { error = $"File size {file.Length:N0} bytes exceeds the 10 MB limit ({maxFileSizeBytes:N0} bytes)." });
 
-        var request = new CreateTemplateRequest
+        try
         {
-            Name = name,
-            Channel = ChannelType.Letter,
-            BodyPath = file.FileName,
-            Description = description,
-            FileSizeBytes = file.Length
-        };
+            var request = new CreateTemplateRequest
+            {
+                Name = name,
+                Channel = ChannelType.Letter,
+                BodyPath = string.Empty, // will be set by service via DocxContent
+                Description = description,
+                FileSizeBytes = file.Length,
+                DocxContent = file.OpenReadStream()
+            };
 
-        var template = await _templateService.CreateAsync(request, cancellationToken);
+            var template = await _templateService.CreateAsync(request, cancellationToken);
 
-        var dto = new TemplateDto
+            var dto = new TemplateDto
+            {
+                Id = template.Id,
+                Name = template.Name,
+                Channel = template.Channel.ToString(),
+                BodyPath = template.BodyPath,
+                BodyChecksum = template.BodyChecksum,
+                Status = template.Status.ToString(),
+                Version = template.Version,
+                IsSubTemplate = template.IsSubTemplate,
+                Description = template.Description,
+                CreatedAt = template.CreatedAt,
+                UpdatedAt = template.UpdatedAt
+            };
+
+            return CreatedAtAction(nameof(GetTemplate), new { id = template.Id }, dto);
+        }
+        catch (ValidationException vex) when (vex.Message.Contains("already exists"))
         {
-            Id = template.Id,
-            Name = template.Name,
-            Channel = template.Channel.ToString(),
-            BodyPath = template.BodyPath,
-            BodyChecksum = template.BodyChecksum,
-            Status = template.Status.ToString(),
-            Version = template.Version,
-            IsSubTemplate = template.IsSubTemplate,
-            Description = template.Description,
-            CreatedAt = template.CreatedAt,
-            UpdatedAt = template.UpdatedAt
-        };
-
-        return CreatedAtAction(nameof(GetTemplate), new { id = template.Id }, dto);
+            return Conflict(new { error = vex.Message });
+        }
     }
 
     /// <summary>
@@ -302,11 +323,13 @@ public class TemplatesController : ControllerBase
     /// Maximum file size is 10 MB (10,485,760 bytes).
     /// </summary>
     /// <remarks>
-    /// Business rules:
+    /// Business rules (F-205):
+    /// - Required parts: name (max 200 chars).
+    /// - Optional parts: description (max 500 chars), file (binary DOCX — if omitted, existing DOCX retained).
     /// - File must not exceed 10 MB (F-204).
     /// - Template name must remain unique within the Letter channel.
-    /// - File is optional: if omitted, existing DOCX is retained.
-    /// - Only Designer and Admin roles can edit templates.
+    /// - Channel cannot be changed: endpoint only applies to Letter templates (422 on mismatch).
+    /// - Only Designer and Admin roles can edit templates (CampaignManager excluded).
     /// </remarks>
     /// <param name="id">Template GUID.</param>
     [HttpPut("{id:guid}/letter")]
@@ -315,8 +338,10 @@ public class TemplatesController : ControllerBase
     [Consumes("multipart/form-data")]
     [ProducesResponseType(typeof(TemplateDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status413RequestEntityTooLarge)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    [ProducesResponseType(StatusCodes.Status413RequestEntityTooLarge)]
+    [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<ActionResult<TemplateDto>> UpdateLetterTemplate(
@@ -326,40 +351,67 @@ public class TemplatesController : ControllerBase
         [FromForm] string? description = null,
         CancellationToken cancellationToken = default)
     {
+        // Validate required parts
+        if (string.IsNullOrWhiteSpace(name))
+            return BadRequest(new { error = "The name field is required." });
+
+        if (name.Length > 200)
+            return BadRequest(new { error = "The name field must not exceed 200 characters." });
+
+        if (description is not null && description.Length > 500)
+            return BadRequest(new { error = "The description field must not exceed 500 characters." });
+
         const long maxFileSizeBytes = 10_485_760;
         if (file is not null && file.Length > maxFileSizeBytes)
             return StatusCode(StatusCodes.Status413RequestEntityTooLarge,
                 new { error = $"File size {file.Length:N0} bytes exceeds the 10 MB limit ({maxFileSizeBytes:N0} bytes)." });
 
-        // Retrieve existing template to retain current BodyPath when no new file is provided
+        // Retrieve existing template to check existence and channel
         var existing = await _templateService.GetByIdAsync(id, cancellationToken);
         if (existing is null) return NotFound();
 
-        var request = new UpdateTemplateRequest
-        {
-            Name = name,
-            BodyPath = file is not null ? file.FileName : existing.BodyPath,
-            BodyChecksum = existing.BodyChecksum,
-            Description = description,
-            ChangedBy = _currentUserService.UserName
-        };
+        // Channel mismatch: this endpoint is exclusively for Letter templates (F-205)
+        if (existing.Channel != ChannelType.Letter)
+            return UnprocessableEntity(new
+            {
+                error = $"Channel mismatch: template '{id}' is a {existing.Channel} template. " +
+                        "Use the dedicated endpoint for that channel."
+            });
 
-        var template = await _templateService.UpdateAsync(id, request, cancellationToken);
-
-        return Ok(new TemplateDto
+        try
         {
-            Id = template.Id,
-            Name = template.Name,
-            Channel = template.Channel.ToString(),
-            BodyPath = template.BodyPath,
-            BodyChecksum = template.BodyChecksum,
-            Status = template.Status.ToString(),
-            Version = template.Version,
-            IsSubTemplate = template.IsSubTemplate,
-            Description = template.Description,
-            CreatedAt = template.CreatedAt,
-            UpdatedAt = template.UpdatedAt
-        });
+            var request = new UpdateTemplateRequest
+            {
+                Name = name,
+                // When no new file supplied, preserve existing BodyPath (business rule 2)
+                BodyPath = existing.BodyPath,
+                BodyChecksum = existing.BodyChecksum,
+                Description = description,
+                ChangedBy = _currentUserService.UserName,
+                DocxContent = file?.OpenReadStream()
+            };
+
+            var template = await _templateService.UpdateAsync(id, request, cancellationToken);
+
+            return Ok(new TemplateDto
+            {
+                Id = template.Id,
+                Name = template.Name,
+                Channel = template.Channel.ToString(),
+                BodyPath = template.BodyPath,
+                BodyChecksum = template.BodyChecksum,
+                Status = template.Status.ToString(),
+                Version = template.Version,
+                IsSubTemplate = template.IsSubTemplate,
+                Description = template.Description,
+                CreatedAt = template.CreatedAt,
+                UpdatedAt = template.UpdatedAt
+            });
+        }
+        catch (ValidationException vex) when (vex.Message.Contains("already exists"))
+        {
+            return Conflict(new { error = vex.Message });
+        }
     }
 
     // ================================================================
