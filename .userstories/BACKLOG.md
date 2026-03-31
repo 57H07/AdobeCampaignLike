@@ -651,8 +651,9 @@
 ---
 
 #### [US-014] - Scalar placeholder replacement
-**Status:** 🔵 IN PROGRESS
+**Status:** ✅ DONE
 **Start date:** 2026-03-31
+**End date:** 2026-03-31
 **Priority:** 🔴 High
 **Complexity:** M
 **Epic:** Epic 3
@@ -665,21 +666,21 @@
 > F-302: Scalar placeholder replacement. Values are XML-escaped before insertion. Missing keys replaced with empty string.
 
 **Acceptance criteria:**
-- [ ] `{{ key }}` placeholders replaced with corresponding values from recipient data
-- [ ] Values are XML-escaped (prevent OpenXML injection)
-- [ ] Missing keys replaced with empty string (no exception)
-- [ ] Replacement works in main body, headers, footers
-- [ ] Nested placeholders not supported (documented)
+- [x] `{{ key }}` placeholders replaced with corresponding values from recipient data ✅
+- [x] Values are XML-escaped (prevent OpenXML injection) ✅
+- [x] Missing keys replaced with empty string (no exception) ✅
+- [x] Replacement works in main body, headers, footers ✅
+- [x] Nested placeholders not supported (documented) ✅
 
 **Technical tasks:**
-- [ ] `TASK-014-01` - **[Class]** Create `DocxPlaceholderReplacer` in `Infrastructure/Rendering/`
-- [ ] `TASK-014-02` - **[Method]** Implement `ReplaceScalars(WordprocessingDocument doc, Dictionary<string, string> data)`
-- [ ] `TASK-014-03` - **[Regex]** Match `{{ key }}` pattern in merged text runs
-- [ ] `TASK-014-04` - **[Escape]** XML-escape values before insertion
-- [ ] `TASK-014-05` - **[Fallback]** Replace missing keys with empty string
-- [ ] `TASK-014-06` - **[Test]** Unit tests for scalar replacement
-- [ ] `TASK-014-07` - **[Test]** Unit tests for XML escaping (e.g., `<>&"`)
-- [ ] `TASK-014-08` - **[Test]** Unit tests for missing keys
+- [x] `TASK-014-01` - **[Class]** Create `DocxPlaceholderReplacer` in `Infrastructure/Rendering/` ✅ 2026-03-31
+- [x] `TASK-014-02` - **[Method]** Implement `ReplaceScalars(WordprocessingDocument doc, Dictionary<string, string> data)` ✅ 2026-03-31
+- [x] `TASK-014-03` - **[Regex]** Match `{{ key }}` pattern in merged text runs ✅ 2026-03-31
+- [x] `TASK-014-04` - **[Escape]** XML-escape values before insertion ✅ 2026-03-31
+- [x] `TASK-014-05` - **[Fallback]** Replace missing keys with empty string ✅ 2026-03-31
+- [x] `TASK-014-06` - **[Test]** Unit tests for scalar replacement ✅ 2026-03-31
+- [x] `TASK-014-07` - **[Test]** Unit tests for XML escaping (e.g., `<>&"`) ✅ 2026-03-31
+- [x] `TASK-014-08` - **[Test]** Unit tests for missing keys ✅ 2026-03-31
 
 **Business rules:**
 1. Placeholder syntax: `{{ key }}` (spaces inside braces optional)
