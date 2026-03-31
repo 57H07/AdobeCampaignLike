@@ -509,7 +509,8 @@
 ---
 
 #### [US-011] - Multipart upload API for Letter templates
-**Status:** 🟡 TODO
+**Status:** 🔵 IN PROGRESS
+**Start date:** 2026-03-31
 **Priority:** 🔴 High
 **Complexity:** L
 **Epic:** Epic 2
