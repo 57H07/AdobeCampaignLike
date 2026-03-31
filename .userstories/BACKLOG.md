@@ -509,8 +509,9 @@
 ---
 
 #### [US-011] - Multipart upload API for Letter templates
-**Status:** 🔵 IN PROGRESS
+**Status:** ✅ DONE
 **Start date:** 2026-03-31
+**End date:** 2026-03-31
 **Priority:** 🔴 High
 **Complexity:** L
 **Epic:** Epic 2
@@ -523,28 +524,28 @@
 > F-205: `POST /api/templates/letter` and `PUT /api/templates/{id}/letter` with multipart/form-data. Parts: `name`, `description`, `file`. Authorization: Designer or Admin only.
 
 **Acceptance criteria:**
-- [ ] `POST /api/templates/letter` endpoint accepts multipart/form-data
-- [ ] `PUT /api/templates/{id}/letter` endpoint accepts multipart/form-data
-- [ ] Required parts: `name` (string, max 200 chars), `file` (binary)
-- [ ] Optional part: `description` (string, max 500 chars)
-- [ ] Authorization requires Designer or Admin role (not CampaignManager)
-- [ ] Returns HTTP 201 with `TemplateDto` on successful create
-- [ ] Returns HTTP 409 on name collision
-- [ ] Returns HTTP 404 on update if template not found
-- [ ] Returns HTTP 422 on channel mismatch (update to non-Letter template)
-- [ ] `TemplateDto` includes `bodyPath` as relative path (no server root exposed)
+- [x] `POST /api/templates/letter` endpoint accepts multipart/form-data ✅
+- [x] `PUT /api/templates/{id}/letter` endpoint accepts multipart/form-data ✅
+- [x] Required parts: `name` (string, max 200 chars), `file` (binary) ✅
+- [x] Optional part: `description` (string, max 500 chars) ✅
+- [x] Authorization requires Designer or Admin role (not CampaignManager) ✅
+- [x] Returns HTTP 201 with `TemplateDto` on successful create ✅
+- [x] Returns HTTP 409 on name collision ✅
+- [x] Returns HTTP 404 on update if template not found ✅
+- [x] Returns HTTP 422 on channel mismatch (update to non-Letter template) ✅
+- [x] `TemplateDto` includes `bodyPath` as relative path (no server root exposed) ✅
 
 **Technical tasks:**
-- [ ] `TASK-011-01` - **[API]** Add `POST /api/templates/letter` to `TemplatesController`
-- [ ] `TASK-011-02` - **[API]** Add `PUT /api/templates/{id}/letter` to `TemplatesController`
-- [ ] `TASK-011-03` - **[Auth]** Apply `RequireDesignerOrAdmin` policy (exclude CampaignManager)
-- [ ] `TASK-011-04` - **[Binding]** Parse multipart form parts (`name`, `description`, `file`)
-- [ ] `TASK-011-05` - **[Service]** Wire to `TemplateService.CreateAsync` / `UpdateAsync`
-- [ ] `TASK-011-06` - **[DTO]** Ensure `TemplateDto.BodyPath` exposes relative path only
-- [ ] `TASK-011-07` - **[Test]** API integration tests for create success path
-- [ ] `TASK-011-08` - **[Test]** API integration tests for update success path
-- [ ] `TASK-011-09` - **[Test]** API integration tests for 409/404/422 error cases
-- [ ] `TASK-011-10` - **[Doc]** Update API documentation with multipart examples
+- [x] `TASK-011-01` - **[API]** Add `POST /api/templates/letter` to `TemplatesController` ✅ 2026-03-31
+- [x] `TASK-011-02` - **[API]** Add `PUT /api/templates/{id}/letter` to `TemplatesController` ✅ 2026-03-31
+- [x] `TASK-011-03` - **[Auth]** Apply `RequireDesignerOrAdmin` policy (exclude CampaignManager) ✅ 2026-03-31
+- [x] `TASK-011-04` - **[Binding]** Parse multipart form parts (`name`, `description`, `file`) ✅ 2026-03-31
+- [x] `TASK-011-05` - **[Service]** Wire to `TemplateService.CreateAsync` / `UpdateAsync` ✅ 2026-03-31
+- [x] `TASK-011-06` - **[DTO]** Ensure `TemplateDto.BodyPath` exposes relative path only ✅ 2026-03-31
+- [x] `TASK-011-07` - **[Test]** API integration tests for create success path ✅ 2026-03-31
+- [x] `TASK-011-08` - **[Test]** API integration tests for update success path ✅ 2026-03-31
+- [x] `TASK-011-09` - **[Test]** API integration tests for 409/404/422 error cases ✅ 2026-03-31
+- [x] `TASK-011-10` - **[Doc]** Update API documentation with multipart examples ✅ 2026-03-31
 
 **Business rules:**
 1. Template name must be unique per channel (enforced at service layer)
