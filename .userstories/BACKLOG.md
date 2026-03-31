@@ -651,7 +651,8 @@
 ---
 
 #### [US-014] - Scalar placeholder replacement
-**Status:** 🟡 TODO
+**Status:** 🔵 IN PROGRESS
+**Start date:** 2026-03-31
 **Priority:** 🔴 High
 **Complexity:** M
 **Epic:** Epic 3
