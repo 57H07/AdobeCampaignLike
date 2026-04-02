@@ -45,4 +45,13 @@ public class TemplateDto
     /// </summary>
     public IReadOnlyList<PlaceholderManifestEntryDto> PlaceholderManifests { get; init; }
         = Array.Empty<PlaceholderManifestEntryDto>();
+
+    /// <summary>
+    /// Validation warnings generated at upload time.
+    /// Lists placeholder keys found in the DOCX body but not declared in the manifest.
+    /// Empty when no undeclared placeholders are detected or when the template has no DOCX body.
+    /// Non-blocking: upload succeeds even when warnings are present.
+    /// </summary>
+    public IReadOnlyList<string> Warnings { get; init; }
+        = Array.Empty<string>();
 }

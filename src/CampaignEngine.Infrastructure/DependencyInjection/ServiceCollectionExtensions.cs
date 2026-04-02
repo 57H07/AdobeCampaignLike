@@ -159,6 +159,11 @@ public static class ServiceCollectionExtensions
         // Placeholder parser service — extracts placeholder keys from template HTML and validates completeness.
         services.AddSingleton<IPlaceholderParserService, PlaceholderParserService>();
 
+        // US-018: DOCX placeholder parser service — extracts keys from DOCX streams and computes
+        // undeclared-key warnings at upload time. DocxPlaceholderParser is stateless (compiled regexes).
+        services.AddSingleton<DocxPlaceholderParser>();
+        services.AddSingleton<IDocxPlaceholderParserService, DocxPlaceholderParserService>();
+
         // Sub-template resolver service — resolves {{> name}} references recursively with circular detection.
         services.AddScoped<ISubTemplateResolverService, SubTemplateResolverService>();
 

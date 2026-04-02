@@ -23,6 +23,7 @@ public class TemplatesController : ControllerBase
     private readonly ITemplateService _templateService;
     private readonly IPlaceholderManifestService _manifestService;
     private readonly IPlaceholderParserService _parserService;
+    private readonly IDocxPlaceholderParserService _docxParserService;
     private readonly ISubTemplateResolverService _subTemplateResolver;
     private readonly ICurrentUserService _currentUserService;
     private readonly ITemplatePreviewService _previewService;
@@ -32,6 +33,7 @@ public class TemplatesController : ControllerBase
         ITemplateService templateService,
         IPlaceholderManifestService manifestService,
         IPlaceholderParserService parserService,
+        IDocxPlaceholderParserService docxParserService,
         ISubTemplateResolverService subTemplateResolver,
         ICurrentUserService currentUserService,
         ITemplatePreviewService previewService,
@@ -40,6 +42,7 @@ public class TemplatesController : ControllerBase
         _templateService = templateService;
         _manifestService = manifestService;
         _parserService = parserService;
+        _docxParserService = docxParserService;
         _subTemplateResolver = subTemplateResolver;
         _currentUserService = currentUserService;
         _previewService = previewService;
@@ -283,6 +286,13 @@ public class TemplatesController : ControllerBase
 
         try
         {
+            // US-018: Buffer the DOCX bytes so the stream can be read twice —
+            // once by the service (to persist the file) and once by the manifest
+            // validator (to extract placeholder keys for warnings).
+            await using var docxBuffer = new MemoryStream();
+            await file.CopyToAsync(docxBuffer, cancellationToken);
+            docxBuffer.Position = 0;
+
             var request = new CreateTemplateRequest
             {
                 Name = name,
@@ -290,10 +300,16 @@ public class TemplatesController : ControllerBase
                 BodyPath = string.Empty, // will be set by service via DocxContent
                 Description = description,
                 FileSizeBytes = file.Length,
-                DocxContent = file.OpenReadStream()
+                DocxContent = docxBuffer
             };
 
             var template = await _templateService.CreateAsync(request, cancellationToken);
+
+            // US-018: F-307 — validate manifest at upload time (non-blocking).
+            // For a new template the manifest is empty, so all extracted keys are warned.
+            docxBuffer.Position = 0;
+            var manifestEntries = await _manifestService.GetByTemplateIdAsync(template.Id, cancellationToken);
+            var warnings = _docxParserService.GetUndeclaredPlaceholders(docxBuffer, manifestEntries);
 
             var dto = new TemplateDto
             {
@@ -307,7 +323,8 @@ public class TemplatesController : ControllerBase
                 IsSubTemplate = template.IsSubTemplate,
                 Description = template.Description,
                 CreatedAt = template.CreatedAt,
-                UpdatedAt = template.UpdatedAt
+                UpdatedAt = template.UpdatedAt,
+                Warnings = warnings
             };
 
             return CreatedAtAction(nameof(GetTemplate), new { id = template.Id }, dto);
@@ -380,6 +397,16 @@ public class TemplatesController : ControllerBase
 
         try
         {
+            // US-018: Buffer DOCX bytes when a new file is provided, so the stream can be
+            // read by the service (persist) and then by the manifest validator (warnings).
+            MemoryStream? docxBuffer = null;
+            if (file is not null)
+            {
+                docxBuffer = new MemoryStream();
+                await file.CopyToAsync(docxBuffer, cancellationToken);
+                docxBuffer.Position = 0;
+            }
+
             var request = new UpdateTemplateRequest
             {
                 Name = name,
@@ -388,10 +415,20 @@ public class TemplatesController : ControllerBase
                 BodyChecksum = existing.BodyChecksum,
                 Description = description,
                 ChangedBy = _currentUserService.UserName,
-                DocxContent = file?.OpenReadStream()
+                DocxContent = docxBuffer
             };
 
             var template = await _templateService.UpdateAsync(id, request, cancellationToken);
+
+            // US-018: F-307 — validate manifest at upload time only, and only when a new DOCX was supplied.
+            IReadOnlyList<string> warnings = Array.Empty<string>();
+            if (docxBuffer is not null)
+            {
+                docxBuffer.Position = 0;
+                var manifestEntries = await _manifestService.GetByTemplateIdAsync(template.Id, cancellationToken);
+                warnings = _docxParserService.GetUndeclaredPlaceholders(docxBuffer, manifestEntries);
+                await docxBuffer.DisposeAsync();
+            }
 
             return Ok(new TemplateDto
             {
@@ -405,7 +442,8 @@ public class TemplatesController : ControllerBase
                 IsSubTemplate = template.IsSubTemplate,
                 Description = template.Description,
                 CreatedAt = template.CreatedAt,
-                UpdatedAt = template.UpdatedAt
+                UpdatedAt = template.UpdatedAt,
+                Warnings = warnings
             });
         }
         catch (ValidationException vex) when (vex.Message.Contains("already exists"))

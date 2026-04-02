@@ -857,9 +857,9 @@
 - [ ] No validation at publish time (deferred to upload)
 
 **Technical tasks:**
-- [ ] `TASK-018-01` - **[DTO]** Add `Warnings` property to `TemplateDto`
-- [ ] `TASK-018-02` - **[Service]** Compare extracted placeholders to manifest at upload
-- [ ] `TASK-018-03` - **[Service]** Populate warnings for undeclared keys
+- [x] `TASK-018-01` - **[DTO]** Add `Warnings` property to `TemplateDto` ✅ 2026-04-02
+- [x] `TASK-018-02` - **[Service]** Compare extracted placeholders to manifest at upload ✅ 2026-04-02
+- [x] `TASK-018-03` - **[Service]** Populate warnings for undeclared keys ✅ 2026-04-02
 - [ ] `TASK-018-04` - **[Test]** Unit tests for validation warnings
 - [ ] `TASK-018-05` - **[Test]** API integration test with undeclared placeholders
 

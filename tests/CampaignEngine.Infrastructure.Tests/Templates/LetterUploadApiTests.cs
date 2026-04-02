@@ -38,10 +38,17 @@ public class LetterUploadApiTests
         _currentUserServiceMock = new Mock<ICurrentUserService>();
         _currentUserServiceMock.Setup(s => s.UserName).Returns("designer@test.com");
 
+        // US-018: IDocxPlaceholderParserService returns no warnings by default in legacy tests.
+        var docxParserMock = new Mock<IDocxPlaceholderParserService>();
+        docxParserMock
+            .Setup(p => p.GetUndeclaredPlaceholders(It.IsAny<Stream>(), It.IsAny<IEnumerable<PlaceholderManifestEntryDto>>()))
+            .Returns(Array.Empty<string>());
+
         _controller = new TemplatesController(
             _templateServiceMock.Object,
             new Mock<IPlaceholderManifestService>().Object,
             new Mock<IPlaceholderParserService>().Object,
+            docxParserMock.Object,
             new Mock<ISubTemplateResolverService>().Object,
             _currentUserServiceMock.Object,
             new Mock<ITemplatePreviewService>().Object,
@@ -54,11 +61,18 @@ public class LetterUploadApiTests
 
     private static IFormFile MakeFormFile(string fileName, long sizeBytes = 512)
     {
-        var stream = MinimalDocxStream();
         var formFile = new Mock<IFormFile>();
         formFile.Setup(f => f.FileName).Returns(fileName);
         formFile.Setup(f => f.Length).Returns(sizeBytes);
-        formFile.Setup(f => f.OpenReadStream()).Returns(stream);
+        formFile.Setup(f => f.OpenReadStream()).Returns(MinimalDocxStream);
+        // US-018: controller now uses CopyToAsync instead of OpenReadStream for DOCX buffering.
+        formFile
+            .Setup(f => f.CopyToAsync(It.IsAny<Stream>(), It.IsAny<CancellationToken>()))
+            .Returns<Stream, CancellationToken>(async (target, ct) =>
+            {
+                var bytes = new byte[] { 0x50, 0x4B, 0x03, 0x04 };
+                await target.WriteAsync(bytes, ct);
+            });
         return formFile.Object;
     }
 
