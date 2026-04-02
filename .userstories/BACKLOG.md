@@ -693,7 +693,8 @@
 ---
 
 #### [US-015] - Collection rendering via table rows
-**Status:** 🟡 TODO
+**Status:** 🔵 IN PROGRESS
+**Start date:** 2026-04-02 15:30
 **Priority:** 🔴 High
 **Complexity:** L
 **Epic:** Epic 3
@@ -715,17 +716,17 @@
 - [ ] Empty collections result in no rows (marker/end rows removed)
 
 **Technical tasks:**
-- [ ] `TASK-015-01` - **[Class]** Create `DocxTableCollectionRenderer` in `Infrastructure/Rendering/`
-- [ ] `TASK-015-02` - **[Method]** Implement `RenderCollections(WordprocessingDocument doc, Dictionary<string, List<Dictionary<string, string>>> collections)`
-- [ ] `TASK-015-03` - **[Detection]** Find marker rows `{{ collection_key }}`
-- [ ] `TASK-015-04` - **[Validation]** Validate matching `{{ end }}` row exists
-- [ ] `TASK-015-05` - **[Duplication]** Clone template row for each item
-- [ ] `TASK-015-06` - **[Replacement]** Replace `{{ item.field }}` with item values
-- [ ] `TASK-015-07` - **[Cleanup]** Remove marker and end rows
-- [ ] `TASK-015-08` - **[Exception]** Throw `TemplateRenderException` for missing `{{ end }}`
-- [ ] `TASK-015-09` - **[Test]** Unit tests for collection rendering (3-5 items)
-- [ ] `TASK-015-10` - **[Test]** Unit tests for empty collection
-- [ ] `TASK-015-11` - **[Test]** Unit tests for missing `{{ end }}` error
+- [x] `TASK-015-01` - **[Class]** Create `DocxTableCollectionRenderer` in `Infrastructure/Rendering/` ✅ 2026-04-02
+- [x] `TASK-015-02` - **[Method]** Implement `RenderCollections(WordprocessingDocument doc, Dictionary<string, List<Dictionary<string, string>>> collections)` ✅ 2026-04-02
+- [x] `TASK-015-03` - **[Detection]** Find marker rows `{{ collection_key }}` ✅ 2026-04-02
+- [x] `TASK-015-04` - **[Validation]** Validate matching `{{ end }}` row exists ✅ 2026-04-02
+- [x] `TASK-015-05` - **[Duplication]** Clone template row for each item ✅ 2026-04-02
+- [x] `TASK-015-06` - **[Replacement]** Replace `{{ item.field }}` with item values ✅ 2026-04-02
+- [x] `TASK-015-07` - **[Cleanup]** Remove marker and end rows ✅ 2026-04-02
+- [x] `TASK-015-08` - **[Exception]** Throw `TemplateRenderException` for missing `{{ end }}` ✅ 2026-04-02
+- [x] `TASK-015-09` - **[Test]** Unit tests for collection rendering (3-5 items) ✅ 2026-04-02
+- [x] `TASK-015-10` - **[Test]** Unit tests for empty collection ✅ 2026-04-02
+- [x] `TASK-015-11` - **[Test]** Unit tests for missing `{{ end }}` error ✅ 2026-04-02
 
 **Business rules:**
 1. Only table-row duplication supported (no paragraph-level loops)
