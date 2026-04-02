@@ -622,4 +622,181 @@ public class LetterUploadApiTests
         // Assert
         authorizeAttributes.Should().ContainSingle(a => a.Policy == AuthorizationPolicies.RequireDesignerOrAdmin);
     }
+
+    // ================================================================
+    // US-018: Manifest validation warnings (TASK-018-05)
+    // ================================================================
+
+    /// <summary>
+    /// Builds a controller that uses the supplied IDocxPlaceholderParserService mock.
+    /// IPlaceholderManifestService returns an empty manifest by default (new template).
+    /// </summary>
+    private TemplatesController MakeControllerWithDocxParser(
+        Mock<IDocxPlaceholderParserService> docxParserMock,
+        Mock<IPlaceholderManifestService>? manifestMock = null)
+    {
+        manifestMock ??= new Mock<IPlaceholderManifestService>();
+        manifestMock
+            .Setup(m => m.GetByTemplateIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<PlaceholderManifestEntryDto>());
+
+        return new TemplatesController(
+            _templateServiceMock.Object,
+            manifestMock.Object,
+            new Mock<IPlaceholderParserService>().Object,
+            docxParserMock.Object,
+            new Mock<ISubTemplateResolverService>().Object,
+            _currentUserServiceMock.Object,
+            new Mock<ITemplatePreviewService>().Object,
+            new Mock<ITemplateBodyStore>().Object);
+    }
+
+    [Fact]
+    public async Task CreateLetterTemplate_UndeclaredPlaceholders_WarningsIncludedInDto()
+    {
+        // Arrange
+        var templateId = Guid.NewGuid();
+        var template = MakeLetterTemplate(templateId);
+        _templateServiceMock
+            .Setup(s => s.CreateAsync(It.IsAny<CreateTemplateRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(template);
+
+        var expectedWarnings = new[] { "invoiceDate", "customerAddress" };
+        var docxParserMock = new Mock<IDocxPlaceholderParserService>();
+        docxParserMock
+            .Setup(p => p.GetUndeclaredPlaceholders(It.IsAny<Stream>(), It.IsAny<IEnumerable<PlaceholderManifestEntryDto>>()))
+            .Returns(expectedWarnings);
+
+        var controller = MakeControllerWithDocxParser(docxParserMock);
+
+        // Act
+        var result = await controller.CreateLetterTemplate(
+            name: "Invoice Letter",
+            file: MakeFormFile("invoice.docx"));
+
+        // Assert — HTTP 201 with warnings in DTO
+        var createdResult = result.Result.Should().BeOfType<CreatedAtActionResult>().Subject;
+        var dto = createdResult.Value.Should().BeOfType<TemplateDto>().Subject;
+        dto.Warnings.Should().BeEquivalentTo(expectedWarnings);
+    }
+
+    [Fact]
+    public async Task CreateLetterTemplate_AllPlaceholdersDeclared_EmptyWarnings()
+    {
+        // Arrange — parser finds no undeclared keys
+        var template = MakeLetterTemplate();
+        _templateServiceMock
+            .Setup(s => s.CreateAsync(It.IsAny<CreateTemplateRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(template);
+
+        var docxParserMock = new Mock<IDocxPlaceholderParserService>();
+        docxParserMock
+            .Setup(p => p.GetUndeclaredPlaceholders(It.IsAny<Stream>(), It.IsAny<IEnumerable<PlaceholderManifestEntryDto>>()))
+            .Returns(Array.Empty<string>());
+
+        var controller = MakeControllerWithDocxParser(docxParserMock);
+
+        // Act
+        var result = await controller.CreateLetterTemplate("My Letter", MakeFormFile("letter.docx"));
+
+        // Assert — upload succeeds even though no warnings (non-blocking confirmed by HTTP 201)
+        var createdResult = result.Result.Should().BeOfType<CreatedAtActionResult>().Subject;
+        var dto = createdResult.Value.Should().BeOfType<TemplateDto>().Subject;
+        dto.Warnings.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task CreateLetterTemplate_WithWarnings_StillReturns201()
+    {
+        // Arrange — F-307: upload must succeed even when warnings are present
+        var template = MakeLetterTemplate();
+        _templateServiceMock
+            .Setup(s => s.CreateAsync(It.IsAny<CreateTemplateRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(template);
+
+        var docxParserMock = new Mock<IDocxPlaceholderParserService>();
+        docxParserMock
+            .Setup(p => p.GetUndeclaredPlaceholders(It.IsAny<Stream>(), It.IsAny<IEnumerable<PlaceholderManifestEntryDto>>()))
+            .Returns(new[] { "undeclaredKey" });
+
+        var controller = MakeControllerWithDocxParser(docxParserMock);
+
+        // Act
+        var result = await controller.CreateLetterTemplate("My Letter", MakeFormFile("letter.docx"));
+
+        // Assert — non-blocking: HTTP 201, not 400/422
+        result.Result.Should().BeOfType<CreatedAtActionResult>()
+            .Which.StatusCode.Should().Be(201);
+    }
+
+    [Fact]
+    public async Task UpdateLetterTemplate_NewDocxUploaded_WarningsPopulated()
+    {
+        // Arrange
+        var templateId = Guid.NewGuid();
+        var existingTemplate = MakeLetterTemplate(templateId);
+        var updatedTemplate = MakeLetterTemplate(templateId, version: 2);
+
+        _templateServiceMock
+            .Setup(s => s.GetByIdAsync(templateId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existingTemplate);
+        _templateServiceMock
+            .Setup(s => s.UpdateAsync(templateId, It.IsAny<UpdateTemplateRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(updatedTemplate);
+
+        var expectedWarnings = new[] { "newField" };
+        var docxParserMock = new Mock<IDocxPlaceholderParserService>();
+        docxParserMock
+            .Setup(p => p.GetUndeclaredPlaceholders(It.IsAny<Stream>(), It.IsAny<IEnumerable<PlaceholderManifestEntryDto>>()))
+            .Returns(expectedWarnings);
+
+        var controller = MakeControllerWithDocxParser(docxParserMock);
+
+        // Act
+        var result = await controller.UpdateLetterTemplate(
+            id: templateId,
+            name: "Updated Letter",
+            file: MakeFormFile("updated.docx"));
+
+        // Assert
+        var okResult = result.Result.Should().BeOfType<OkObjectResult>().Subject;
+        var dto = okResult.Value.Should().BeOfType<TemplateDto>().Subject;
+        dto.Warnings.Should().BeEquivalentTo(expectedWarnings);
+    }
+
+    [Fact]
+    public async Task UpdateLetterTemplate_NoNewDocx_WarningsEmpty()
+    {
+        // Arrange — update with metadata only (no DOCX file) → no validation runs
+        var templateId = Guid.NewGuid();
+        var existingTemplate = MakeLetterTemplate(templateId);
+        var updatedTemplate = MakeLetterTemplate(templateId, version: 2);
+
+        _templateServiceMock
+            .Setup(s => s.GetByIdAsync(templateId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existingTemplate);
+        _templateServiceMock
+            .Setup(s => s.UpdateAsync(templateId, It.IsAny<UpdateTemplateRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(updatedTemplate);
+
+        var docxParserMock = new Mock<IDocxPlaceholderParserService>();
+
+        var controller = MakeControllerWithDocxParser(docxParserMock);
+
+        // Act — no file supplied
+        var result = await controller.UpdateLetterTemplate(
+            id: templateId,
+            name: "Renamed Letter",
+            file: null);
+
+        // Assert — no validation ran, warnings must be empty
+        var okResult = result.Result.Should().BeOfType<OkObjectResult>().Subject;
+        var dto = okResult.Value.Should().BeOfType<TemplateDto>().Subject;
+        dto.Warnings.Should().BeEmpty();
+
+        // Verify parser was never called
+        docxParserMock.Verify(
+            p => p.GetUndeclaredPlaceholders(It.IsAny<Stream>(), It.IsAny<IEnumerable<PlaceholderManifestEntryDto>>()),
+            Times.Never);
+    }
 }
