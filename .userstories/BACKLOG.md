@@ -742,7 +742,8 @@
 ---
 
 #### [US-016] - Conditional block support (non-nested)
-**Status:** 🟡 TODO
+**Status:** 🔵 IN PROGRESS
+**Start date:** 2026-04-02 (started via /do-userstory)
 **Priority:** 🔴 High
 **Complexity:** M
 **Epic:** Epic 3
