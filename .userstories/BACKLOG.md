@@ -794,7 +794,8 @@
 ---
 
 #### [US-017] - Placeholder extraction from DOCX
-**Status:** 🟡 TODO
+**Status:** 🔵 IN PROGRESS
+**Start date:** 2026-04-02 12:00
 **Priority:** 🔴 High
 **Complexity:** M
 **Epic:** Epic 3
