@@ -837,8 +837,10 @@
 ---
 
 #### [US-018] - Manifest validation with upload-time warnings
-**Status:** 🔵 IN PROGRESS
+**Status:** ✅ DONE
 **Start date:** 2026-04-02 14:30
+**End date:** 2026-04-02
+**Actual duration:** 1 day
 **Priority:** 🔴 High
 **Complexity:** S
 **Epic:** Epic 3
@@ -851,10 +853,10 @@
 > F-307: Validation runs at upload time only (non-blocking). API response includes `warnings` array for undeclared placeholders. No hard block at publish.
 
 **Acceptance criteria:**
-- [ ] Upload response includes `warnings` array in `TemplateDto`
-- [ ] Warnings list placeholders found in DOCX but not in manifest
-- [ ] Upload succeeds even if warnings present (non-blocking)
-- [ ] No validation at publish time (deferred to upload)
+- [x] Upload response includes `warnings` array in `TemplateDto` ✅
+- [x] Warnings list placeholders found in DOCX but not in manifest ✅
+- [x] Upload succeeds even if warnings present (non-blocking) ✅
+- [x] No validation at publish time (deferred to upload) ✅
 
 **Technical tasks:**
 - [x] `TASK-018-01` - **[DTO]** Add `Warnings` property to `TemplateDto` ✅ 2026-04-02
