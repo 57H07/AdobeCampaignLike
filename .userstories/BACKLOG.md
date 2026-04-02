@@ -742,8 +742,9 @@
 ---
 
 #### [US-016] - Conditional block support (non-nested)
-**Status:** 🔵 IN PROGRESS
-**Start date:** 2026-04-02 (started via /do-userstory)
+**Status:** ✅ DONE
+**Start date:** 2026-04-02
+**End date:** 2026-04-02
 **Priority:** 🔴 High
 **Complexity:** M
 **Epic:** Epic 3
@@ -765,15 +766,15 @@
 - [ ] Nested `{{ if }}` blocks throw `TemplateRenderException` with clear message
 
 **Technical tasks:**
-- [ ] `TASK-016-01` - **[Class]** Create `DocxConditionalBlockRenderer` in `Infrastructure/Rendering/`
-- [ ] `TASK-016-02` - **[Method]** Implement `RenderConditionals(WordprocessingDocument doc, Dictionary<string, bool> conditions)`
-- [ ] `TASK-016-03` - **[Detection]** Find `{{ if key }}` and `{{ end }}` markers
-- [ ] `TASK-016-04` - **[Validation]** Detect nested `{{ if }}` blocks and throw exception
-- [ ] `TASK-016-05` - **[Removal]** Remove block content if condition is false
-- [ ] `TASK-016-06` - **[Cleanup]** Remove marker paragraphs/rows
-- [ ] `TASK-016-07` - **[Test]** Unit tests for true condition (content kept)
-- [ ] `TASK-016-08` - **[Test]** Unit tests for false condition (content removed)
-- [ ] `TASK-016-09` - **[Test]** Unit tests for nested `{{ if }}` error
+- [x] `TASK-016-01` - **[Class]** Create `DocxConditionalBlockRenderer` in `Infrastructure/Rendering/` ✅ 2026-04-02
+- [x] `TASK-016-02` - **[Method]** Implement `RenderConditionals(WordprocessingDocument doc, Dictionary<string, bool> conditions)` ✅ 2026-04-02
+- [x] `TASK-016-03` - **[Detection]** Find `{{ if key }}` and `{{ end }}` markers ✅ 2026-04-02
+- [x] `TASK-016-04` - **[Validation]** Detect nested `{{ if }}` blocks and throw exception ✅ 2026-04-02
+- [x] `TASK-016-05` - **[Removal]** Remove block content if condition is false ✅ 2026-04-02
+- [x] `TASK-016-06` - **[Cleanup]** Remove marker paragraphs/rows ✅ 2026-04-02
+- [x] `TASK-016-07` - **[Test]** Unit tests for true condition (content kept) ✅ 2026-04-02
+- [x] `TASK-016-08` - **[Test]** Unit tests for false condition (content removed) ✅ 2026-04-02
+- [x] `TASK-016-09` - **[Test]** Unit tests for nested `{{ if }}` error ✅ 2026-04-02
 
 **Business rules:**
 1. Conditional keys are case-sensitive
