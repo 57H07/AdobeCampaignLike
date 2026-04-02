@@ -837,7 +837,8 @@
 ---
 
 #### [US-018] - Manifest validation with upload-time warnings
-**Status:** 🟡 TODO
+**Status:** 🔵 IN PROGRESS
+**Start date:** 2026-04-02 14:30
 **Priority:** 🔴 High
 **Complexity:** S
 **Epic:** Epic 3
