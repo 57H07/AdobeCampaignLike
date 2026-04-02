@@ -10,7 +10,7 @@ namespace CampaignEngine.Infrastructure.Rendering;
 /// <see cref="DocxPlaceholderParser"/>, then computes the set of keys absent
 /// from the declared manifest entries.
 /// </summary>
-internal sealed class DocxPlaceholderParserService : IDocxPlaceholderParserService
+public sealed class DocxPlaceholderParserService : IDocxPlaceholderParserService
 {
     private readonly DocxPlaceholderParser _parser;
 
