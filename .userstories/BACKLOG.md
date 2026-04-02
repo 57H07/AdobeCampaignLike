@@ -817,11 +817,11 @@
 - [ ] Item placeholders (`{{ item.field }}`) included
 
 **Technical tasks:**
-- [ ] `TASK-017-01` - **[Class]** Create `DocxPlaceholderParser` in `Infrastructure/Rendering/`
-- [ ] `TASK-017-02` - **[Method]** Implement `ExtractPlaceholders(WordprocessingDocument doc) → List<string>`
-- [ ] `TASK-017-03` - **[Regex]** Match `{{ key }}` pattern (exclude `{{ if }}`, `{{ end }}`)
-- [ ] `TASK-017-04` - **[Traversal]** Scan main body, headers, footers (after run merging)
-- [ ] `TASK-017-05` - **[Deduplication]** Return unique set of keys
+- [x] `TASK-017-01` - **[Class]** Create `DocxPlaceholderParser` in `Infrastructure/Rendering/` ✅ 2026-04-02
+- [x] `TASK-017-02` - **[Method]** Implement `ExtractPlaceholders(WordprocessingDocument doc) → List<string>` ✅ 2026-04-02
+- [x] `TASK-017-03` - **[Regex]** Match `{{ key }}` pattern (exclude `{{ if }}`, `{{ end }}`) ✅ 2026-04-02
+- [x] `TASK-017-04` - **[Traversal]** Scan main body, headers, footers (after run merging) ✅ 2026-04-02
+- [x] `TASK-017-05` - **[Deduplication]** Return unique set of keys ✅ 2026-04-02
 - [ ] `TASK-017-06` - **[Test]** Unit tests for placeholder extraction
 - [ ] `TASK-017-07` - **[Test]** Unit tests for headers/footers extraction
 
