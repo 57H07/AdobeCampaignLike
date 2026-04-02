@@ -693,8 +693,10 @@
 ---
 
 #### [US-015] - Collection rendering via table rows
-**Status:** 🔵 IN PROGRESS
+**Status:** ✅ DONE
 **Start date:** 2026-04-02 15:30
+**End date:** 2026-04-02
+**Actual duration:** 1 day
 **Priority:** 🔴 High
 **Complexity:** L
 **Epic:** Epic 3
