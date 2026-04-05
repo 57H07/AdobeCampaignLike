@@ -964,7 +964,8 @@
 ---
 
 #### [US-021] - Per-recipient DOCX dispatch
-**Status:** 🟡 TODO
+**Status:** 🔵 IN PROGRESS
+**Start date:** 2026-04-05
 **Priority:** 🔴 High
 **Complexity:** L
 **Epic:** Epic 4
