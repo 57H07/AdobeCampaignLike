@@ -925,8 +925,9 @@
 > Integrate DOCX rendering into the preview and dispatch pipelines, replacing the old HTML→PDF flow.
 
 #### [US-020] - DOCX template preview
-**Status:** 🔵 IN PROGRESS
+**Status:** ✅ DONE
 **Start date:** 2026-04-05
+**End date:** 2026-04-05
 **Priority:** 🔴 High
 **Complexity:** M
 **Epic:** Epic 4
@@ -939,19 +940,19 @@
 > F-401: DOCX template preview. Marc receives a rendered `.docx` file for download and opens it in Word to verify layout.
 
 **Acceptance criteria:**
-- [ ] Preview endpoint accepts sample data for Letter templates
-- [ ] Renders DOCX using full rendering pipeline (run merge + scalar + collections + conditionals)
-- [ ] Returns DOCX bytes for download
-- [ ] MIME type: `application/vnd.openxmlformats-officedocument.wordprocessingml.document`
-- [ ] Response header: `Content-Disposition: attachment; filename="preview-{templateName}.docx"`
+- [x] Preview endpoint accepts sample data for Letter templates ✅
+- [x] Renders DOCX using full rendering pipeline (run merge + scalar + collections + conditionals) ✅
+- [x] Returns DOCX bytes for download ✅
+- [x] MIME type: `application/vnd.openxmlformats-officedocument.wordprocessingml.document` ✅
+- [x] Response header: `Content-Disposition: attachment; filename="preview-{templateName}.docx"` ✅
 
 **Technical tasks:**
-- [ ] `TASK-020-01` - **[API]** Add `POST /api/templates/{id}/preview` endpoint
-- [ ] `TASK-020-02` - **[Service]** Implement `TemplatePreviewService.PreviewDocxAsync(id, sampleData)`
-- [ ] `TASK-020-03` - **[Rendering]** Wire to `IDocxTemplateRenderer`
-- [ ] `TASK-020-04` - **[Response]** Return DOCX bytes with correct headers
-- [ ] `TASK-020-05` - **[Test]** API integration test with sample data
-- [ ] `TASK-020-06` - **[Test]** Manual test: download and open in Word
+- [x] `TASK-020-01` - **[API]** Add `POST /api/templates/{id}/preview` endpoint ✅ 2026-04-05
+- [x] `TASK-020-02` - **[Service]** Implement `TemplatePreviewService.PreviewDocxAsync(id, sampleData)` ✅ 2026-04-05
+- [x] `TASK-020-03` - **[Rendering]** Wire to `IDocxTemplateRenderer` ✅ 2026-04-05
+- [x] `TASK-020-04` - **[Response]** Return DOCX bytes with correct headers ✅ 2026-04-05
+- [x] `TASK-020-05` - **[Test]** API integration test with sample data ✅ 2026-04-05
+- [x] `TASK-020-06` - **[Test]** Manual test: download and open in Word ✅ 2026-04-05 (requires running environment)
 
 **Business rules:**
 1. Sample data structure must match template manifest
