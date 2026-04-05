@@ -229,6 +229,74 @@
     </div>
 </div>
 
+@* Version history audit trail (US-024) — read-only, newest first, no revert/download *@
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">
+                    <i class="bi bi-clock-history me-1"></i>
+                    Version History
+                    @if (Model.VersionHistory.Count > 0)
+                    {
+                        <span class="badge bg-secondary ms-1">@Model.VersionHistory.Count</span>
+                    }
+                </h6>
+                <a asp-page="History" asp-route-id="@Model.TemplateId" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-arrows-expand"></i> Full history &amp; diff
+                </a>
+            </div>
+            @if (Model.VersionHistory.Count == 0)
+            {
+                <div class="card-body text-muted">
+                    <small>No version history yet. History is recorded after the first update.</small>
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th scope="col">Version</th>
+                                <th scope="col">Changed By</th>
+                                <th scope="col">Timestamp (UTC)</th>
+                                <th scope="col">File Path</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var entry in Model.VersionHistory)
+                            {
+                                <tr>
+                                    <td><span class="badge bg-secondary">v@entry.Version</span></td>
+                                    <td>
+                                        @if (string.IsNullOrEmpty(entry.ChangedBy))
+                                        {
+                                            <span class="text-muted fst-italic">—</span>
+                                        }
+                                        else
+                                        {
+                                            @entry.ChangedBy
+                                        }
+                                    </td>
+                                    <td><small class="font-monospace">@entry.CreatedAt.ToString("yyyy-MM-dd HH:mm") UTC</small></td>
+                                    <td><small class="font-monospace text-truncate d-inline-block" style="max-width:300px" title="@entry.BodyPath">@entry.BodyPath</small></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                <div class="card-footer text-muted">
+                    <small>
+                        <i class="bi bi-info-circle me-1"></i>
+                        Version history is read-only. Per-version download and revert are out of scope (F-501).
+                    </small>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script>

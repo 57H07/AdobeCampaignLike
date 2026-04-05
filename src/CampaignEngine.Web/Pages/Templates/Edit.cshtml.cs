@@ -48,6 +48,10 @@ public class EditTemplateModel : PageModel
     public IReadOnlyList<string> ReferencedSubTemplates { get; private set; }
         = Array.Empty<string>();
 
+    /// <summary>Version history for audit trail display (US-024). Read-only, newest first.</summary>
+    public IReadOnlyList<TemplateHistoryDto> VersionHistory { get; private set; }
+        = Array.Empty<TemplateHistoryDto>();
+
     public async Task<IActionResult> OnGetAsync(Guid id)
     {
         var template = await _templateService.GetByIdAsync(id);
@@ -66,6 +70,7 @@ public class EditTemplateModel : PageModel
         };
 
         await LoadSubTemplateDataAsync(template.BodyPath);
+        VersionHistory = await _templateService.GetHistoryAsync(id);
         return Page();
     }
 
@@ -80,6 +85,7 @@ public class EditTemplateModel : PageModel
             ChannelDisplay = existing.Channel.ToString();
             StatusDisplay = existing.Status.ToString();
             await LoadSubTemplateDataAsync(Input.BodyPath);
+            VersionHistory = await _templateService.GetHistoryAsync(id);
             return Page();
         }
 
@@ -108,6 +114,7 @@ public class EditTemplateModel : PageModel
             ChannelDisplay = existing?.Channel.ToString() ?? string.Empty;
             StatusDisplay = existing?.Status.ToString() ?? string.Empty;
             await LoadSubTemplateDataAsync(Input.BodyPath);
+            VersionHistory = await _templateService.GetHistoryAsync(id);
             ModelState.AddModelError(string.Empty, ex.Message);
             return Page();
         }
