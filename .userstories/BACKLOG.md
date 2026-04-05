@@ -1097,8 +1097,9 @@
 > Track template version history and provide audit trail with binary diff indicator.
 
 #### [US-024] - DOCX version history audit trail
-**Status:** 🔵 IN PROGRESS
+**Status:** ✅ DONE
 **Start date:** 2026-04-05
+**End date:** 2026-04-05
 **Priority:** 🔴 High
 **Complexity:** S
 **Epic:** Epic 5
@@ -1111,19 +1112,19 @@
 > F-501: Version history as audit trail only. No per-version download, no revert action. Displays version number, author, timestamp, file path.
 
 **Acceptance criteria:**
-- [ ] `GET /api/templates/{id}/history` returns version history
-- [ ] Each entry includes: version number, `ChangedBy`, timestamp, `BodyPath`
-- [ ] History entries sorted by version descending (newest first)
-- [ ] UI displays version history table on template edit page
-- [ ] No download link for historical versions (current version only)
-- [ ] No revert action (documented as out of scope)
+- [x] `GET /api/templates/{id}/history` returns version history ✅
+- [x] Each entry includes: version number, `ChangedBy`, timestamp, `BodyPath` ✅
+- [x] History entries sorted by version descending (newest first) ✅
+- [x] UI displays version history table on template edit page ✅
+- [x] No download link for historical versions (current version only) ✅
+- [x] No revert action (documented as out of scope) ✅
 
 **Technical tasks:**
-- [ ] `TASK-024-01` - **[API]** Add `GET /api/templates/{id}/history` endpoint
-- [ ] `TASK-024-02` - **[Service]** Implement `TemplateService.GetVersionHistoryAsync(id)`
-- [ ] `TASK-024-03` - **[DTO]** Create `TemplateVersionDto` with required fields
-- [ ] `TASK-024-04` - **[UI]** Add version history table to `EditTemplate.cshtml`
-- [ ] `TASK-024-05` - **[Test]** API integration test for history retrieval
+- [x] `TASK-024-01` - **[API]** Add `GET /api/templates/{id}/history` endpoint ✅ 2026-04-05
+- [x] `TASK-024-02` - **[Service]** Implement `TemplateService.GetVersionHistoryAsync(id)` ✅ 2026-04-05
+- [x] `TASK-024-03` - **[DTO]** Create `TemplateVersionDto` with required fields ✅ 2026-04-05
+- [x] `TASK-024-04` - **[UI]** Add version history table to `EditTemplate.cshtml` ✅ 2026-04-05
+- [x] `TASK-024-05` - **[Test]** API integration test for history retrieval ✅ 2026-04-05
 
 **Business rules:**
 1. All versions retained indefinitely (no cleanup job)
