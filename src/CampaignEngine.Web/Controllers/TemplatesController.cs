@@ -928,6 +928,66 @@ public class TemplatesController : ControllerBase
         }
     }
 
+    // ----------------------------------------------------------------
+    // POST /api/templates/{id}/preview/docx  (US-020 / F-401)
+    // ----------------------------------------------------------------
+
+    /// <summary>
+    /// Renders a Letter (DOCX) template with caller-supplied sample data and returns
+    /// the rendered DOCX file as a download attachment.
+    ///
+    /// Use this endpoint to verify letter layout before scheduling a campaign.
+    /// </summary>
+    /// <remarks>
+    /// Business rules:
+    /// - Template must be a Letter channel template (422 on channel mismatch).
+    /// - Sample data is provided inline in the request body (not fetched from a data source).
+    /// - Preview is ephemeral: the rendered DOCX is not persisted.
+    /// - Full rendering pipeline is applied: RunMerger → Conditionals → Collections → Scalars.
+    /// - MIME type: application/vnd.openxmlformats-officedocument.wordprocessingml.document.
+    /// - Response header: Content-Disposition: attachment; filename="preview-{templateName}.docx".
+    /// </remarks>
+    /// <param name="id">Template GUID.</param>
+    /// <param name="request">Sample data to merge into the template.</param>
+    [HttpPost("{id:guid}/preview/docx")]
+    [Authorize(Policy = AuthorizationPolicies.RequireDesignerOrAdmin)]
+    [ProducesResponseType(typeof(FileContentResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> PreviewDocxTemplate(
+        Guid id,
+        [FromBody] DocxPreviewRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var result = await _previewService.PreviewDocxAsync(id, request, cancellationToken);
+
+            const string docxMimeType =
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+
+            // Sanitise template name for use in a filename (replace spaces and special chars).
+            var safeFileName = System.Text.RegularExpressions.Regex
+                .Replace(result.TemplateName, @"[^\w\-.]", "_");
+
+            Response.Headers["Content-Disposition"] =
+                $"attachment; filename=\"preview-{safeFileName}.docx\"";
+
+            return File(result.DocxBytes, docxMimeType);
+        }
+        catch (NotFoundException)
+        {
+            return NotFound();
+        }
+        catch (ValidationException ex)
+        {
+            return UnprocessableEntity(new { error = ex.Message });
+        }
+    }
+
     // ================================================================
     // Versioning Endpoints (US-008)
     // ================================================================

@@ -6,6 +6,7 @@ using CampaignEngine.Application.Interfaces.Storage;
 using CampaignEngine.Application.Models;
 using CampaignEngine.Domain.Enums;
 using CampaignEngine.Domain.Exceptions;
+using ValidationException = CampaignEngine.Domain.Exceptions.ValidationException;
 
 namespace CampaignEngine.Infrastructure.Templates;
 
@@ -38,6 +39,7 @@ public sealed class TemplatePreviewService : ITemplatePreviewService
     private readonly IPlaceholderParserService _parserService;
     private readonly IChannelPostProcessorRegistry _postProcessorRegistry;
     private readonly ITemplateBodyStore _bodyStore;
+    private readonly IDocxTemplateRenderer _docxRenderer;
     private readonly IAppLogger<TemplatePreviewService> _logger;
 
     public TemplatePreviewService(
@@ -50,6 +52,7 @@ public sealed class TemplatePreviewService : ITemplatePreviewService
         ITemplateRenderer renderer,
         IPlaceholderParserService parserService,
         IChannelPostProcessorRegistry postProcessorRegistry,
+        IDocxTemplateRenderer docxRenderer,
         IAppLogger<TemplatePreviewService> logger)
     {
         _templateRepository = templateRepository;
@@ -61,6 +64,7 @@ public sealed class TemplatePreviewService : ITemplatePreviewService
         _renderer = renderer;
         _parserService = parserService;
         _postProcessorRegistry = postProcessorRegistry;
+        _docxRenderer = docxRenderer;
         _logger = logger;
     }
 
@@ -253,6 +257,67 @@ public sealed class TemplatePreviewService : ITemplatePreviewService
             TotalSampleRows = sampleRows.Count,
             MissingPlaceholders = missingKeys.AsReadOnly(),
             IsSuccess = true
+        };
+    }
+
+    // ----------------------------------------------------------------
+    // PreviewDocxAsync — US-020 / F-401
+    // ----------------------------------------------------------------
+
+    /// <inheritdoc/>
+    public async Task<DocxPreviewResult> PreviewDocxAsync(
+        Guid templateId,
+        DocxPreviewRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        // ----------------------------------------------------------------
+        // 1. Load and validate the template
+        // ----------------------------------------------------------------
+        var template = await _templateRepository.GetByIdNoTrackingAsync(templateId, cancellationToken);
+
+        if (template is null)
+            throw new NotFoundException("Template", templateId);
+
+        if (template.Channel != ChannelType.Letter)
+            throw new ValidationException(
+                $"Template '{templateId}' is a {template.Channel} template. " +
+                "DOCX preview is only available for Letter channel templates.");
+
+        // ----------------------------------------------------------------
+        // 2. Load the DOCX bytes from the body store
+        // ----------------------------------------------------------------
+        byte[] docxBytes;
+        await using (var stream = await _bodyStore.ReadAsync(template.BodyPath, cancellationToken))
+        {
+            using var ms = new MemoryStream();
+            await stream.CopyToAsync(ms, cancellationToken);
+            docxBytes = ms.ToArray();
+        }
+
+        // ----------------------------------------------------------------
+        // 3. Render via the full DOCX pipeline (F-301 through F-304)
+        // ----------------------------------------------------------------
+        var renderedBytes = await _docxRenderer.RenderAsync(
+            docxBytes,
+            request.Scalars,
+            request.Collections,
+            request.Conditions,
+            cancellationToken);
+
+        _logger.LogInformation(
+            "DOCX preview rendered for Template {TemplateId} ('{TemplateName}'), " +
+            "Scalars={ScalarCount}, Collections={CollectionCount}, Conditions={ConditionCount}",
+            templateId,
+            template.Name,
+            request.Scalars.Count,
+            request.Collections.Count,
+            request.Conditions.Count);
+
+        return new DocxPreviewResult
+        {
+            TemplateId = templateId,
+            TemplateName = template.Name,
+            DocxBytes = renderedBytes
         };
     }
 

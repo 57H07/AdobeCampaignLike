@@ -29,4 +29,33 @@ public interface ITemplatePreviewService
         Guid templateId,
         TemplatePreviewRequest request,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Renders a Letter (DOCX) template using the provided sample data and returns
+    /// the resulting DOCX bytes for download.
+    ///
+    /// F-401 contract:
+    ///   - Runs the full rendering pipeline: RunMerger → ConditionalRenderer →
+    ///     CollectionRenderer → ScalarReplacer.
+    ///   - Preview is ephemeral: no rendered output is persisted.
+    ///   - Template must be a Letter channel template.
+    ///   - Template must exist and have a stored DOCX body.
+    /// </summary>
+    /// <param name="templateId">ID of the Letter template to preview.</param>
+    /// <param name="request">Sample data to merge into the template.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>
+    /// A <see cref="DocxPreviewResult"/> containing the rendered DOCX bytes and
+    /// the template name (used for the Content-Disposition filename).
+    /// </returns>
+    /// <exception cref="CampaignEngine.Domain.Exceptions.NotFoundException">
+    /// Thrown when the template does not exist.
+    /// </exception>
+    /// <exception cref="CampaignEngine.Domain.Exceptions.ValidationException">
+    /// Thrown when the template is not a Letter channel template.
+    /// </exception>
+    Task<DocxPreviewResult> PreviewDocxAsync(
+        Guid templateId,
+        DocxPreviewRequest request,
+        CancellationToken cancellationToken = default);
 }

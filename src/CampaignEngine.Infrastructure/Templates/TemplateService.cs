@@ -550,7 +550,7 @@ public sealed class TemplateService : ITemplateService
         var template = await _templateRepository.GetByIdNoTrackingAsync(id, cancellationToken);
 
         if (template is null)
-            throw new NotFoundException($"Template '{id}' not found.");
+            throw new NotFoundException("Template", id);
 
         if (template.Channel != ChannelType.Letter)
             throw new DomainException(

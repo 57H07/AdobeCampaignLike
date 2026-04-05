@@ -164,6 +164,16 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<DocxPlaceholderParser>();
         services.AddSingleton<IDocxPlaceholderParserService, DocxPlaceholderParserService>();
 
+        // US-020: DOCX rendering pipeline components — all stateless, registered as Singleton.
+        // DocxRunMerger, DocxPlaceholderReplacer, DocxTableCollectionRenderer,
+        // DocxConditionalBlockRenderer are concrete helpers with no external state.
+        // DocxTemplateRenderer orchestrates all four steps (F-301 through F-304).
+        services.AddSingleton<DocxRunMerger>();
+        services.AddSingleton<DocxPlaceholderReplacer>();
+        services.AddSingleton<DocxTableCollectionRenderer>();
+        services.AddSingleton<DocxConditionalBlockRenderer>();
+        services.AddSingleton<IDocxTemplateRenderer, DocxTemplateRenderer>();
+
         // Sub-template resolver service — resolves {{> name}} references recursively with circular detection.
         services.AddScoped<ISubTemplateResolverService, SubTemplateResolverService>();
 

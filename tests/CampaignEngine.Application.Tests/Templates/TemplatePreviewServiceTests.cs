@@ -74,6 +74,7 @@ public class TemplatePreviewServiceTests : IDisposable
             _rendererMock.Object,
             _parserMock.Object,
             _postProcessorRegistryMock.Object,
+            new Mock<IDocxTemplateRenderer>().Object,
             _loggerMock.Object);
 
         // Default: encryptor returns plaintext unchanged for test simplicity
