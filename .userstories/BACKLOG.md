@@ -383,7 +383,8 @@
 ---
 
 #### [US-008] - DOCX download endpoint
-**Status:** 🟡 TODO
+**Status:** 🔵 IN PROGRESS
+**Start date:** 2026-04-05
 **Priority:** 🟠 Medium
 **Complexity:** S
 **Epic:** Epic 1
