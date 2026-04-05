@@ -1097,7 +1097,8 @@
 > Track template version history and provide audit trail with binary diff indicator.
 
 #### [US-024] - DOCX version history audit trail
-**Status:** 🟡 TODO
+**Status:** 🔵 IN PROGRESS
+**Start date:** 2026-04-05
 **Priority:** 🔴 High
 **Complexity:** S
 **Epic:** Epic 5
