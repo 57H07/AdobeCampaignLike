@@ -924,7 +924,8 @@
 > Integrate DOCX rendering into the preview and dispatch pipelines, replacing the old HTML→PDF flow.
 
 #### [US-020] - DOCX template preview
-**Status:** 🟡 TODO
+**Status:** 🔵 IN PROGRESS
+**Start date:** 2026-04-05
 **Priority:** 🔴 High
 **Complexity:** M
 **Epic:** Epic 4
