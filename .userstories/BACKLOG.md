@@ -964,8 +964,9 @@
 ---
 
 #### [US-021] - Per-recipient DOCX dispatch
-**Status:** 🔵 IN PROGRESS
+**Status:** ✅ DONE
 **Start date:** 2026-04-05
+**End date:** 2026-04-05
 **Priority:** 🔴 High
 **Complexity:** L
 **Epic:** Epic 4
@@ -978,20 +979,20 @@
 > F-402: One DOCX per recipient. No batch accumulation. Old PDF accumulation + `FlushBatchAsync` removed. Each `SendAsync` call is atomic.
 
 **Acceptance criteria:**
-- [ ] `ProcessChunkJob` reads DOCX body from file system
-- [ ] Calls `IDocxTemplateRenderer.RenderAsync` once per recipient
-- [ ] Passes rendered DOCX bytes via `DispatchRequest.BinaryContent`
-- [ ] Calls `LetterDispatcher.SendAsync` once per recipient (no batching)
-- [ ] Old PDF accumulation logic removed
+- [x] `ProcessChunkJob` reads DOCX body from file system ✅
+- [x] Calls `IDocxTemplateRenderer.RenderAsync` once per recipient ✅
+- [x] Passes rendered DOCX bytes via `DispatchRequest.BinaryContent` ✅
+- [x] Calls `LetterDispatcher.SendAsync` once per recipient (no batching) ✅
+- [x] Old PDF accumulation logic removed ✅
 
 **Technical tasks:**
-- [ ] `TASK-021-01` - **[Job]** Update `ProcessChunkJob` to read DOCX from `ITemplateBodyStore`
-- [ ] `TASK-021-02` - **[Job]** Call `IDocxTemplateRenderer.RenderAsync(docxStream, recipientData)`
-- [ ] `TASK-021-03` - **[Job]** Set `DispatchRequest.BinaryContent` with rendered bytes
-- [ ] `TASK-021-04` - **[Job]** Call `LetterDispatcher.SendAsync` per recipient
-- [ ] `TASK-021-05` - **[Cleanup]** Remove old PDF accumulation code
-- [ ] `TASK-021-06` - **[Test]** Integration test for chunk job with DOCX template
-- [ ] `TASK-021-07` - **[Test]** Verify one file per recipient in output
+- [x] `TASK-021-01` - **[Job]** Update `ProcessChunkJob` to read DOCX from `ITemplateBodyStore` ✅ 2026-04-05
+- [x] `TASK-021-02` - **[Job]** Call `IDocxTemplateRenderer.RenderAsync(docxStream, recipientData)` ✅ 2026-04-05
+- [x] `TASK-021-03` - **[Job]** Set `DispatchRequest.BinaryContent` with rendered bytes ✅ 2026-04-05
+- [x] `TASK-021-04` - **[Job]** Call `LetterDispatcher.SendAsync` per recipient ✅ 2026-04-05
+- [x] `TASK-021-05` - **[Cleanup]** Remove old PDF accumulation code ✅ 2026-04-05
+- [x] `TASK-021-06` - **[Test]** Integration test for chunk job with DOCX template ✅ 2026-04-05
+- [x] `TASK-021-07` - **[Test]** Verify one file per recipient in output ✅ 2026-04-05
 
 **Business rules:**
 1. Rendering must complete within 10 s timeout (existing setting)
