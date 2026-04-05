@@ -1031,6 +1031,46 @@ public class TemplatesController : ControllerBase
             UpdatedAt = template.UpdatedAt
         });
     }
+
+    // ================================================================
+    // DOCX Download Endpoint (US-008)
+    // ================================================================
+
+    // ----------------------------------------------------------------
+    // GET /api/templates/{id}/docx
+    // ----------------------------------------------------------------
+
+    /// <summary>
+    /// Downloads the current DOCX file for a Letter template.
+    /// </summary>
+    /// <remarks>
+    /// Business rules (F-110 / US-008):
+    /// - Template must exist; otherwise returns 404.
+    /// - Template must be a Letter channel template; otherwise returns 422.
+    /// - Authorization requires Designer, Admin, or Operator (CampaignManager) role.
+    /// </remarks>
+    /// <param name="id">Template GUID.</param>
+    [HttpGet("{id:guid}/docx")]
+    [Authorize(Policy = AuthorizationPolicies.RequireAuthenticated)]
+    [ProducesResponseType(typeof(FileStreamResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> DownloadDocx(
+        Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        const string docxMimeType =
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+
+        var (stream, templateName) = await _templateService.GetDocxBodyAsync(id, cancellationToken);
+
+        var safeFileName = templateName.Replace("\"", "_") + ".docx";
+        Response.Headers["Content-Disposition"] =
+            $"attachment; filename=\"{safeFileName}\"";
+
+        return File(stream, docxMimeType);
+    }
 }
 
 // ================================================================

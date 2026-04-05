@@ -539,6 +539,32 @@ public sealed class TemplateService : ITemplateService
     }
 
     // ----------------------------------------------------------------
+    // US-008: DOCX download
+    // ----------------------------------------------------------------
+
+    /// <inheritdoc />
+    public async Task<(Stream Content, string TemplateName)> GetDocxBodyAsync(
+        Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        var template = await _templateRepository.GetByIdNoTrackingAsync(id, cancellationToken);
+
+        if (template is null)
+            throw new NotFoundException($"Template '{id}' not found.");
+
+        if (template.Channel != ChannelType.Letter)
+            throw new DomainException(
+                $"Template '{id}' is a {template.Channel} template. DOCX download is only available for Letter templates.");
+
+        if (string.IsNullOrWhiteSpace(template.BodyPath))
+            throw new DomainException(
+                $"Template '{id}' does not have a DOCX file attached.");
+
+        var stream = await _bodyStore.ReadAsync(template.BodyPath, cancellationToken);
+        return (stream, template.Name);
+    }
+
+    // ----------------------------------------------------------------
     // Helpers
     // ----------------------------------------------------------------
 

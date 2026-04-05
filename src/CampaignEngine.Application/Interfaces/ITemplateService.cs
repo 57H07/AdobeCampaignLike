@@ -100,4 +100,18 @@ public interface ITemplateService
         int version,
         string? changedBy,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Returns the raw DOCX bytes and template name for the given template ID.
+    /// Business rules (F-110 / US-008):
+    ///   - Template must exist and not be soft-deleted (throws NotFoundException otherwise).
+    ///   - Template must be a Letter channel template (throws DomainException otherwise).
+    ///   - Template must have a non-empty BodyPath (throws DomainException otherwise).
+    /// </summary>
+    /// <param name="id">Template GUID.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>A tuple of (docx bytes stream, template name).</returns>
+    Task<(Stream Content, string TemplateName)> GetDocxBodyAsync(
+        Guid id,
+        CancellationToken cancellationToken = default);
 }
