@@ -383,8 +383,9 @@
 ---
 
 #### [US-008] - DOCX download endpoint
-**Status:** 🔵 IN PROGRESS
+**Status:** ✅ DONE
 **Start date:** 2026-04-05
+**End date:** 2026-04-05
 **Priority:** 🟠 Medium
 **Complexity:** S
 **Epic:** Epic 1
@@ -397,20 +398,20 @@
 > F-110: DOCX download endpoint. Authorization: Designer, Admin, or CampaignManager. Returns DOCX bytes with `Content-Disposition: attachment`.
 
 **Acceptance criteria:**
-- [ ] `GET /api/templates/{id}/docx` endpoint implemented
-- [ ] Authorization requires Designer, Admin, or CampaignManager role
-- [ ] Returns DOCX bytes with MIME type `application/vnd.openxmlformats-officedocument.wordprocessingml.document`
-- [ ] Response header includes `Content-Disposition: attachment; filename="{templateName}.docx"`
-- [ ] Returns HTTP 404 if template not found
-- [ ] Returns HTTP 422 if template is not Letter channel
+- [x] `GET /api/templates/{id}/docx` endpoint implemented ✅
+- [x] Authorization requires Designer, Admin, or CampaignManager role ✅
+- [x] Returns DOCX bytes with MIME type `application/vnd.openxmlformats-officedocument.wordprocessingml.document` ✅
+- [x] Response header includes `Content-Disposition: attachment; filename="{templateName}.docx"` ✅
+- [x] Returns HTTP 404 if template not found ✅
+- [x] Returns HTTP 422 if template is not Letter channel ✅
 
 **Technical tasks:**
-- [ ] `TASK-008-01` - **[API]** Add `GET /api/templates/{id}/docx` endpoint to `TemplatesController`
-- [ ] `TASK-008-02` - **[Auth]** Apply `RequireDesignerOrAdminOrCampaignManager` policy
-- [ ] `TASK-008-03` - **[Service]** Implement `TemplateService.GetDocxBodyAsync(id)`
-- [ ] `TASK-008-04` - **[Response]** Set correct MIME type and Content-Disposition header
-- [ ] `TASK-008-05` - **[Test]** API integration tests for success path
-- [ ] `TASK-008-06` - **[Test]** API integration tests for 404/422 responses
+- [x] `TASK-008-01` - **[API]** Add `GET /api/templates/{id}/docx` endpoint to `TemplatesController` ✅ 2026-04-05
+- [x] `TASK-008-02` - **[Auth]** Apply `RequireDesignerOrAdminOrCampaignManager` policy ✅ 2026-04-05
+- [x] `TASK-008-03` - **[Service]** Implement `TemplateService.GetDocxBodyAsync(id)` ✅ 2026-04-05
+- [x] `TASK-008-04` - **[Response]** Set correct MIME type and Content-Disposition header ✅ 2026-04-05
+- [x] `TASK-008-05` - **[Test]** API integration tests for success path ✅ 2026-04-05
+- [x] `TASK-008-06` - **[Test]** API integration tests for 404/422 responses ✅ 2026-04-05
 
 **Business rules:**
 1. CampaignManager has read-only access (cannot upload/update)
