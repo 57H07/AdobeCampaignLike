@@ -114,11 +114,6 @@ public static class SwaggerServiceExtensions
             options.ExampleFilters();
 
             // ----------------------------------------------------------------
-            // Annotations support (SwaggerSchemaAttribute, SwaggerOperationAttribute)
-            // ----------------------------------------------------------------
-            options.EnableAnnotations();
-
-            // ----------------------------------------------------------------
             // Order endpoints by controller then HTTP method for readability
             // ----------------------------------------------------------------
             options.OrderActionsBy(api => $"{api.ActionDescriptor.RouteValues["controller"]}_{api.HttpMethod}");

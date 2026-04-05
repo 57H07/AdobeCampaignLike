@@ -1,4 +1,3 @@
-using System.ComponentModel.DataAnnotations;
 using CampaignEngine.Domain.Common;
 using CampaignEngine.Domain.Enums;
 using CampaignEngine.Domain.Exceptions;
@@ -27,8 +26,8 @@ public class Template : SoftDeletableEntity
 
     /// <summary>
     /// Concurrency token managed by SQL Server (rowversion/timestamp).
+    /// Configured as a row version via EF Fluent API in TemplateConfiguration.
     /// </summary>
-    [Timestamp]
     public byte[] RowVersion { get; set; } = Array.Empty<byte>();
 
     public TemplateStatus Status { get; set; } = TemplateStatus.Draft;

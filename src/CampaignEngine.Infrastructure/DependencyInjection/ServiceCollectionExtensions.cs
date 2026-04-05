@@ -153,6 +153,9 @@ public static class ServiceCollectionExtensions
         // Template service — CRUD operations with soft delete and unique-name enforcement.
         services.AddScoped<ITemplateService, TemplateService>();
 
+        // DOCX structural validation (US-009, F-203) — depends on DocumentFormat.OpenXml.
+        services.AddScoped<IDocxValidationService, DocxValidationService>();
+
         // Placeholder manifest service — manages typed placeholder declarations per template.
         services.AddScoped<IPlaceholderManifestService, PlaceholderManifestService>();
 

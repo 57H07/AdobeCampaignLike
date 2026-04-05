@@ -3,7 +3,7 @@ using CampaignEngine.Application.Interfaces;
 using CampaignEngine.Domain.Exceptions;
 using DocumentFormat.OpenXml.Packaging;
 
-namespace CampaignEngine.Application.Services;
+namespace CampaignEngine.Infrastructure.Templates;
 
 /// <summary>
 /// Validates the structural integrity and security of an uploaded DOCX file.

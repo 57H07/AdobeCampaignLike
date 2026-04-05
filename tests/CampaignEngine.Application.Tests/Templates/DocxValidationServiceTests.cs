@@ -1,7 +1,7 @@
 using System.IO.Compression;
 using System.Text;
-using CampaignEngine.Application.Services;
 using CampaignEngine.Domain.Exceptions;
+using CampaignEngine.Infrastructure.Templates;
 
 namespace CampaignEngine.Application.Tests.Templates;
 

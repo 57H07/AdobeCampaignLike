@@ -1,12 +1,9 @@
-using Swashbuckle.AspNetCore.Annotations;
-
 namespace CampaignEngine.Application.DTOs.Send;
 
 /// <summary>
 /// Recipient information for a single send request.
 /// At least one of Email or PhoneNumber must be supplied depending on the channel.
 /// </summary>
-[SwaggerSchema(Description = "Recipient contact details.")]
 public class SendRecipient
 {
     /// <summary>

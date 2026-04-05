@@ -1,4 +1,5 @@
 using CampaignEngine.Application.DependencyInjection;
+using CampaignEngine.Domain.Enums;
 using CampaignEngine.Infrastructure.DependencyInjection;
 using CampaignEngine.Infrastructure.Persistence.Seed;
 using CampaignEngine.Web.Middleware;
@@ -40,6 +41,39 @@ try
     // ----------------------------------------------------------------
     builder.Services.AddApplication();
     builder.Services.AddInfrastructure(builder.Configuration);
+
+    // ----------------------------------------------------------------
+    // Authorization policies — role-based access control
+    // Business rules:
+    //   Designer: template CRUD + preview, no campaign access
+    //   Operator: campaign CRUD + monitoring, read-only template access
+    //   Admin: full access + user management + configuration
+    // ----------------------------------------------------------------
+    builder.Services.AddAuthorizationCore(options =>
+    {
+        options.AddPolicy(AuthorizationPolicies.RequireAdmin, policy =>
+            policy.RequireRole(UserRole.Admin));
+
+        options.AddPolicy(AuthorizationPolicies.RequireDesigner, policy =>
+            policy.RequireRole(UserRole.Designer));
+
+        options.AddPolicy(AuthorizationPolicies.RequireOperator, policy =>
+            policy.RequireRole(UserRole.Operator));
+
+        options.AddPolicy(AuthorizationPolicies.RequireDesignerOrAdmin, policy =>
+            policy.RequireRole(UserRole.Designer, UserRole.Admin));
+
+        options.AddPolicy(AuthorizationPolicies.RequireOperatorOrAdmin, policy =>
+            policy.RequireRole(UserRole.Operator, UserRole.Admin));
+
+        options.AddPolicy(AuthorizationPolicies.RequireAuthenticated, policy =>
+            policy.RequireAuthenticatedUser());
+
+        // Default fallback: all pages/endpoints require authentication
+        options.FallbackPolicy = new AuthorizationPolicyBuilder()
+            .RequireAuthenticatedUser()
+            .Build();
+    });
 
     // ----------------------------------------------------------------
     // ASP.NET Core: Razor Pages + Web API

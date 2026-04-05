@@ -19,7 +19,26 @@ public class AuthorizationPoliciesTests
     {
         var services = new ServiceCollection();
         services.AddLogging(); // DefaultAuthorizationService requires ILogger
-        services.AddApplication(); // registers all policies via AddAuthorizationCore
+        services.AddApplication();
+        // Policies are configured in the Web layer (Program.cs); replicate here for unit testing.
+        services.AddAuthorizationCore(options =>
+        {
+            options.AddPolicy(AuthorizationPolicies.RequireAdmin, policy =>
+                policy.RequireRole(UserRole.Admin));
+            options.AddPolicy(AuthorizationPolicies.RequireDesigner, policy =>
+                policy.RequireRole(UserRole.Designer));
+            options.AddPolicy(AuthorizationPolicies.RequireOperator, policy =>
+                policy.RequireRole(UserRole.Operator));
+            options.AddPolicy(AuthorizationPolicies.RequireDesignerOrAdmin, policy =>
+                policy.RequireRole(UserRole.Designer, UserRole.Admin));
+            options.AddPolicy(AuthorizationPolicies.RequireOperatorOrAdmin, policy =>
+                policy.RequireRole(UserRole.Operator, UserRole.Admin));
+            options.AddPolicy(AuthorizationPolicies.RequireAuthenticated, policy =>
+                policy.RequireAuthenticatedUser());
+            options.FallbackPolicy = new AuthorizationPolicyBuilder()
+                .RequireAuthenticatedUser()
+                .Build();
+        });
         var sp = services.BuildServiceProvider();
         _authorizationService = sp.GetRequiredService<IAuthorizationService>();
     }
