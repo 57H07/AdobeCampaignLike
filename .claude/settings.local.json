@@ -8,7 +8,9 @@
       "Skill(list-userstories:*)",
       "Bash(find f:/_Projets/AdobeCampaignLike/src/CampaignEngine.Application/Services -name *.cs)",
       "Bash(xargs basename:*)",
-      "Bash(dotnet test:*)"
+      "Bash(dotnet test:*)",
+      "Bash(rm -rf src/CampaignEngine.Web/obj/Release/net8.0/compressed)",
+      "Bash(rm -rf src/CampaignEngine.Web/obj/Debug/net8.0/compressed)"
     ]
   }
 }

@@ -20,7 +20,12 @@ public sealed class CampaignRepository : RepositoryBase<Campaign>, ICampaignRepo
         CampaignFilter filter,
         CancellationToken cancellationToken = default)
     {
+        // Fix #12/#13: explicit soft-delete filter as defense-in-depth against
+        // accidental IgnoreQueryFilters() upstream, and AsNoTracking for read-only
+        // paging to avoid change-tracker growth across successive pages.
         var query = DbContext.Campaigns
+            .AsNoTracking()
+            .Where(c => !c.IsDeleted)
             .Include(c => c.Steps)
             .Include(c => c.DataSource)
             .AsQueryable();
@@ -57,6 +62,7 @@ public sealed class CampaignRepository : RepositoryBase<Campaign>, ICampaignRepo
     /// <inheritdoc />
     public async Task<Campaign?> GetWithDetailsAsync(Guid id, CancellationToken cancellationToken = default)
         => await DbContext.Campaigns
+            .Where(c => !c.IsDeleted)
             .Include(c => c.Steps)
             .Include(c => c.DataSource)
             .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
@@ -64,17 +70,21 @@ public sealed class CampaignRepository : RepositoryBase<Campaign>, ICampaignRepo
     /// <inheritdoc />
     public async Task<Campaign?> GetWithStepsAsync(Guid id, CancellationToken cancellationToken = default)
         => await DbContext.Campaigns
+            .Where(c => !c.IsDeleted)
             .Include(c => c.Steps)
             .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
 
     /// <inheritdoc />
     public async Task<bool> ExistsWithNameAsync(string name, CancellationToken cancellationToken = default)
-        => await DbContext.Campaigns.AnyAsync(c => c.Name == name, cancellationToken);
+        => await DbContext.Campaigns
+            .Where(c => !c.IsDeleted)
+            .AnyAsync(c => c.Name == name, cancellationToken);
 
     /// <inheritdoc />
     public async Task<Campaign?> GetNoTrackingAsync(Guid id, CancellationToken cancellationToken = default)
         => await DbContext.Campaigns
             .AsNoTracking()
+            .Where(c => !c.IsDeleted)
             .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
 
     /// <inheritdoc />
@@ -104,6 +114,7 @@ public sealed class CampaignRepository : RepositoryBase<Campaign>, ICampaignRepo
     /// <inheritdoc />
     public async Task<Campaign?> GetWithDataSourceFieldsAndStepsAsync(Guid id, CancellationToken cancellationToken = default)
         => await DbContext.Campaigns
+            .Where(c => !c.IsDeleted)
             .Include(c => c.DataSource)
                 .ThenInclude(ds => ds!.Fields)
             .Include(c => c.Steps)
@@ -119,6 +130,7 @@ public sealed class CampaignRepository : RepositoryBase<Campaign>, ICampaignRepo
     {
         var query = DbContext.Campaigns
             .AsNoTracking()
+            .Where(c => !c.IsDeleted)
             .Include(c => c.Steps)
             .Where(c => statuses.Contains(c.Status));
 

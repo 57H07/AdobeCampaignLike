@@ -53,6 +53,18 @@ public sealed class TemplateSnapshotService : ITemplateSnapshotService
 
         var templates = await _templateRepository.GetByIdsAsync(templateIds, cancellationToken);
 
+        // Fix #10: guard against data corruption / join duplicates that would
+        // otherwise make ToDictionary throw a generic ArgumentException, which
+        // surfaces to the operator with no actionable context.
+        var duplicateId = templates
+            .GroupBy(t => t.Id)
+            .FirstOrDefault(g => g.Count() > 1)?.Key;
+
+        if (duplicateId.HasValue)
+            throw new DomainException(
+                $"Template repository returned duplicate template id '{duplicateId.Value}' when building " +
+                $"snapshots for campaign '{campaignId}'. Investigate the Templates table for corrupted rows.");
+
         var templateMap = templates.ToDictionary(t => t.Id);
 
         // Create one snapshot per step (each step may reference a different template)

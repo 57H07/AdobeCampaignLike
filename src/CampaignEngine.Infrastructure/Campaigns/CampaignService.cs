@@ -98,6 +98,25 @@ public sealed class CampaignService : ICampaignService
             });
 
         // ----------------------------------------------------------------
+        // Validate: ScheduledAt (if provided) must be at least 5 minutes ahead
+        // Rejects at creation time rather than deferring the failure to Schedule()
+        // where the error would surface with confusing "wrong status" context.
+        // ----------------------------------------------------------------
+        if (request.ScheduledAt.HasValue)
+        {
+            var minScheduleAhead = DateTime.UtcNow.AddMinutes(5);
+            if (request.ScheduledAt.Value < minScheduleAhead)
+            {
+                throw new ValidationException(new Dictionary<string, string[]>
+                {
+                    ["scheduledAt"] = [
+                        $"ScheduledAt must be at least 5 minutes in the future (minimum: {minScheduleAhead:yyyy-MM-dd HH:mm} UTC)."
+                    ]
+                });
+            }
+        }
+
+        // ----------------------------------------------------------------
         // Validate: DataSource exists if specified
         // ----------------------------------------------------------------
         if (request.DataSourceId.HasValue)

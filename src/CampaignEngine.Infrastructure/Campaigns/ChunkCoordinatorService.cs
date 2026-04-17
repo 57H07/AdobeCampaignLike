@@ -197,72 +197,18 @@ public sealed class ChunkCoordinatorService : IChunkCoordinatorService
     }
 
     /// <inheritdoc />
-    public async Task<bool> RecordChunkCompletionAsync(
+    public Task<bool> RecordChunkCompletionAsync(
         Guid chunkId,
         int successCount,
         int failureCount,
         CancellationToken cancellationToken = default)
-    {
-        // ----------------------------------------------------------------
-        // Atomic SQL UPDATE: increment step completion counter.
-        // The chunk that brings CompletedChunks == TotalChunks triggers finalization.
-        // ----------------------------------------------------------------
-        var chunk = await _chunkRepository.GetTrackedAsync(chunkId, cancellationToken);
-
-        if (chunk is null)
-        {
-            _logger.LogError(new InvalidOperationException($"Chunk {chunkId} not found"),
-                "RecordChunkCompletion: chunk {ChunkId} not found", chunkId);
-            return false;
-        }
-
-        chunk.Status = ChunkStatus.Completed;
-        chunk.SuccessCount = successCount;
-        chunk.FailureCount = failureCount;
-        chunk.ProcessedCount = successCount + failureCount;
-        chunk.CompletedAt = DateTime.UtcNow;
-
-        // Atomically increment campaign processed/success/failure counters
-        // using raw SQL UPDATE to avoid EF concurrency races
-        await _unitOfWork.ExecuteSqlRawAsync(
-            """
-            UPDATE Campaigns SET
-                ProcessedCount = ProcessedCount + {0},
-                SuccessCount = SuccessCount + {1},
-                FailureCount = FailureCount + {2},
-                UpdatedAt = GETUTCDATE()
-            WHERE Id = {3}
-            """,
-            cancellationToken,
-            successCount + failureCount,
+        => FinalizeChunkAsync(
+            chunkId,
+            ChunkStatus.Completed,
             successCount,
             failureCount,
-            chunk.CampaignId);
-
-        await _unitOfWork.CommitAsync(cancellationToken);
-
-        // ----------------------------------------------------------------
-        // Completion detection: count remaining non-terminal chunks
-        // ----------------------------------------------------------------
-        var pendingOrProcessingCount = await _chunkRepository.CountPendingOrProcessingAsync(
-            chunk.CampaignStepId, cancellationToken);
-
-        var isLastChunk = pendingOrProcessingCount == 0;
-
-        if (isLastChunk)
-        {
-            _logger.LogInformation(
-                "Campaign {CampaignId} Step {StepId}: all chunks completed — triggering finalization",
-                chunk.CampaignId, chunk.CampaignStepId);
-
-            await _completionService.FinalizeStepAsync(
-                chunk.CampaignId,
-                chunk.CampaignStepId,
-                cancellationToken);
-        }
-
-        return isLastChunk;
-    }
+            errorMessage: null,
+            cancellationToken);
 
     /// <inheritdoc />
     public async Task RecordChunkFailureAsync(
@@ -270,54 +216,182 @@ public sealed class ChunkCoordinatorService : IChunkCoordinatorService
         string errorMessage,
         CancellationToken cancellationToken = default)
     {
-        var chunk = await _chunkRepository.GetTrackedAsync(chunkId, cancellationToken);
+        var chunk = await _chunkRepository.GetTrackedAsync(chunkId, cancellationToken)
+            ?? throw new NotFoundException("CampaignChunk", chunkId);
 
-        if (chunk is null)
-        {
-            _logger.LogError(new InvalidOperationException($"Chunk {chunkId} not found"),
-                "RecordChunkFailure: chunk {ChunkId} not found", chunkId);
-            return;
-        }
-
+        var truncated = TruncateError(errorMessage);
         chunk.RetryAttempts++;
-        chunk.ErrorMessage = errorMessage[..Math.Min(errorMessage.Length, 2000)];
+        chunk.ErrorMessage = truncated;
 
         if (chunk.RetryAttempts >= _options.MaxRetryAttempts)
         {
-            chunk.Status = ChunkStatus.Failed;
-            chunk.CompletedAt = DateTime.UtcNow;
-
             _logger.LogError(
-                new InvalidOperationException(errorMessage),
+                new InvalidOperationException(truncated),
                 "Campaign {CampaignId} Chunk {ChunkId}: permanently failed after {Attempts} attempts",
                 chunk.CampaignId, chunkId, chunk.RetryAttempts);
 
+            // Persist retry counter / error message before the terminal transition
             await _unitOfWork.CommitAsync(cancellationToken);
 
-            // Check if this was the last chunk (even though it failed)
-            await RecordChunkCompletionAsync(chunkId, 0, chunk.RecipientCount, cancellationToken);
+            // Mark chunk as Failed (not Completed) and trigger finalization in one atomic path
+            await FinalizeChunkAsync(
+                chunkId,
+                ChunkStatus.Failed,
+                successCount: 0,
+                failureCount: chunk.RecipientCount,
+                errorMessage: truncated,
+                cancellationToken);
+            return;
         }
-        else
+
+        // Single transaction: reset to Pending + schedule retry + persist job id together.
+        // If any step fails, the transaction rolls back and the caller can safely retry
+        // without leaving the chunk orphaned (job scheduled but no HangfireJobId persisted,
+        // or chunk marked Pending with no job to process it).
+        await _unitOfWork.BeginTransactionAsync(cancellationToken);
+        try
         {
             chunk.Status = ChunkStatus.Pending;
-            await _unitOfWork.CommitAsync(cancellationToken);
 
-            // Re-enqueue with delay based on retry attempt
             var delaySeconds = _options.RetryDelaysSeconds.Length > chunk.RetryAttempts - 1
                 ? _options.RetryDelaysSeconds[chunk.RetryAttempts - 1]
                 : _options.RetryDelaysSeconds[^1];
 
-            var jobId = BackgroundJob.Schedule<IProcessChunkJob>(
+            var jobId = _jobClient.Schedule<IProcessChunkJob>(
                 job => job.ExecuteAsync(chunkId, CancellationToken.None),
                 TimeSpan.FromSeconds(delaySeconds));
 
             chunk.HangfireJobId = jobId;
-            await _unitOfWork.CommitAsync(cancellationToken);
+
+            await _unitOfWork.CommitTransactionAsync(cancellationToken);
 
             _logger.LogWarning(
                 "Campaign {CampaignId} Chunk {ChunkId}: scheduled retry {Attempt}/{Max} in {Delay}s. Job: {JobId}",
                 chunk.CampaignId, chunkId, chunk.RetryAttempts, _options.MaxRetryAttempts, delaySeconds, jobId);
         }
+        catch
+        {
+            await _unitOfWork.RollbackTransactionAsync(cancellationToken);
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Core atomic chunk finalization. Handles both successful completion and permanent failure
+    /// through a single code path to avoid state inversion (a failed chunk incorrectly marked Completed).
+    /// Uses atomic SQL for:
+    ///   1. Chunk status transition (idempotent via Status NOT IN terminal guard).
+    ///   2. Campaign counter increments.
+    ///   3. Step finalization claim — a single atomic UPDATE of CampaignSteps.ExecutedAt
+    ///      combined with a NOT EXISTS check ensures exactly one caller wins the race
+    ///      to trigger FinalizeStepAsync, no matter how many chunks complete concurrently.
+    /// </summary>
+    private async Task<bool> FinalizeChunkAsync(
+        Guid chunkId,
+        ChunkStatus finalStatus,
+        int successCount,
+        int failureCount,
+        string? errorMessage,
+        CancellationToken cancellationToken)
+    {
+        var chunk = await _chunkRepository.GetTrackedAsync(chunkId, cancellationToken)
+            ?? throw new NotFoundException("CampaignChunk", chunkId);
+
+        var campaignId = chunk.CampaignId;
+        var stepId = chunk.CampaignStepId;
+
+        await _unitOfWork.BeginTransactionAsync(cancellationToken);
+        try
+        {
+            // Atomic, idempotent chunk state transition. If another worker already finalized
+            // this chunk (e.g., a duplicate Hangfire invocation), rowcount is 0 and we skip.
+            var chunkRowCount = await _unitOfWork.ExecuteSqlRawAsync(
+                """
+                UPDATE CampaignChunks SET
+                    Status = {0},
+                    SuccessCount = {1},
+                    FailureCount = {2},
+                    ProcessedCount = {3},
+                    CompletedAt = GETUTCDATE(),
+                    ErrorMessage = COALESCE({4}, ErrorMessage)
+                WHERE Id = {5} AND Status NOT IN (3, 4)
+                """,
+                cancellationToken,
+                (int)finalStatus,
+                successCount,
+                failureCount,
+                successCount + failureCount,
+                (object?)errorMessage ?? DBNull.Value,
+                chunkId);
+
+            if (chunkRowCount == 0)
+            {
+                _logger.LogWarning(
+                    "Chunk {ChunkId} already in terminal status — skipping duplicate finalization",
+                    chunkId);
+                await _unitOfWork.RollbackTransactionAsync(cancellationToken);
+                return false;
+            }
+
+            // Atomic counter increments on the campaign row.
+            await _unitOfWork.ExecuteSqlRawAsync(
+                """
+                UPDATE Campaigns SET
+                    ProcessedCount = ProcessedCount + {0},
+                    SuccessCount = SuccessCount + {1},
+                    FailureCount = FailureCount + {2},
+                    UpdatedAt = GETUTCDATE()
+                WHERE Id = {3}
+                """,
+                cancellationToken,
+                successCount + failureCount,
+                successCount,
+                failureCount,
+                campaignId);
+
+            // Atomic step finalization claim. Exactly one caller can transition
+            // ExecutedAt from NULL to a timestamp AND observe zero non-terminal
+            // chunks in the same statement. All other concurrent callers see @@ROWCOUNT = 0.
+            var claimed = await _unitOfWork.ExecuteSqlRawAsync(
+                """
+                UPDATE CampaignSteps SET ExecutedAt = GETUTCDATE()
+                WHERE Id = {0}
+                  AND ExecutedAt IS NULL
+                  AND NOT EXISTS (
+                      SELECT 1 FROM CampaignChunks
+                      WHERE CampaignStepId = {0} AND Status IN (1, 2)
+                  )
+                """,
+                cancellationToken,
+                stepId);
+
+            await _unitOfWork.CommitTransactionAsync(cancellationToken);
+
+            if (claimed > 0)
+            {
+                _logger.LogInformation(
+                    "Campaign {CampaignId} Step {StepId}: all chunks terminal — claimed finalization",
+                    campaignId, stepId);
+
+                await _completionService.FinalizeStepAsync(campaignId, stepId, cancellationToken);
+                return true;
+            }
+
+            return false;
+        }
+        catch
+        {
+            await _unitOfWork.RollbackTransactionAsync(cancellationToken);
+            throw;
+        }
+    }
+
+    private static string TruncateError(string? errorMessage)
+    {
+        if (string.IsNullOrWhiteSpace(errorMessage))
+            return "Unknown error";
+
+        return errorMessage.Length <= 2000 ? errorMessage : errorMessage[..2000];
     }
 
     /// <inheritdoc />

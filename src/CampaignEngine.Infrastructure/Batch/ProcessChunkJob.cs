@@ -127,7 +127,7 @@ public sealed class ProcessChunkJob : IProcessChunkJob
 
             try
             {
-                using var docxStream = await _templateBodyStore.ReadAsync(docxBodyPath, cancellationToken);
+                await using var docxStream = await _templateBodyStore.ReadAsync(docxBodyPath, cancellationToken);
                 using var ms = new MemoryStream();
                 await docxStream.CopyToAsync(ms, cancellationToken);
                 docxTemplateBytes = ms.ToArray();
@@ -324,11 +324,12 @@ public sealed class ProcessChunkJob : IProcessChunkJob
         var (recipientEmail, recipientPhone) = ResolveRecipientAddress(recipient, step.Channel);
         if (string.IsNullOrWhiteSpace(recipientEmail) && string.IsNullOrWhiteSpace(recipientPhone))
         {
+            var recipientRef = ResolveLetterRecipientRef(recipient);
             _logger.LogWarning(
-                "ProcessChunkJob: recipient has no address for channel {Channel}, skipping",
-                (object)step.Channel.ToString());
+                "ProcessChunkJob: Chunk {ChunkId} — recipient {RecipientRef} has no address for channel {Channel}, skipping",
+                chunk.Id, recipientRef, step.Channel);
             throw new InvalidOperationException(
-                $"Recipient has no address for channel {step.Channel}.");
+                $"Recipient {recipientRef} has no address for channel {step.Channel}.");
         }
 
         return new DispatchRequest

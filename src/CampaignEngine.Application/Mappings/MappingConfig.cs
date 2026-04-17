@@ -34,6 +34,13 @@ public static class MappingConfig
         {
             if (_configured) return;
             RegisterMappings(TypeAdapterConfig.GlobalSettings);
+
+            // Fix #15: compile all registered mappings on startup so mismatches
+            // (missing destination members, broken expressions) surface as a
+            // loud exception at bootstrap time rather than silently producing
+            // incomplete DTOs at runtime.
+            TypeAdapterConfig.GlobalSettings.Compile();
+
             _configured = true;
         }
     }
