@@ -168,7 +168,7 @@ public static class SwaggerServiceExtensions
                 options.ConfigObject.AdditionalItems["persistAuthorization"] = true;
 
                 // Custom CSS for a cleaner dark-accented header
-                options.InjectStylesheet("/swagger-ui/custom.css");
+                options.InjectStylesheet("/swagger-ui/campaign-swagger.css");
             });
         }
 
